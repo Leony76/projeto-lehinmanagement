@@ -1,10 +1,16 @@
 export const titleColors = {
   primary: "text-primary-light text-shadow-[1px_1px_0px_var(--color-primary)]",
+  primaryDark: "text-primary-middledark text-shadow-[1px_1px_0px_#976344]",
+
   secondary: "text-secondary text-shadow-[1px_1px_0px_var(--color-secondary-middledark)]",
+  secondaryDark: "text-secondary text-shadow-[1px_1px_0px_var(--color-secondary-middledark)]",
+
+  yellow: "text-yellow text-shadow-[1px_1px_0px_#B19705]",
 };
 
 export const textColors = {
   primary: "text-primary",
+  primaryMiddleDark: "text-primary-middledark",
   primaryDark: "text-primary-dark",
   primaryLight: "text-primary-light",
   primaryLighter: "text-primary-ultralight",
@@ -13,6 +19,17 @@ export const textColors = {
   secondary: "text-secondary",
   secondaryMiddleDark: "text-secondary-middledark",
   secondaryDark: "text-secondary-dark",
+
+  yellowLight: "text-yellow-light",
+  yellow: "text-yellow",
+  yellowDark: "text-yellow-dark",
+
+  redLight: "text-red-light",
+  red: "text-red",
+  redDark: "text-red-dark",
+
+  blueLight: "text-blue-light",
+  blue: "text-blue",
 
   uiMoney: "text-ui-money",
   uiStock: "text-ui-stock",
@@ -45,11 +62,41 @@ export const inputColors = {
 };
 
 export const buttonColorsScheme = {
-  primary: "border-primary bg-primary-ultralight/70 text-primary border-[1.5px] rounded-3xl p-1 focus:outline-none hover:bg-primary-dark hover:text-primary-light focus:bg-primary-dark focus:text-primary-light transition duration-300 cursor-pointer active:bg-primary-ultralight/70 active:text-primary",
-  secondary: "border-secondary-middledark bg-secondary-light/70 text-secondary-middledark border-[1.5px] rounded-3xl p-1 focus:outline-none hover:bg-secondary-dark hover:text-secondary-light focus:bg-secondary-dark focus:text-secondary-light transition cursor-pointer duration-150 active:bg-secondary-light active:text-secondary-middledark",
+  primary: `
+    border-primary bg-primary-ultralight/70 text-primary
+    border-[1.5px] rounded-3xl p-1
+    hover:bg-primary-dark hover:text-primary-light
+    focus:outline-none focus-visible:bg-primary-dark focus-visible:text-primary-light
+    active:bg-primary-ultralight/70 active:text-primary
+    transition duration-300 cursor-pointer
+  `,
+  secondary: `
+    border-secondary-middledark bg-secondary-light/70 text-secondary-middledark
+    border-[1.5px] rounded-3xl p-1
+    hover:bg-secondary-dark hover:text-secondary-light
+    focus:outline-none focus-visible:bg-secondary-dark focus-visible:text-secondary-light
+    active:bg-secondary-light active:text-secondary-middledark
+    transition duration-150 cursor-pointer
+  `,
 };
 
 export const inputColorScheme = {
-  primary: "border-primary bg-primary-ultralight/70 text-primary border-[1.5px] rounded-2xl p-0.5 px-3 focus:outline-none hover:bg-primary-dark/90 hover:text-primary-light focus:bg-primary-dark/90 focus:text-primary-light transition duration-300",
-  secondary: "border-secondary bg-secondary-light/70 text-secondary-middledark border-[1.5px] rounded-2xl p-0.5 px-3 focus:outline-none hover:text-primary-light transition duration-300",
+  primary: `
+    bg-primary-ultralight/70 
+    text-primary
+    border-[1.5px] border-primary border-primary rounded-2xl 
+    p-0.5 px-3
+    hover:bg-primary-dark/90 hover:text-primary-light
+    focus:outline-none focus-visible:bg-primary-dark/90 focus-visible:text-primary-light
+    transition duration-300
+  `,
+  secondary: `
+    bg-secondary-light/70 
+    text-secondary-middledark
+    border-[1.5px] border-secondary rounded-2xl 
+    p-0.5 px-3
+    hover:text-secondary-light hover:bg-secondary-dark
+    focus:outline-none focus-visible:text-secondary-light focus-visible:bg-secondary-dark
+    transition duration-300
+  `,
 };

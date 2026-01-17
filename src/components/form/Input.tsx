@@ -1,4 +1,4 @@
-import { colorScheme, InputTypes } from "@/src/constants/generalConfigs";
+import { ColorScheme, InputTypes } from "@/src/constants/generalConfigs";
 import { textColors, inputColorScheme } from "@/src/constants/systemColorsPallet"
 
 type InputProps = {
@@ -9,7 +9,7 @@ type InputProps = {
   label: string;
   placeholder: string;
   type: InputTypes;
-  colorScheme?: colorScheme;
+  colorScheme?: ColorScheme;
 }
 
 const Input = ({
@@ -21,20 +21,24 @@ const Input = ({
 }:InputProps) => {
   return (
     <div className='flex flex-col'>
-      <label htmlFor={label} className={
+      <label htmlFor={label} className={`${
         style?.label
           ? style.label
-          : colorScheme === 'Fire' 
-            ? textColors.secondaryMiddleDark
-            : textColors.primary
-      }>{label}</label>
-      <input placeholder={placeholder} className={
+          : ''
+      } ${
+        colorScheme === 'primary' 
+          ? textColors.secondaryMiddleDark
+          : textColors.primary
+      }`}>{label}</label>
+      <input placeholder={placeholder} className={`${
         style?.input
           ? style.input
-          : colorScheme === 'Fire' 
-            ? inputColorScheme.primary
-            : inputColorScheme.secondary
-      } type={type} name={label} id={label} />
+          : ''
+      } ${
+        colorScheme === 'primary' 
+          ? inputColorScheme.primary
+          : inputColorScheme.secondary
+      }`} type={type}/>
     </div>
   )
 }

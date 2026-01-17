@@ -16,7 +16,7 @@ const Button = ({
     <button className={
       style  
         ? style
-        : colorScheme === 'Fire' 
+        : colorScheme === 'primary' 
           ? buttonColorsScheme.primary
           : buttonColorsScheme.secondary
     }>{label}</button>

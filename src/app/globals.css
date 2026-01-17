@@ -4,6 +4,7 @@
   --color-primary-ultralight: #fae6c4;
   --color-primary-light: #ffc90e;
   --color-primary: #ff8040;
+  --color-primary-middledark: #D0641F;
   --color-primary-dark: #724818;
 
   --color-secondary-light: #dafdfa;
@@ -13,6 +14,19 @@
 
   --color-ui-money: #28810d;
   --color-ui-stock: #ff9500;
+
+  /*Misc system colors*/
+
+  --color-yellow-light: #B19705;
+  --color-yellow: #DDC000;
+  --color-yellow-dark: #B19705;
+
+  --color-red-light: #FF0005;
+  --color-red: #E75C5C;
+  --color-red-dark: #9A0003;
+
+  --color-blue-light: #7F89F0;
+  --color-blue: #5C68E7;
 }
 
 @theme {

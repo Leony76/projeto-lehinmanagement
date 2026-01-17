@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import LRC from '../../../../public/LericoriaPadraoFogo2.png';
+import LRC from '@/public/LericoriaPadraoFogo2.png';
 import Image from 'next/image';
 import Input from '@/src/components/form/Input';
 import { titleColors, textColors, inputColorScheme, buttonColorsScheme } from '@/src/constants/systemColorsPallet';
@@ -19,14 +19,14 @@ const Login = () => {
             label={'E-mail'}
             placeholder={'E-mail'}
             type={'email'}
-            colorScheme='Fire'
+            colorScheme='primary'
           />
           <div className='mt-1'></div>
           <Input
             label={'Senha'}
             placeholder={'Senha'}
             type={'password'}
-            colorScheme='Fire'
+            colorScheme='primary'
           />
           <div className='mt-4'></div>
           <Button label={'Entrar'}/>
