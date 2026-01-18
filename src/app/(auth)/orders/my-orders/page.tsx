@@ -2,12 +2,13 @@ import PageTitle from "@/src/components/ui/PageTitle";
 import Select from "@/src/components/form/Select";
 import Search from "@/src/components/form/Search";
 import Placeholder from '@/public/my-interpretation-of-the-torque-twister-before-picture-on-v0-2p6oyytw55691.jpg';
-import Product from "@/src/components/products/Product";
+import OrderProduct from "@/src/components/products/OrderProduct";
+import MyOrderProduct from "@/src/components/products/MyOrderProduct";
 
-const Products = () => {
+const MyOrders = () => {
   return (
     <div>
-      <PageTitle style="my-2" title="Produtos"/>
+      <PageTitle style="my-2" title="Meus Pedidos"/>
       <div>
         <Search style={{input: 'mt-5'}} colorScheme="primary"/>
         <div className="flex gap-3 mt-3">
@@ -16,7 +17,7 @@ const Products = () => {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-5 my-4 mt-6">
-        <Product 
+        <MyOrderProduct 
           image={Placeholder} 
           name={`Produto #1`} 
           category={"Brinquedo"} 
@@ -30,4 +31,4 @@ const Products = () => {
   )
 }
 
-export default Products
+export default MyOrders

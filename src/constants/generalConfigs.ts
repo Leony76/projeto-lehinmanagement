@@ -28,4 +28,5 @@ export const CATEGORY_OPTIONS = [
 ] as const;
 
 export type CategoryValue = typeof CATEGORY_OPTIONS[number]['value'];
+export type CategoryTranslatedValue = typeof CATEGORY_OPTIONS[number]['label'];
 

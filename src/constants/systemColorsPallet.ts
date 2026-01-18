@@ -31,6 +31,10 @@ export const textColors = {
   blueLight: "text-blue-light",
   blue: "text-blue",
 
+  greenLight: "text-green",
+
+  gray: "text-gray",
+
   uiMoney: "text-ui-money",
   uiStock: "text-ui-stock",
 };
@@ -78,7 +82,76 @@ export const buttonColorsScheme = {
     active:bg-secondary-light active:text-secondary-middledark
     transition duration-150 cursor-pointer
   `,
+
+  green: `
+    !text-green !border-green !bg-green/15
+    hover:!bg-green hover:!border-green-500 hover:!text-white
+    focus-visible:!bg-green focus-visible:border-green-500 focus-visible:!text-white
+    active:!text-green active:!border-green active:!bg-green/15 
+  `,
+
+  red: `
+    !text-red !border-red !bg-red/15
+    hover:!bg-red hover:!border-red-500 hover:!text-white
+    focus-visible:!bg-red focus-visible:border-red-500 focus-visible:!text-white
+    active:!text-red active:!border-red active:!bg-red/15 
+  `,
+
+  gray: `
+    !text-gray !border-gray !bg-gray/15
+    hover:!bg-gray hover:!border-gray hover:!text-white
+    focus-visible:!bg-gray focus-visible:border-gray focus-visible:!text-white
+    active:!text-gray active:!border-gray active:!bg-gray/15 
+  `,
+
+  menuLi: `
+    cursor-pointer pl-2 p-1 text-primary-light 
+    hover:bg-white/10 hover:text-secondary-light
+    focus-visible:bg-white/10 focus-visible:text-secondary-light
+    active:text-secondary-middledark
+    rounded-xl 
+    transition duration-150  
+  `,
 };
+
+export const staticButtonColorScheme = {
+    primary: `
+    border-primary bg-primary-ultralight/70 text-primary
+    border-[1.5px] rounded-3xl p-1
+    hover:bg-primary-dark hover:text-primary-light
+    transition duration-300 
+  `,
+  secondary: `
+    border-secondary-middledark bg-secondary-light/70 text-secondary-middledark
+    border-[1.5px] rounded-3xl p-1
+    hover:bg-secondary-dark hover:text-secondary-light
+    transition duration-150 
+  `,
+
+  green: `
+    !text-green !border-green !bg-green-100
+    hover:!bg-green hover:!border-green-500 hover:!text-green-100
+    transition duration-150 
+  `,
+
+  red: `
+    !text-red !border-red !bg-red-100
+    hover:!bg-red hover:!border-red-500 hover:!text-red-100
+    transition duration-150 
+  `,
+
+  yellow: `
+    !text-yellow !border-yellow !bg-yellow-100
+    hover:!bg-yellow-dark hover:!border-yellow-100 hover:!text-yellow-100
+    transition duration-150 
+  `,
+
+  gray: `
+    !text-gray !border-gray !bg-gray-100
+    hover:!bg-gray hover:!border-gray hover:!text-gray-100
+    transition duration-150 
+  `,
+}
 
 export const inputColorScheme = {
   primary: `

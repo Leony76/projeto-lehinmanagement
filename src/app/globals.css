@@ -17,13 +17,19 @@
 
   /*Misc system colors*/
 
-  --color-yellow-light: #B19705;
+  --color-yellow-light: #FFF600;
   --color-yellow: #DDC000;
   --color-yellow-dark: #B19705;
 
   --color-red-light: #FF0005;
   --color-red: #E75C5C;
   --color-red-dark: #9A0003;
+
+  --color-green: #28810D;
+
+  --color-cyan: #00A1FF;
+
+  --color-gray: #B6A8A2;
 
   --color-blue-light: #7F89F0;
   --color-blue: #5C68E7;
