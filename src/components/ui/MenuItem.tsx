@@ -16,10 +16,10 @@ const MenuItem = ({closeMenu, label, route}:Props) => {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <li className={`${isActive(route) ? "text-white pl-2 p-1" : buttonColorsScheme.menuLi}`}>
+    <li className={`flex flex-col ${isActive(route) ? "text-white! p-2" : ''}`}>
       {isActive(route) 
         ? label
-        : <Link onClick={() => closeMenu(false)} href={route}>
+        : <Link className={`${isActive(route) ? "" : buttonColorsScheme.menuLi}`} onClick={() => closeMenu(false)} href={route}>
             {label}
           </Link>
       }

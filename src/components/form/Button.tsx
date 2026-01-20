@@ -6,6 +6,7 @@ type ButtonProps = {
   colorScheme?: ColorScheme;
   label?: string;
   style?: string;
+  iconStyle?: string;
   icon?: IconType;
 
   onClick?: () => void;
@@ -16,7 +17,7 @@ const Button = ({
   label,
   style,
   icon: Icon,
-
+  iconStyle,
   onClick
 }:ButtonProps) => {
   return (
@@ -28,7 +29,7 @@ const Button = ({
       :   buttonColorsScheme.secondary
     }`}>{
       Icon
-        ? <Icon/>
+        ? <Icon className={iconStyle}/>
         : label
     }</button>
   )

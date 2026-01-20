@@ -127,7 +127,7 @@ export const buttonColorsScheme = {
   `,
 
   menuLi: `
-    cursor-pointer pl-2 p-1 rounded-xl
+    cursor-pointer p-2 rounded-xl
     text-primary-light
     hover:bg-white/10 hover:text-secondary-light
     focus-visible:bg-white/10 focus-visible:text-secondary-light

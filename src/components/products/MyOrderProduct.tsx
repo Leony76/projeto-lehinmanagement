@@ -65,14 +65,17 @@ const MyOrderProduct = ({
         </div>
         <div className='flex gap-2 mt-1'>
           <Button label='Pagar' style={`px-5 flex-1 text-xl ${buttonColorsScheme.green}`}/>
-          <Button onClick={() => showMoreActions(!moreActions)} style={`px-5 ${
-            moreActions 
-              ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!' 
-              : buttonColorsScheme.gray
-          }`} icon={
-            moreActions 
-              ? FaChevronUp 
-              : FaChevronDown}
+          <Button
+            onClick={() => showMoreActions(!moreActions)}
+            style={`px-5 flex items-center justify-center ${
+              moreActions
+                ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!'
+                : buttonColorsScheme.gray
+            }`}
+            icon={FaChevronDown}
+            iconStyle={`transition-transform duration-300 ${
+              moreActions ? 'rotate-180' : 'rotate-0'
+            }`}
           />
         </div>
       </div>

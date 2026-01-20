@@ -1,20 +1,136 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String
+  document  String
+  createdAt DateTime @map("created_at")
+  updatedAt DateTime @map("updated_at")
+  orders    Order[]
+
+  @@map("customers")
+}
+
+model User {
+  id           String         @id
+  name         String
+  email        String         @unique
+  password     String
+  role         Role           @default(SELLER)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  Account      Account[]
+  Session      Session[]
+  orderHistory OrderHistory[]
+  orders       Order[]
+  products     Product[]
+
+  @@map("users")
+}
+
+model Order {
+  id           Int            @id @default(autoincrement())
+  customerId   Int            @map("customer_id")
+  userId       String         @map("user_id")
+  status       Status         @default(PENDING)
+  total        Decimal
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  orderHistory OrderHistory[]
+  orderItems   OrderItem[]
+  customer     Customer       @relation(fields: [customerId], references: [id])
+  user         User           @relation(fields: [userId], references: [id])
+  payments     Payment[]
+
+  @@map("orders")
+}
+
+model Product {
+  id         Int         @id @default(autoincrement())
+  sellerId   String      @map("seller_id")
+  name       String
+  price      Decimal
+  stock      Int
+  isActive   Boolean     @map("is_active")
+  category   Category
+  imageUrl   String      @map("image_url")
+  orderItems OrderItem[]
+  seller     User        @relation(fields: [sellerId], references: [id])
+
+  @@map("products")
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  orderId   Int      @map("order_id")
+  amount    Decimal
+  method    String
+  status    Status
+  createdAt DateTime @default(now()) @map("created_at")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int     @map("order_id")
+  productId Int     @map("product_id")
+  quantity  Int
+  price     Decimal
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model OrderHistory {
+  id          Int      @id @default(autoincrement())
+  orderId     Int      @map("order_id")
+  status      Status
+  changedById String   @map("changed_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  changedBy   User     @relation(fields: [changedById], references: [id])
+  order       Order    @relation(fields: [orderId], references: [id])
+
+  @@map("order_history")
+}
+
+model Account {
+  id                String @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  users             User   @relation(fields: [userId], references: [id])
+}
+
+model Session {
+  id           String   @id
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  users        User     @relation(fields: [userId], references: [id])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
 enum Role {
-  ADMIN  
+  ADMIN
   SELLER
 }
 
@@ -32,115 +148,9 @@ enum Category {
   HANDMADE
 }
 
-
 enum Status {
   PENDING
   APPROVED
   REJECTED
   CANCELED
 }
-
-model Customer {
-  id Int @id @default(autoincrement())
-  name String
-  email String @unique
-  phone String
-  document String
-  createdAt DateTime @map("created_at")
-  updatedAt DateTime @map("updated_at")
-
-  orders Order[]
-
-  @@map("customers")
-}
-
-model User {
-  id Int @id @default(autoincrement())
-  name String 
-  email String @unique
-  password String
-  role Role @default(SELLER)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  orders Order[]
-  products Product[]
-  orderHistory OrderHistory[]
-
-  @@map("users")
-}
-
-model Order {
-  id Int @id @default(autoincrement())
-  customerId Int @map("customer_id")
-  userId Int @map("user_id")
-  customer Customer @relation(fields: [customerId], references: [id])
-  user User @relation(fields: [userId], references: [id])
-  status Status @default(PENDING)
-  total Decimal
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  payments Payment[]
-  orderItems OrderItem[]
-  orderHistory OrderHistory[]
-
-  @@map("orders")
-}
-
-model Product {
-  id Int @id @default(autoincrement())
-  sellerId Int @map("seller_id")
-  seller User @relation(fields: [sellerId], references: [id])
-  name String
-  price Decimal
-  stock Int
-  isActive Boolean @map("is_active")
-  category Category
-  imageUrl String @map("image_url")
-
-  orderItems OrderItem[]
-
-  @@map("products")
-}
-
-model Payment {
-  id        Int      @id @default(autoincrement())
-  orderId   Int      @map("order_id")
-  amount    Decimal
-  method    String
-  status    Status
-  createdAt DateTime @default(now()) @map("created_at")
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  @@map("payments")
-}
-
-
-model OrderItem {
-  id        Int      @id @default(autoincrement())
-  orderId   Int      @map("order_id")
-  productId Int      @map("product_id")
-  quantity  Int
-  price     Decimal
-
-  order   Order      @relation(fields: [orderId], references: [id])
-  product Product    @relation(fields: [productId], references: [id])
-
-  @@map("order_items")
-}
-
-model OrderHistory {
-  id           Int      @id @default(autoincrement())
-  orderId      Int      @map("order_id")
-  status       Status
-  changedById  Int      @map("changed_by")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  order     Order @relation(fields: [orderId], references: [id])
-  changedBy User  @relation(fields: [changedById], references: [id])
-
-  @@map("order_history")
-}
-

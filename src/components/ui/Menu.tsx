@@ -35,7 +35,7 @@ const Menu = ({menu, showMenu}:Props) => {
           Menu
         </h2>
         <nav className="flex flex-col flex-1">
-          <ul className="space-y-1 text-[15px]">
+          <ul className="text-[15px]">
             <MenuItem route='/dashboard' closeMenu={showMenu} label={'Dashboard'}/>
             <MenuItem route='/products' closeMenu={showMenu} label={'Produtos'}/>
             <MenuItem route='/orders' closeMenu={showMenu} label={'Pedidos'}/>
@@ -45,7 +45,7 @@ const Menu = ({menu, showMenu}:Props) => {
           </ul>
           <ul className="mt-auto text-center mb-5">
             <li className={`${buttonColorsScheme.menuLi} text-secondary!`}>Leony Leandro</li>
-            <li className={`${buttonColorsScheme.menuLi} text-red-300 text-lg text-shadow-2xs hover:text-red-100! active:text-red-600!`}>
+            <li className={`${buttonColorsScheme.menuLi} flex flex-col text-red-300 text-lg text-shadow-2xs hover:text-red-100! active:text-red-600!`}>
               <Link onClick={() => showMenu(false)} href="/dashboard">
                 Sair
               </Link>
