@@ -1,6 +1,7 @@
 import { buttonColorsScheme, titleColors } from '@/src/constants/systemColorsPallet';
 import Link from 'next/link';
-import React from 'react'
+import MenuItem from './MenuItem';
+import { SetStateAction } from 'react';
 
 type Props = {
   menu: boolean;
@@ -34,17 +35,17 @@ const Menu = ({menu, showMenu}:Props) => {
           Menu
         </h2>
         <nav className="flex flex-col flex-1">
-          <ul className="space-y-1">
-            <li className={buttonColorsScheme.menuLi}><Link onClick={() => showMenu(false)} href="/dashboard">Dashboard</Link></li>
-            <li className={buttonColorsScheme.menuLi}><Link onClick={() => showMenu(false)} href="/products">Produtos</Link></li>
-            <li className={buttonColorsScheme.menuLi}><Link onClick={() => showMenu(false)} href="/products">Pedidos</Link></li>
-            <li className={`${buttonColorsScheme.menuLi} text-[15px]`}><Link onClick={() => showMenu(false)} href="/products/my-products">Meus Produtos</Link></li>
-            <li className={`${buttonColorsScheme.menuLi} text-[16px]`}><Link onClick={() => showMenu(false)} href="/products/my-products">Vender Produto</Link></li>
-            <li className={buttonColorsScheme.menuLi}><Link onClick={() => showMenu(false)} href="/orders/my-orders">Meus Pedidos</Link></li>
+          <ul className="space-y-1 text-[15px]">
+            <MenuItem route='/dashboard' closeMenu={showMenu} label={'Dashboard'}/>
+            <MenuItem route='/products' closeMenu={showMenu} label={'Produtos'}/>
+            <MenuItem route='/orders' closeMenu={showMenu} label={'Pedidos'}/>
+            <MenuItem route='/products/my-products' closeMenu={showMenu} label={'Meus Produtos'}/>
+            <MenuItem route='/products/sell-product' closeMenu={showMenu} label={'Vender Produto'}/>
+            <MenuItem route='/orders/my-orders' closeMenu={showMenu} label={'Meus Pedidos'}/>
           </ul>
           <ul className="mt-auto text-center mb-5">
             <li className={`${buttonColorsScheme.menuLi} text-secondary!`}>Leony Leandro</li>
-            <li className={`${buttonColorsScheme.menuLi} text-red-300 text-lg text-shadow-2xs hover:!text-red-100 active:!text-red-600`}>
+            <li className={`${buttonColorsScheme.menuLi} text-red-300 text-lg text-shadow-2xs hover:text-red-100! active:text-red-600!`}>
               <Link onClick={() => showMenu(false)} href="/dashboard">
                 Sair
               </Link>

@@ -16,7 +16,7 @@ const MyOrders = () => {
           <Select style={{input: 'flex-1 w-full'}} selectSetup={"CATEGORY"} colorScheme={"primary"} label={"Categoria"}/>
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-5 my-4 mt-6">
+      <div className="grid grid-cols-1 gap-2 mt-6 mb-8">
         <MyOrderProduct 
           image={Placeholder} 
           name={`Produto #1`} 

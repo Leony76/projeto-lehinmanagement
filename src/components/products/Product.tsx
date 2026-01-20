@@ -12,6 +12,8 @@ type Props = {
   rating: number;
   price: number;
   stock: number;
+
+  showOrderProductModal: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const Product = ({
@@ -22,6 +24,8 @@ const Product = ({
   rating,
   price,
   stock,
+
+  showOrderProductModal
 }:Props) => {
   return (
     <div className={productCardSetup.mainContainer}>
@@ -47,7 +51,12 @@ const Product = ({
           <span className={productCardSetup.price}>R$ {price.toFixed(2).replace('.',',')}</span>
           <span className={productCardSetup.stock}>Em estoque: {stock}</span>
         </div>
-        <Button style='text-xl' label={"Fazer pedido"} colorScheme={'primary'}/>
+        <Button
+          style='text-xl' 
+          label={"Fazer pedido"}
+          colorScheme={'primary'}
+          onClick={() => showOrderProductModal(true)}
+        />
       </div>
     </div>
   )

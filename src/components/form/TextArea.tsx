@@ -6,7 +6,7 @@ type InputProps = {
     label?: string;
     input?: string;
   };
-  label: string;
+  label?: string;
   placeholder: string;
   colorScheme?: ColorScheme;
 }

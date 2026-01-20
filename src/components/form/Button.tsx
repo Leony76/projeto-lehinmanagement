@@ -7,19 +7,25 @@ type ButtonProps = {
   label?: string;
   style?: string;
   icon?: IconType;
+
+  onClick?: () => void;
 }
 
 const Button = ({
   colorScheme,
   label,
   style,
-  icon: Icon
+  icon: Icon,
+
+  onClick
 }:ButtonProps) => {
   return (
-    <button className={`${style ?? ""} ${
+    <button onClick={onClick} className={`${style ?? ""} ${
       colorScheme === 'primary' 
         ? buttonColorsScheme.primary
-        : buttonColorsScheme.secondary
+      : colorScheme == 'red'
+        ? buttonColorsScheme.red
+      :   buttonColorsScheme.secondary
     }`}>{
       Icon
         ? <Icon/>

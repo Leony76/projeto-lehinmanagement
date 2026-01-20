@@ -1,10 +1,20 @@
+"use client";
+
 import PageTitle from "@/src/components/ui/PageTitle";
 import Select from "@/src/components/form/Select";
 import Search from "@/src/components/form/Search";
 import Placeholder from '@/public/my-interpretation-of-the-torque-twister-before-picture-on-v0-2p6oyytw55691.jpg';
 import Product from "@/src/components/products/Product";
+import { useState } from "react";
+import OrderProduct from "@/src/components/modal/OrderProduct";
+import { lockScrollY } from "@/src/utils/lockScrollY";
 
 const Products = () => {
+
+  const [orderProductMenu, showOrderProductMenu] = useState(false);
+
+  lockScrollY(orderProductMenu);
+
   return (
     <div>
       <PageTitle style="my-2" title="Produtos"/>
@@ -24,8 +34,17 @@ const Products = () => {
           rating={3.5} 
           price={99.97} 
           stock={123}
+
+          showOrderProductModal={showOrderProductMenu}
         />
       </div>
+
+      {/* ⇊ MODALS ⇊ */}
+
+      <OrderProduct
+        isOpen={orderProductMenu}
+        showOrderProductMenu={showOrderProductMenu}
+      />
     </div>
   )
 }

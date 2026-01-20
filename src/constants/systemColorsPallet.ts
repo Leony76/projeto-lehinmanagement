@@ -71,46 +71,69 @@ export const buttonColorsScheme = {
     border-[1.5px] rounded-3xl p-1
     hover:bg-primary-dark hover:text-primary-light
     focus:outline-none focus-visible:bg-primary-dark focus-visible:text-primary-light
-    active:bg-primary-ultralight/70 active:text-primary
-    transition duration-300 cursor-pointer
+    sm:active:bg-primary-ultralight/70 sm:active:text-primary
+    active:bg-primary-dark active:text-primary-light
+    transition sm:duration-300 duration-150 cursor-pointer
   `,
+
   secondary: `
     border-secondary-middledark bg-secondary-light/70 text-secondary-middledark
     border-[1.5px] rounded-3xl p-1
     hover:bg-secondary-dark hover:text-secondary-light
     focus:outline-none focus-visible:bg-secondary-dark focus-visible:text-secondary-light
-    active:bg-secondary-light active:text-secondary-middledark
-    transition duration-150 cursor-pointer
+    sm:active:bg-secondary-light/70 sm:active:text-secondary-middledark
+    active:bg-secondary-dark active:text-secondary-light
+    transition sm:duration-300 duration-150 cursor-pointer
   `,
 
   green: `
-    !text-green !border-green !bg-green/15
-    hover:!bg-green hover:!border-green-500 hover:!text-white
-    focus-visible:!bg-green focus-visible:border-green-500 focus-visible:!text-white
-    active:!text-green active:!border-green active:!bg-green/15 
+    !border-green !bg-green/15 !text-green
+    border-[1.5px] rounded-3xl p-1
+    hover:!bg-green hover:!text-white
+    focus:outline-none focus-visible:!bg-green focus-visible:!text-white
+    sm:active:!bg-green/15 sm:active:!text-green
+    active:!bg-green active:!text-white
+    transition sm:duration-300 duration-150 cursor-pointer
   `,
 
   red: `
-    !text-red !border-red !bg-red/15
-    hover:!bg-red hover:!border-red-500 hover:!text-white
-    focus-visible:!bg-red focus-visible:border-red-500 focus-visible:!text-white
-    active:!text-red active:!border-red active:!bg-red/15 
+    !border-red !bg-red/15 !text-red
+    border-[1.5px] rounded-3xl p-1
+    hover:!bg-red hover:!text-white
+    focus:outline-none focus-visible:!bg-red focus-visible:!text-white
+    sm:active:!bg-red/15 sm:active:!text-red
+    active:!bg-red active:!text-white
+    transition sm:duration-300 duration-150 cursor-pointer
+  `,
+
+  yellow: `
+    !border-yellow !bg-yellow-100 !text-yellow
+    border-[1.5px] rounded-3xl p-1
+    hover:!bg-yellow-dark hover:!text-yellow-100
+    focus:outline-none focus-visible:!bg-yellow-dark focus-visible:!text-white
+    sm:active:!bg-yellow-100 sm:active:!text-yellow-dark
+    active:!bg-yellow-dark active:!text-white
+    transition sm:duration-300 duration-150 cursor-pointer
   `,
 
   gray: `
-    !text-gray !border-gray !bg-gray/15
-    hover:!bg-gray hover:!border-gray hover:!text-white
-    focus-visible:!bg-gray focus-visible:border-gray focus-visible:!text-white
-    active:!text-gray active:!border-gray active:!bg-gray/15 
+    !border-gray !bg-gray/15 !text-gray
+    border-[1.5px] rounded-3xl p-1
+    hover:!bg-gray hover:!text-white
+    focus:outline-none focus-visible:!bg-gray focus-visible:!text-white
+    sm:active:!bg-gray/15 sm:active:!text-gray
+    active:!bg-gray active:!text-white
+    transition sm:duration-300 duration-150 cursor-pointer
   `,
 
   menuLi: `
-    cursor-pointer pl-2 p-1 text-primary-light 
+    cursor-pointer pl-2 p-1 rounded-xl
+    text-primary-light
     hover:bg-white/10 hover:text-secondary-light
     focus-visible:bg-white/10 focus-visible:text-secondary-light
+    sm:active:text-primary-light
     active:text-secondary-middledark
-    rounded-xl 
-    transition duration-150  
+    transition sm:duration-300 duration-150
   `,
 };
 
@@ -159,8 +182,8 @@ export const inputColorScheme = {
     text-primary
     border-[1.5px] border-primary border-primary rounded-2xl 
     p-0.5 px-3
-    hover:bg-primary-dark/90 hover:text-primary-light
-    focus:outline-none focus-visible:bg-primary-dark/90 focus-visible:text-primary-light
+    hover:bg-primary-dark/90 hover:text-primary
+    focus:outline-none focus-visible:bg-primary-dark/90 focus-visible:text-primary
     transition duration-300
   `,
   secondary: `
@@ -168,8 +191,8 @@ export const inputColorScheme = {
     text-secondary-middledark
     border-[1.5px] border-secondary rounded-2xl 
     p-0.5 px-3
-    hover:text-secondary-light hover:bg-secondary-dark
-    focus:outline-none focus-visible:text-secondary-light focus-visible:bg-secondary-dark
+    hover:text-secondary hover:bg-secondary-dark
+    focus:outline-none focus-visible:text-secondary focus-visible:bg-secondary-dark
     transition duration-300
   `,
 };

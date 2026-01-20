@@ -5,6 +5,7 @@ import Image from "next/image";
 import LRC from "@/public/LericoriaPadraoFogo2.png";
 import { IoMenu } from "react-icons/io5";
 import Menu from "@/src/components/ui/Menu";
+import { lockScrollY } from "@/src/utils/lockScrollY";
 
 export default function AuthLayout({
   children,
@@ -16,32 +17,17 @@ export default function AuthLayout({
   const [showHeader, setShowHeader] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  useEffect(() => {
-    if (menu) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [menu]);
+  lockScrollY(menu);
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
-      // Sempre mostrar no topo
       if (currentScrollY === 0) {
         setShowHeader(true);
-      } 
-      // Scroll para baixo → esconde
-      else if (currentScrollY > lastScrollY) {
+      } else if (currentScrollY > lastScrollY) {
         setShowHeader(false);
-      } 
-      // Scroll para cima → mostra
-      else {
+      } else {
         setShowHeader(true);
       }
 
@@ -82,11 +68,11 @@ export default function AuthLayout({
           </ul>
         </nav>
       </header>
-      <main className="flex-1 mx-auto w-full max-w-270 pt-18 p-2">
+      <main className="flex-1 mx-auto w-full max-w-270 pt-18 p-4">
         {children}
       </main>
       <footer>
-        <h4 className="bg-linear-to-b text-center py-2 text-secondary-light from-secondary-dark to-secondary-middledark">&copy; Leony Leandro Barros,<br/> Todos os Direitos Reservados</h4>
+        <h4 className="bg-linear-to-b text-center py-7 text-secondary-light from-secondary-dark to-secondary-middledark">&copy; Leony Leandro Barros,<br/> Todos os Direitos Reservados</h4>
       </footer>
     </div>
   );

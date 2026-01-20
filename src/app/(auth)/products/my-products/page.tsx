@@ -1,10 +1,20 @@
+"use client";
+
 import PageTitle from "@/src/components/ui/PageTitle";
 import Select from "@/src/components/form/Select";
 import Search from "@/src/components/form/Search";
 import Placeholder from '@/public/my-interpretation-of-the-torque-twister-before-picture-on-v0-2p6oyytw55691.jpg';
 import MyProduct from "@/src/components/products/MyProduct";
+import { useToast } from "@/src/contexts/ToastContext";
 
 const MyProducts = () => {
+
+  const { showToast } = useToast();
+
+  const handleShowToast = () => {
+    showToast("Comentário enviado com sucesso!", "success");
+  };
+
   return (
     <div>
       <PageTitle style="my-2" title="Meus Produtos"/>
@@ -24,6 +34,7 @@ const MyProducts = () => {
           rating={3.5} 
           price={99.97} 
           stock={123}
+          onComment={handleShowToast}
         />
       </div>
     </div>

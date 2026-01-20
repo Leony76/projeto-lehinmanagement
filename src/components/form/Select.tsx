@@ -1,15 +1,15 @@
-import { ColorScheme } from "@/src/constants/generalConfigs";
 import { inputColorScheme, textColors } from "@/src/constants/systemColorsPallet";
-import { FILTER_OPTIONS, CATEGORY_OPTIONS } from "@/src/constants/generalConfigs";
+import {  ColorScheme, PAYMENT_OPTIONS, FILTER_OPTIONS, CATEGORY_OPTIONS } from "@/src/constants/generalConfigs";
 
 type Props = {
-  selectSetup: 'FILTER' | 'CATEGORY';
-  colorScheme: ColorScheme;
+  selectSetup: 'FILTER' | 'CATEGORY' | 'PAYMENT';
+  colorScheme?: ColorScheme;
   label: string;
   hasTopLabel?: boolean;
   style?: {
     label?: string;
     input?: string;
+    container?: string;
   }
 }
 
@@ -24,26 +24,21 @@ const Select = ({
     const options = 
     selectSetup === 'FILTER' 
       ? FILTER_OPTIONS 
-      : CATEGORY_OPTIONS;
+    : selectSetup === 'CATEGORY'
+      ? CATEGORY_OPTIONS
+      : PAYMENT_OPTIONS
+    ;
 
   return (
-    <div className="flex flex-col w-full">
+    <div className={`flex flex-col w-full ${style?.container ?? ''}`}>
     {hasTopLabel && (
       <label htmlFor={label} className={`${
-        style?.label
-          ? style.label
-          : ''
-      } ${
         colorScheme === 'primary' 
           ? textColors.secondaryMiddleDark
           : textColors.primary
-      }`}>{label}</label>
+      } ${style?.label ?? ''}`}>{label}</label>
     )}
-      <select className={`text-center focus:rounded-b-none cursor-pointer py-1 shadow-sm ${
-        style?.input
-          ? style.input
-          : ''
-      } ${
+      <select className={`text-center focus:rounded-b-none cursor-pointer py-1 shadow-sm ${style?.input ?? ''} ${
         colorScheme === 'primary' 
           ? inputColorScheme.primary
           : inputColorScheme.secondary

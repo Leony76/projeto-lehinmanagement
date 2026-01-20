@@ -1,6 +1,6 @@
 export type InputTypes = 'text' | 'number' | 'email' | 'password';
-
-export type ColorScheme = 'primary' | 'secondary';
+export type ToastType = "success" | "error" | "alert" | "info";
+export type ColorScheme = 'primary' | 'secondary' | 'red';
 
 export const FILTER_OPTIONS = [
   { value: 'price_desc', label: 'Maior Preço' },
@@ -11,7 +11,12 @@ export const FILTER_OPTIONS = [
   { value: 'rating_asc', label: 'Menos bem avaliado' },
 ] as const;
 
-export type FilterValue = typeof FILTER_OPTIONS[number]['value'];
+export const PAYMENT_OPTIONS = [
+  { value: 'pix' , label: 'Pix'},
+  { value: 'credit_card' , label: 'Cartão de crédito'},
+  { value: 'debit_card' , label: 'Cartão de débito'},
+  { value: 'bank_slip' , label: 'Boleto bancário'},
+] as const;
 
 export const CATEGORY_OPTIONS = [
   { value: 'toys', label: 'Brinquedo' },
@@ -27,6 +32,8 @@ export const CATEGORY_OPTIONS = [
   { value: 'handmade', label: 'Artesanal' },
 ] as const;
 
+export type PaymentOptions = typeof PAYMENT_OPTIONS[number]['label']
 export type CategoryValue = typeof CATEGORY_OPTIONS[number]['value'];
 export type CategoryTranslatedValue = typeof CATEGORY_OPTIONS[number]['label'];
+export type FilterValue = typeof FILTER_OPTIONS[number]['value'];
 

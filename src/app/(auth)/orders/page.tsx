@@ -16,17 +16,15 @@ const Orders = () => {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-5 my-4 mt-6">
-      {[1].map((index:number) => (
         <OrderProduct 
           image={Placeholder} 
-          name={`Produto #${index}`} 
+          name={`Produto #1`} 
           category={"Brinquedo"} 
           datePutToSale={"14/01/26"} 
           rating={3.5} 
           price={99.97} 
           stock={123}
-        />
-      ))}      
+        /> 
       </div>
     </div>
   )

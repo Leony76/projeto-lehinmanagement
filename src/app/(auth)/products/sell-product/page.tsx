@@ -6,7 +6,7 @@ import PageTitle from '@/src/components/ui/PageTitle'
 import { buttonColorsScheme } from '@/src/constants/systemColorsPallet'
 import { FaImage } from 'react-icons/fa'
 
-const page = () => {
+const SellProduct = () => {
   return (
     <div>
       <PageTitle style='mt-2' title={'Vender Produto'}/>
@@ -30,4 +30,4 @@ const page = () => {
   )
 }
 
-export default page
+export default SellProduct
