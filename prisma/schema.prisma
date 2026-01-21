@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String
+  document  String
+  createdAt DateTime @map("created_at")
+  updatedAt DateTime @map("updated_at")
+  orders    Order[]
+
+  @@map("customers")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  name      String?
+  email     String    @unique
+  password  String?
+  emailVerified Boolean?  @map("email_verified")
+  image         String?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  role Role? @default(SELLER)
+
+  accounts      Account[]
+  sessions      Session[]
+  orders        Order[]
+  products      Product[]
+  orderHistory  OrderHistory[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  password              String?
+  type                  String?   
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verification")
+}
+
+
+model Order {
+  id           Int            @id @default(autoincrement())
+  customerId   Int            @map("customer_id")
+  userId       String         @map("user_id")
+  status       Status         @default(PENDING)
+  total        Decimal
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  orderHistory OrderHistory[]
+  orderItems   OrderItem[]
+  customer     Customer       @relation(fields: [customerId], references: [id])
+  user         User           @relation(fields: [userId], references: [id])
+  payments     Payment[]
+
+  @@map("orders")
+}
+
+model Product {
+  id         Int         @id @default(autoincrement())
+  sellerId   String      @map("seller_id")
+  name       String
+  price      Decimal
+  stock      Int
+  isActive   Boolean     @map("is_active")
+  category   Category
+  imageUrl   String      @map("image_url")
+  orderItems OrderItem[]
+  seller     User        @relation(fields: [sellerId], references: [id])
+
+  @@map("products")
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  orderId   Int      @map("order_id")
+  amount    Decimal
+  method    String
+  status    Status
+  createdAt DateTime @default(now()) @map("created_at")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int     @map("order_id")
+  productId Int     @map("product_id")
+  quantity  Int
+  price     Decimal
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model OrderHistory {
+  id          Int      @id @default(autoincrement())
+  orderId     Int      @map("order_id")
+  status      Status
+  changedById String   @map("changed_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  changedBy   User     @relation(fields: [changedById], references: [id])
+  order       Order    @relation(fields: [orderId], references: [id])
+
+  @@map("order_history")
+}
+
+enum Role {
+  ADMIN
+  SELLER
+}
+
+enum Category {
+  TOY
+  CLOTHING
+  ELECTRONIC
+  HYGIENE
+  COSMETIC
+  APPLIANCE
+  SPORT
+  DECORATION
+  CLEANING
+  KITCHEN
+  HANDMADE
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELED
+}
