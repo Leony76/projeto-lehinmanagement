@@ -1,7 +1,9 @@
+"use client"
+
 import { buttonColorsScheme, titleColors } from '@/src/constants/systemColorsPallet';
-import Link from 'next/link';
 import MenuItem from './MenuItem';
-import { SetStateAction } from 'react';
+import { useRouter } from 'next/navigation';
+import { authClient } from '@/src/lib/auth-client';
 
 type Props = {
   menu: boolean;
@@ -9,6 +11,19 @@ type Props = {
 }
 
 const Menu = ({menu, showMenu}:Props) => {
+
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/login");
+        },
+      },
+    });
+  };
+
   return (
     <>
     <div
@@ -45,10 +60,10 @@ const Menu = ({menu, showMenu}:Props) => {
           </ul>
           <ul className="mt-auto text-center mb-5">
             <li className={`${buttonColorsScheme.menuLi} text-secondary!`}>Leony Leandro</li>
-            <li className={`${buttonColorsScheme.menuLi} flex flex-col text-red-300 text-lg text-shadow-2xs hover:text-red-100! active:text-red-600!`}>
-              <Link onClick={() => showMenu(false)} href="/dashboard">
+            <li className={`${buttonColorsScheme.menuLi} p-0! flex flex-col text-red-300 text-lg text-shadow-2xs hover:text-red-100! active:text-red-600!`}>
+              <button className='p-1 cursor-pointer' onClick={handleLogout}>
                 Sair
-              </Link>
+              </button>
             </li>
           </ul>
         </nav>
