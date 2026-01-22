@@ -6,32 +6,34 @@ import Image from 'next/image';
 import Input from '@/src/components/form/Input';
 import { titleColors, textColors } from '@/src/constants/systemColorsPallet';
 import Button from '@/src/components/form/Button';
-import { useFormReducer } from '@/src/hooks/useFormReducer';
-import { LoginFormState } from '@/src/types/form/auth';
 import { useState } from 'react';
 import { authClient } from '@/src/lib/auth-client';
 import { authErrorsPtBr } from '@/src/lib/auth-errors';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema, LoginFormData } from '@/src/schemas/loginSchema'; 
+import { useRouter } from 'next/navigation';
 import Error from '@/src/components/ui/Error';
 
 const Login = () => {
 
+  const router = useRouter();
   const [error, setError] = useState<string | undefined | null>(null);
   const [loading, setLoading] = useState(false);
-  const { form, handleChange } = useFormReducer<LoginFormState>({
-    email: '',
-    password: '',
-  });
 
-  const handleSubmit = async (e:React.FormEvent<HTMLFormElement>):Promise<void> => {
-    e.preventDefault();
-  
-    if (!form.email && !form.password) {setError('Preencha os campos'); return}
-    if (!form.email) {setError('O campo de email é obrigatório'); return}
-    if (!form.password) {setError('O campo de senha é obrigatório'); return}
-    
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: 'onTouched'
+  })
+
+  const onSubmit = async (data: LoginFormData) => {
     await authClient.signIn.email({
-      email: form.email,
-      password: form.password,
+      email: data.email,
+      password: data.password,
       
       callbackURL: "/dashboard"
     },{
@@ -39,6 +41,9 @@ const Login = () => {
         setError(null);
         setLoading(true);
       }, 
+      onSuccess: () => {
+        router.push("/dashboard");
+      },
       onError: (ctx) => {
         const errorCode = ctx.error.code as keyof typeof authErrorsPtBr;
         const message = authErrorsPtBr[errorCode] || ctx.error.message || "Ocorreu um erro inesperado.";
@@ -55,36 +60,37 @@ const Login = () => {
           <Image  src={LRC}  alt={'Lericoria'} height={67} width={76}/>
           <h2 className={titleColors.primary}>Lehinmanagment'</h2>
         </div>
-        <form onSubmit={handleSubmit} className='flex flex-col max-w-62.5 w-full'>
+        <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col max-w-62.5 w-full'>
           <h1 className={`${titleColors.secondary} text-3xl text-center`}>Entrar</h1>
+
           <Input
             label={'E-mail'}
             placeholder={'E-mail'}
             type={'email'}
             colorScheme='primary'
-            name={'email'}
-            value={form.email}
-            onChange={handleChange('email')}
+            {...register("email")}
+            error={errors.email?.message}
           />
-          <div className='mt-1'></div>
+
           <Input
+            style={{container: 'mt-1'}}
             label={'Senha'}
             placeholder={'Senha'}
             type={'password'}
             colorScheme='primary'
-            name={'password'}
-            value={form.password}
-            onChange={handleChange('password')}
+            {...register("password")}
+            error={errors.password?.message}
           />
 
           {error && <Error error={error}/>}
-          
+
           <Button
             loading={loading}
             loadingLabel='Entrando'
             style='mt-4'
             label={'Entrar'}
           />
+
           <Link 
             className={`${textColors.secondaryMiddleDark} mt-2 text-xs m-auto`} 
             href={'/register'}>

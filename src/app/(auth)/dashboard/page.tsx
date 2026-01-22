@@ -2,22 +2,45 @@ import { titleColors } from "@/src/constants/systemColorsPallet"
 import InfoCard from "@/src/components/ui/InfoCard"
 import PageTitle from "@/src/components/ui/PageTitle";
 import SectionTitle from "@/src/components/ui/SectionTitle";
+import prisma from "@/src/lib/prisma";
 
-const Dashboard = () => {
+const Dashboard = async () => {
 
   const role = 'SELLER';
+
+  const initialStats = {
+    PENDING: 0,
+    APPROVED: 0,
+    REJECTED: 0,
+    CANCELED: 0
+  };
+
+  const orderStatus = await prisma.orderHistory.groupBy({
+    by: ['status'],
+    _count: {
+      status: true,
+    },
+  });
+
+  
+  const finalStats = orderStatus.reduce((acc, curr) => {
+    acc[curr.status as keyof typeof initialStats] = curr._count.status;
+    return acc;
+  }, { ...initialStats });
+
+  const totalOrders = Object.values(finalStats).reduce((acc, curr) => acc + curr, 0);
 
   return (
     <>
     <PageTitle style="py-2" title="Dashboard"/>
-  {role === 'ADMIN' ? (
+  {role === 'SELLER' ? (
     <>
     <SectionTitle title="Vendas"/>
     <div className="grid grid-cols-2 gap-4 mx-2 my-4">
-      <InfoCard title={"Feitas"} content={123}/>
-      <InfoCard title={"Pendentes"} content={123}/>
-      <InfoCard title={"Aprovadas"} content={123}/>
-      <InfoCard title={"Rejeitadas"} content={123}/>
+      <InfoCard title={"Feitas"} content={totalOrders}/>
+      <InfoCard title={"Pendentes"} content={finalStats.PENDING}/>
+      <InfoCard title={"Aprovadas"} content={finalStats.APPROVED}/>
+      <InfoCard title={"Rejeitadas"} content={finalStats.REJECTED}/>
       <InfoCard title={"Faturado"} style={{content: 'text-ui-money !text-base'}} content={'R$ 1010,00'}/>
       <InfoCard title={"Fatura média"} style={{content: 'text-ui-money !text-base', title: 'text-[17px]'}} content={'R$ 1010,00'}/>
       <InfoCard title={"Menor"} style={{content: 'text-ui-money !text-base'}} content={'R$ 1010,00'}/>
