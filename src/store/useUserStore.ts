@@ -2,17 +2,19 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { SystemRoles } from "../constants/generalConfigs";
 
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  image?: string | null;
+  role?: SystemRoles; 
+  emailVerified: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
 interface UserState {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    image?: string | null;
-    role?: SystemRoles; 
-    emailVerified: boolean;
-    createdAt: string | Date;
-    updatedAt: string | Date;
-  } | null;
+  user: User | null;
   session: {
     id: string;
     userId: string;

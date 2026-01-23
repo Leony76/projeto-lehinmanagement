@@ -1,4 +1,14 @@
-export const saleStats = (items: any[]) => {
+import { $Enums, Prisma } from "@prisma/client";
+
+type SaleStatsGroup = {
+  order: {
+    status: $Enums.Status;
+  };
+  price: Prisma.Decimal;
+  quantity: number;
+};
+
+export const saleStats = (items: SaleStatsGroup[]) => {
   const stats = items.reduce((acc, item) => {
     const status = item.order.status;
     if (!acc[status]) acc[status] = 0;

@@ -2,6 +2,13 @@ export type InputTypes = 'text' | 'number' | 'email' | 'password';
 export type ToastType = "success" | "error" | "alert" | "info";
 export type ColorScheme = 'primary' | 'secondary' | 'red';
 export type SystemRoles = "ADMIN" | "CUSTOMER" | "SELLER";
+export type OrderStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
+
+export const ROLE_LABEL: Record<SystemRoles, string> = {
+  CUSTOMER: 'Cliente',
+  SELLER: 'Vendedor(a)',
+  ADMIN: 'Administrador(a)',
+}
 
 export const FILTER_OPTIONS = [
   { value: 'price_desc', label: 'Maior Preço' },

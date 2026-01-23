@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { authClient } from '@/src/lib/auth-client';
 import { useUserStore } from '@/src/store/useUserStore';
 import Spinner from './Spinner';
+import { ROLE_LABEL } from '@/src/constants/generalConfigs';
 
 type Props = {
   menu: boolean;
@@ -72,6 +73,9 @@ const Menu = ({menu, showMenu}:Props) => {
                 ? nameAndSurname 
                 : <Spinner color='primary'/> + "Carregando..."
               }
+            </li>
+            <li className={`${buttonColorsScheme.menuLi} pt-0 text-sm hover:bg-transparent! hover:cursor-auto text-yellow!`}>
+              {user?.role ? ROLE_LABEL[user.role] : '—'}
             </li>
             <li className={`${buttonColorsScheme.menuLi} p-0! flex flex-col text-red-300 text-lg text-shadow-2xs hover:text-red-100! active:text-red-600!`}>
               <button className='p-1 cursor-pointer' onClick={handleLogout}>

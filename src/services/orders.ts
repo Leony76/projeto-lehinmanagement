@@ -1,30 +1,104 @@
 "use server"
 
+import { OrderStatus, SystemRoles } from "../constants/generalConfigs";
 import prisma from "../lib/prisma";
+import { orderStats } from "../utils/orderStats";
+import { timeAgo } from "../utils/timeAgo";
 
-export const getCustomerOrSellerOrdersStatus = async (userId: string) => {
-  const stats = await prisma.order.groupBy({
-    by: ['status'],
-    where: { userId },
-    _count: {
-      id: true
-    }
-  });
+export const getCustomerAndSellersOrdersStats = async (userId: string) => {
+  const [
 
-  const counts = stats.reduce((acc, curr) => {
-    acc[curr.status] = curr._count.id;
-    return acc;
-  }, { PENDING: 0, APPROVED: 0, REJECTED: 0 } as Record<string, number>);
+    statusStats,
+    spentStats,
+    order,
+    result,
 
-  const totalOrders = Object.values(counts).reduce((a, b) => a + b, 0);
+  ] = await Promise.all([
+    prisma.order.groupBy({
+      by: ['status'],
+      where: { userId },
+      _count: { id: true }
+    }),
+
+    prisma.order.aggregate({
+      where: {
+        userId,
+        status: 'APPROVED'
+      },
+      _sum: { total: true },
+      _avg: { total: true },
+      _max: { total: true },
+      _min: { total: true }
+    }),
+
+    prisma.order.findFirst({
+      where: {
+        userId,
+      },
+      select: {
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    }),
+
+    prisma.orderItem.groupBy({
+      by: ['productId'],
+      where: {
+        order: {
+          userId,
+          status: 'APPROVED', 
+        },
+      },
+      _sum: {
+        quantity: true,
+      },
+      orderBy: {
+        _sum: {
+          quantity: 'desc',
+        },
+      },
+      take: 1,
+    }),
+  ]);
+
+  let mostOrderedCategory = 'Nenhum produto pedido';
+
+  if (result.length > 0) {
+    const product = await prisma.product.findUnique({
+      where: { id: result[0].productId },
+      select: {
+        category: true    
+      },
+    })
+
+    mostOrderedCategory = product?.category ?? mostOrderedCategory
+  }
+  
+  const stats = orderStats(statusStats);
 
   return {
-    totalOrders,
-    totalPendingOrders: counts.PENDING,
-    totalApprovedOrders: counts.APPROVED,
-    totalDeniedOrders: counts.REJECTED,
-  };
-};
+    totalOrders: stats.total,
+    ordersByStatus: {
+      pending: stats.status.PENDING,
+      approved: stats.status.APPROVED,
+      rejected: stats.status.REJECTED,
+    },
+    spent: {
+      total: Number(spentStats._sum.total ?? 0),
+      average: Number(spentStats._avg.total ?? 0),
+      max: Number(spentStats._max.total ?? 0),
+      min: Number(spentStats._min.total ?? 0)
+    },
+    mostRecentOrder: order 
+      ? timeAgo(order.createdAt)
+      : 'Nenhum pedido feito',
+    mostOrderedCategory,
+  }
+}
+
+
 
 export const getSellerOrdersRevenue = async (userId: string) => {
   const sellerItems = await prisma.orderItem.findMany({
@@ -58,23 +132,71 @@ export const getSellerOrdersRevenue = async (userId: string) => {
   };
 }
 
-export const getCustomerOrSellerSpent = async (userId: string) => {
-  const spent = await prisma.order.aggregate({
-    where: {
-      userId,
-      status: 'APPROVED'
+
+
+
+type BuyerRole = Extract<SystemRoles, 'CUSTOMER' | 'SELLER'>
+
+export const getOverallCustomersAndSellersOrderStats = async (role: BuyerRole) => {
+  const [orders, averageOrder, mostOrderedItem] = await Promise.all([
+    prisma.order.groupBy({
+      by: ['status'],
+      where: { user: { role } },
+      _count: { id: true }
+    }),
+
+    prisma.order.aggregate({
+      where: {
+        user: { role },
+        status: 'APPROVED'
+      },
+      _avg: { total: true }
+    }),
+
+    prisma.orderItem.groupBy({
+      by: ['productId'],
+      where: {
+        order: {
+          user: { role },
+          status: 'APPROVED'
+        }
+      },
+      _sum: { quantity: true },
+      orderBy: { _sum: { quantity: 'desc' } },
+      take: 1
+    })
+  ])
+
+  const ordersStatus = orders.reduce(
+    (acc, curr) => {
+      acc[curr.status as OrderStatus] = curr._count.id
+      return acc
     },
-    _sum: { total: true },
-    _avg: { total: true },
-    _max: { total: true },
-    _min: { total: true }
-  });
+    {
+      PENDING: 0,
+      APPROVED: 0,
+      REJECTED: 0,
+      CANCELED: 0
+    } satisfies Record<OrderStatus, number>
+  )
+
+  const totalOrders = Object.values(ordersStatus).reduce((a, b) => a + b, 0)
+
+  const mostOrderedProduct =
+    mostOrderedItem.length > 0
+      ? await prisma.product.findUnique({
+          where: { id: mostOrderedItem[0].productId },
+          select: { name: true }
+        })
+      : null
 
   return {
-    total: Number(spent._sum.total || 0),
-    average: Number(spent._avg.total || 0),
-    max: Number(spent._max.total || 0),
-    min: Number(spent._min.total || 0),
-  };
+    role,
+    totalOrders,
+    ordersStatus,
+    averageOrderValue: Number(averageOrder._avg.total ?? 0),
+    mostOrderedProduct
+  }
 }
+
 
