@@ -2,16 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Nova_Square } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "../contexts/ToastContext";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { AuthInitializer } from "../components/auth/AuthInitializer";
 
 const novaSquare = Nova_Square({
   variable: "--font-nova-square",
@@ -29,12 +20,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" >
       <body
         className={`${novaSquare.className} antialiased`}
+        suppressHydrationWarning
       >
         <ToastProvider>
-          {children}
+          <AuthInitializer>
+            {children}
+          </AuthInitializer>
         </ToastProvider>
       </body>
     </html>

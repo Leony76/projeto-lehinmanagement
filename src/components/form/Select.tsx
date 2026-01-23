@@ -43,7 +43,7 @@ const Select = ({
           ? inputColorScheme.primary
           : inputColorScheme.secondary
       }`}>
-        <option selected>{
+        <option defaultValue="">{
           hasTopLabel
             ? '-- Selecione --'       
             : label 

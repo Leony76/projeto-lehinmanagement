@@ -6,19 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-model Customer {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  phone     String
-  document  String
-  createdAt DateTime @map("created_at")
-  updatedAt DateTime @map("updated_at")
-  orders    Order[]
-
-  @@map("customers")
-}
-
 model User {
   id        String    @id @default(cuid())
   name      String?
@@ -29,7 +16,7 @@ model User {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
-  role Role? @default(SELLER)
+  role Role? @default(CUSTOMER)
 
   accounts      Account[]
   sessions      Session[]
@@ -89,7 +76,6 @@ model Verification {
 
 model Order {
   id           Int            @id @default(autoincrement())
-  customerId   Int            @map("customer_id")
   userId       String         @map("user_id")
   status       Status         @default(PENDING)
   total        Decimal
@@ -97,7 +83,6 @@ model Order {
   updatedAt    DateTime       @updatedAt @map("updated_at")
   orderHistory OrderHistory[]
   orderItems   OrderItem[]
-  customer     Customer       @relation(fields: [customerId], references: [id])
   user         User           @relation(fields: [userId], references: [id])
   payments     Payment[]
 
@@ -158,6 +143,7 @@ model OrderHistory {
 enum Role {
   ADMIN
   SELLER
+  CUSTOMER
 }
 
 enum Category {

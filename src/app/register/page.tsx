@@ -16,6 +16,7 @@ import { registerSchema, RegisterFormData } from '@/src/schemas/registerSchema';
 import { signUp } from '@/src/lib/auth-client';
 import { authErrorsPtBr } from '@/src/lib/auth-errors';
 import { titleColors, textColors } from '@/src/constants/systemColorsPallet';
+import { useUserStore } from '@/src/store/useUserStore';
 
 const Register = () => {
   const router = useRouter();
@@ -40,8 +41,12 @@ const Register = () => {
       email: data.email,
       password: data.password,
     }, {
-      onSuccess: () => {
-        router.push("/dashboard");
+      onSuccess: (ctx) => {
+        if (ctx.data) {
+          useUserStore.getState().setUser(ctx.data.user, ctx.data.session);
+        }
+
+        router.push(`/dashboard?success=signup&name=${encodeURIComponent(data.name)}`);
       },
       onError: (ctx) => {
         const errorCode = ctx.error.code as keyof typeof authErrorsPtBr;
@@ -97,12 +102,11 @@ const Register = () => {
             placeholder="Confirme sua senha"
             type="password"
             colorScheme="secondary"
-            style={{ container: 'mt-1' }}
+            style={{ container: 'mt-1 mb-2' }}
             {...register("confirmPassword")}
             error={errors.confirmPassword?.message}
           />
 
-          {/* Erro que vem do servidor (ex: E-mail já cadastrado) */}
           {apiError && <Error error={apiError} />}
 
           <Button

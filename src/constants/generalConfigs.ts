@@ -1,6 +1,7 @@
 export type InputTypes = 'text' | 'number' | 'email' | 'password';
 export type ToastType = "success" | "error" | "alert" | "info";
 export type ColorScheme = 'primary' | 'secondary' | 'red';
+export type SystemRoles = "ADMIN" | "CUSTOMER" | "SELLER";
 
 export const FILTER_OPTIONS = [
   { value: 'price_desc', label: 'Maior Preço' },

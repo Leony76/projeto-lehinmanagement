@@ -35,14 +35,14 @@ const Login = () => {
       email: data.email,
       password: data.password,
       
-      callbackURL: "/dashboard"
+      callbackURL: "/dashboard?success=login"
     },{
       onRequest: () => {
         setError(null);
         setLoading(true);
       }, 
       onSuccess: () => {
-        router.push("/dashboard");
+        router.push("/dashboard?success=login");
       },
       onError: (ctx) => {
         const errorCode = ctx.error.code as keyof typeof authErrorsPtBr;
@@ -73,7 +73,7 @@ const Login = () => {
           />
 
           <Input
-            style={{container: 'mt-1'}}
+            style={{container: 'mt-1 mb-2'}}
             label={'Senha'}
             placeholder={'Senha'}
             type={'password'}
@@ -87,7 +87,7 @@ const Login = () => {
           <Button
             loading={loading}
             loadingLabel='Entrando'
-            style='mt-4'
+            style='mt-3'
             label={'Entrar'}
           />
 

@@ -4,6 +4,8 @@ import { buttonColorsScheme, titleColors } from '@/src/constants/systemColorsPal
 import MenuItem from './MenuItem';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/src/lib/auth-client';
+import { useUserStore } from '@/src/store/useUserStore';
+import Spinner from './Spinner';
 
 type Props = {
   menu: boolean;
@@ -11,6 +13,9 @@ type Props = {
 }
 
 const Menu = ({menu, showMenu}:Props) => {
+  const user = useUserStore((status) => status.user)
+
+  const nameAndSurname = user?.name.split(' ')[0] + ' ' + user?.name.split(' ')[1];
 
   const router = useRouter();
 
@@ -18,6 +23,9 @@ const Menu = ({menu, showMenu}:Props) => {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
+          setTimeout(() => {
+            useUserStore.getState().clearUser();
+          },1000);
           router.push("/login");
         },
       },
@@ -59,7 +67,12 @@ const Menu = ({menu, showMenu}:Props) => {
             <MenuItem route='/orders/my-orders' closeMenu={showMenu} label={'Meus Pedidos'}/>
           </ul>
           <ul className="mt-auto text-center mb-5">
-            <li className={`${buttonColorsScheme.menuLi} text-secondary!`}>Leony Leandro</li>
+            <li className={`${buttonColorsScheme.menuLi} text-secondary!`}>
+              {user?.name 
+                ? nameAndSurname 
+                : <Spinner color='primary'/> + "Carregando..."
+              }
+            </li>
             <li className={`${buttonColorsScheme.menuLi} p-0! flex flex-col text-red-300 text-lg text-shadow-2xs hover:text-red-100! active:text-red-600!`}>
               <button className='p-1 cursor-pointer' onClick={handleLogout}>
                 Sair
