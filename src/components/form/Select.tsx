@@ -47,7 +47,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       : "focus:ring-secondary"
 
     return (
-      <div className={`flex flex-col ${style?.container ?? ""}`}>
+      <div className={`flex w-full flex-col ${style?.container ?? ""}`}>
         {label && hasTopLabel && (
           <label
             htmlFor={name}

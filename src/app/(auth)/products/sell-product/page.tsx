@@ -2,9 +2,6 @@ import PageTitle from '@/src/components/ui/PageTitle'
 import { auth } from '@/src/lib/auth'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { AddProductFormData, addProductSchema } from '@/src/schemas/addProductSchema'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
 import AddSellProductForm from '@/src/components/form/AddSellProductForm'
 
 const SellProduct = async () => {

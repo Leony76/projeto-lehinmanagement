@@ -81,7 +81,7 @@ export const getSellerSaleStatus = async (userId: string) => {
   return {
     saleStats: saleStats(items),
     mostRecentSale: mostRecentSaleQuery
-      ? timeAgo(mostRecentSaleQuery.createdAt)
+      ? mostRecentSaleQuery.createdAt && timeAgo(mostRecentSaleQuery.createdAt)
       : 'Nenhuma venda aprovada',
     mostSoldCategory: productName
   }

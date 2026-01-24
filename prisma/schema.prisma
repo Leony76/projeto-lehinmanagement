@@ -13,8 +13,8 @@ model User {
   password  String?
   emailVerified Boolean?  @map("email_verified")
   image         String?
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime?  @default(now()) @map("created_at")
+  updatedAt DateTime?  @updatedAt @map("updated_at")
 
   role Role? @default(CUSTOMER)
 
@@ -79,8 +79,8 @@ model Order {
   userId       String         @map("user_id")
   status       Status         @default(PENDING)
   total        Decimal
-  createdAt    DateTime       @default(now()) @map("created_at")
-  updatedAt    DateTime       @updatedAt @map("updated_at")
+  createdAt    DateTime?      @default(now()) @map("created_at")
+  updatedAt    DateTime?      @updatedAt @map("updated_at")
   orderHistory OrderHistory[]
   orderItems   OrderItem[]
   user         User           @relation(fields: [userId], references: [id])
@@ -90,16 +90,19 @@ model Order {
 }
 
 model Product {
-  id         Int         @id @default(autoincrement())
-  sellerId   String      @map("seller_id")
-  name       String
-  price      Decimal
-  stock      Int
-  isActive   Boolean     @map("is_active")
-  category   Category
-  imageUrl   String      @map("image_url")
-  orderItems OrderItem[]
-  seller     User        @relation(fields: [sellerId], references: [id])
+  id          Int         @id @default(autoincrement())
+  sellerId    String      @map("seller_id")
+  name        String
+  price       Decimal
+  description String? 
+  stock       Int
+  isActive    Boolean     @map("is_active")
+  category    Category
+  imageUrl    String      @map("image_url")
+  orderItems  OrderItem[]
+  seller      User        @relation(fields: [sellerId], references: [id])
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime?    @updatedAt @map("updated_at")
 
   @@map("products")
 }
@@ -117,13 +120,14 @@ model Payment {
 }
 
 model OrderItem {
-  id        Int     @id @default(autoincrement())
-  orderId   Int     @map("order_id")
-  productId Int     @map("product_id")
+  id        Int      @id @default(autoincrement())
+  orderId   Int      @map("order_id")
+  productId Int      @map("product_id")
   quantity  Int
   price     Decimal
-  order     Order   @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 
   @@map("order_items")
 }

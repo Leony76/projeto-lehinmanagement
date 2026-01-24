@@ -68,7 +68,7 @@ const Menu = ({menu, showMenu}:Props) => {
             <MenuItem route='/products/sell-product' closeMenu={showMenu} label={'Vender Produto'}/>
           ) : user?.role === 'ADMIN' ? (
             <MenuItem style='text-[13px]' route='/products/sell-product' closeMenu={showMenu} label={'Adicionar Produto'}/>) : (<></>)}
-            <MenuItem route='/orders/my-orders' closeMenu={showMenu} label={'Meus Pedidos'}/>
+          {user?.role !== 'ADMIN' && <MenuItem route='/orders/my-orders' closeMenu={showMenu} label={'Meus Pedidos'}/>}
           </ul>
           <ul className="mt-auto text-center mb-5">
             <li className={`${buttonColorsScheme.menuLi} text-secondary!`}>

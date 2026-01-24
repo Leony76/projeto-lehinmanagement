@@ -1,11 +1,13 @@
-import { CategoryTranslatedValue } from "@/src/constants/generalConfigs";
+import { Category } from "@prisma/client";
 
-export type ProductFormState = {
-  image: string;
+export type ProductDTO = {
+  id: number;
   name: string;
-  category: CategoryTranslatedValue;
-  description?: string;
+  category: Category;
   price: number;
-  quantity: number;
+  stock: number;
+  imageUrl: string;
+  createdAt: string;
 };
+
 

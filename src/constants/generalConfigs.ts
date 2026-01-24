@@ -1,3 +1,5 @@
+import { Category } from "@prisma/client";
+
 export type InputTypes = 'text' | 'number' | 'email' | 'password';
 export type ToastType = "success" | "error" | "alert" | "info";
 export type ColorScheme = 'primary' | 'secondary' | 'red';
@@ -28,18 +30,45 @@ export const PAYMENT_OPTIONS = [
 ] as const;
 
 export const CATEGORY_OPTIONS = [
-  { value: 'toys', label: 'Brinquedo' },
-  { value: 'clothing', label: 'Vestuário' },
-  { value: 'electronics', label: 'Eletrônico' },
-  { value: 'hygiene', label: 'Higiene' },
-  { value: 'cosmetics', label: 'Cosmético' },
-  { value: 'appliances', label: 'Eletrodoméstico' },
-  { value: 'sports', label: 'Esporte' },
-  { value: 'decor', label: 'Decoração' },
-  { value: 'cleaning', label: 'Limpeza' },
-  { value: 'kitchen', label: 'Cozinha' },
-  { value: 'handmade', label: 'Artesanal' },
+  { value: 'TOY', label: 'Brinquedo' },
+  { value: 'CLOTHING', label: 'Vestuário' },
+  { value: 'ELECTRONIC', label: 'Eletrônico' },
+  { value: 'HYGIENE', label: 'Higiene' },
+  { value: 'COSMETIC', label: 'Cosmético' },
+  { value: 'APPLIANCE', label: 'Eletrodoméstico' },
+  { value: 'SPORT', label: 'Esporte' },
+  { value: 'DECORATION', label: 'Decoração' },
+  { value: 'CLEANING', label: 'Limpeza' },
+  { value: 'KITCHEN', label: 'Cozinha' },
+  { value: 'HANDMADE', label: 'Artesanal' },
 ] as const;
+
+export const CATEGORY_LABEL_MAP: Record<
+  Category,
+  | "Brinquedo"
+  | "Vestuário"
+  | "Eletrônico"
+  | "Higiene"
+  | "Cosmético"
+  | "Eletrodoméstico"
+  | "Esporte"
+  | "Decoração"
+  | "Limpeza"
+  | "Cozinha"
+  | "Artesanal"
+> = {
+  TOY: "Brinquedo",
+  CLOTHING: "Vestuário",
+  ELECTRONIC: "Eletrônico",
+  HYGIENE: "Higiene",
+  COSMETIC: "Cosmético",
+  APPLIANCE: "Eletrodoméstico",
+  SPORT: "Esporte",
+  DECORATION: "Decoração",
+  CLEANING: "Limpeza",
+  KITCHEN: "Cozinha",
+  HANDMADE: "Artesanal",
+};
 
 export type PaymentOptions = typeof PAYMENT_OPTIONS[number]['label']
 export type CategoryValue = typeof CATEGORY_OPTIONS[number]['value'];

@@ -22,6 +22,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     minLength?: number;
     max?: number;
     min?: number;
+    step?: 'any' | 1;
   }
   error?: string;
 }
@@ -100,6 +101,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
       ) : (
         <div className="flex flex-col gap-1">
           <input
+            step={miscConfigs?.step}
             {...props}
             ref={ref} 
             id={name}
