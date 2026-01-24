@@ -1,4 +1,4 @@
-import { ColorScheme } from "@/src/constants/generalConfigs";
+import { Buttontype, ColorScheme } from "@/src/constants/generalConfigs";
 import { buttonColorsScheme } from "@/src/constants/systemColorsPallet"
 import { IconType } from "react-icons";
 import Spinner from "../ui/Spinner";
@@ -9,6 +9,7 @@ type ButtonProps = {
   style?: string;
   iconStyle?: string;
   icon?: IconType;
+  type: Buttontype;
 
   loading?: boolean;
   loadingLabel?: string;
@@ -24,10 +25,11 @@ const Button = ({
   iconStyle,
   loading,
   loadingLabel,
+  type,
   onClick,
 }:ButtonProps) => {
   return (
-    <button onClick={onClick} className={`${style ?? ""} ${
+    <button type={type ?? 'submit'} onClick={onClick} className={`${style ?? ""} ${
       colorScheme === 'primary' 
         ? buttonColorsScheme.primary
       : colorScheme == 'red'

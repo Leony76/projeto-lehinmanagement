@@ -3,6 +3,7 @@ export type ToastType = "success" | "error" | "alert" | "info";
 export type ColorScheme = 'primary' | 'secondary' | 'red';
 export type SystemRoles = "ADMIN" | "CUSTOMER" | "SELLER";
 export type OrderStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
+export type Buttontype = 'submit' | 'button';
 
 export const ROLE_LABEL: Record<SystemRoles, string> = {
   CUSTOMER: 'Cliente',

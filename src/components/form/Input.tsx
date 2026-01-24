@@ -7,7 +7,6 @@ import { IconType } from "react-icons";
 import { IoEyeOutline, IoEyeSharp } from "react-icons/io5";
 import Error from "../ui/Error";
 
-// Adicionamos o extends para aceitar todas as props nativas do HTML
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   style?: {
     container?: string; 
