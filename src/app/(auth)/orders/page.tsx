@@ -3,6 +3,7 @@ import Select from "@/src/components/form/Select";
 import Search from "@/src/components/form/Search";
 import Placeholder from '@/public/my-interpretation-of-the-torque-twister-before-picture-on-v0-2p6oyytw55691.jpg';
 import OrderProduct from "@/src/components/products/OrderProduct";
+import ProductCardsGrid from "@/src/components/ui/ProductCardsGrid";
 
 const Orders = () => {
   return (
@@ -15,7 +16,7 @@ const Orders = () => {
           <Select style={{input: 'flex-1 w-full'}} selectSetup={"CATEGORY"} colorScheme={"primary"} label={"Categoria"}/>
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-5 my-4 mt-6">
+      <ProductCardsGrid>
         <OrderProduct 
           image={Placeholder} 
           name={`Produto #1`} 
@@ -25,7 +26,7 @@ const Orders = () => {
           price={99.97} 
           stock={123}
         /> 
-      </div>
+      </ProductCardsGrid>
     </div>
   )
 }

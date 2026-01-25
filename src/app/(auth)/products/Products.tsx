@@ -7,15 +7,18 @@ import Product from "@/src/components/products/Product";
 import { useState } from "react";
 import OrderProduct from "@/src/components/modal/OrderProduct";
 import { lockScrollY } from "@/src/utils/lockScrollY";
-import { CATEGORY_LABEL_MAP } from "@/src/constants/generalConfigs";
 import { ProductDTO } from "@/src/types/form/product";
+import ProductCardsGrid from "@/src/components/ui/ProductCardsGrid";
 
 type Props = {
   products: ProductDTO[];
 };
 
-const Products = ({ products }: Props) => {
+const Products = ({ 
+  products
+}: Props) => {
 
+  const [productsState, setProductsState] = useState<ProductDTO[]>(products);
   const [orderProductMenu, showOrderProductMenu] = useState(false);
   const [SelectedProduct, setSelectedProduct] = useState<ProductDTO | null>(null);
 
@@ -31,16 +34,17 @@ const Products = ({ products }: Props) => {
           <Select style={{input: 'flex-1 w-full'}} selectSetup={"CATEGORY"} colorScheme={"primary"} label={"Categoria"}/>
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-5 my-4 mt-6">
-        {products.map(product => (
+      <ProductCardsGrid>
+        {productsState.map(product => (
           <Product
             key={product.id}
             product={product}
+            setProducts={setProductsState}
             showOrderProductModal={showOrderProductMenu}
             selectedProduct={setSelectedProduct}
           />
         ))}
-      </div>
+      </ProductCardsGrid>
 
       {/* ⇊ MODALS ⇊ */}
 

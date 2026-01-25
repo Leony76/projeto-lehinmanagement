@@ -7,24 +7,24 @@ import TextArea from '@/src/components/form/TextArea'
 import { buttonColorsScheme } from '@/src/constants/systemColorsPallet'
 import { FaImage } from 'react-icons/fa'
 
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { AddProductFormData, addProductSchema } from '@/src/schemas/addProductSchema'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { SubmitHandler, useForm } from 'react-hook-form'
 import { useToast } from '@/src/contexts/ToastContext'
-import { useUserStore } from '@/src/store/useUserStore'
 import Error from '../ui/Error'
-import { useAddProductFormStore } from '@/src/store/useAddProductFormStore'
-import { createProduct } from '@/src/actions/product';
+import { createProduct, updateProduct } from '@/src/actions/product';
+import { ProductDTO } from '@/src/types/form/product'
 
-const AddSellProductForm = () => {
-  const user = useUserStore((stats) => stats.user);
-
-  const FORM_STORAGE_KEY = user
-    ? `sell-product-form:${user.id}`
-    : null;
-
-  const shouldPersistRef = useRef(true);
+const EditProductForm = ({
+  productToBeEdited,
+  setProducts,
+  closeModal
+}: {
+  productToBeEdited: ProductDTO;
+  setProducts: React.Dispatch<React.SetStateAction<ProductDTO[]>>;
+  closeModal: () => void;
+}) => {
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -37,14 +37,19 @@ const AddSellProductForm = () => {
   const {
     register,
     handleSubmit,
-    watch,
-    reset,
     formState: { errors },
   } = useForm<AddProductFormData>({
     resolver: zodResolver(addProductSchema),
+    defaultValues: {
+      name: productToBeEdited.name,
+      category: productToBeEdited.category,
+      description: productToBeEdited.description ?? "",
+      price: String(productToBeEdited.price),
+      stock: String(productToBeEdited.stock),
+    }
   })
 
-  const onSubmit = async(data: AddProductFormData) => {
+  const onSubmit: SubmitHandler<AddProductFormData> = async (data) => {
 
     if (loading)return;
     setLoading(true);
@@ -65,37 +70,23 @@ const AddSellProductForm = () => {
         imageUrl = uploadData.url;
       } 
 
-      await createProduct({
+      const payload = {
         ...data,
-        imageUrl,
-      });
+        id: productToBeEdited.id,
+        ...(imageUrl ? { imageUrl } : {}),
+      }
+
+      await updateProduct(payload)
+
+      setProducts(prev =>
+        prev.map(product =>
+          product.id === productToBeEdited.id
+            ? { ...product, ...payload }
+            : product
+        )
+      );
    
-      showToast(`Produto ${user?.role === 'ADMIN' 
-        ? 'adicionado' 
-        : 'posto à venda'
-      } com sucesso`, 'success');
-
-      shouldPersistRef.current = false;
-
-      FORM_STORAGE_KEY && localStorage.removeItem(FORM_STORAGE_KEY);
-
-      reset({
-        name: "",
-        category: undefined,
-        price: 0,
-        stock: 0,
-        description: "",
-      });
-
-      setImageFile(null);
-      setPreview(null);
-      setImageError(null);
-
-      if (fileInputRef.current) fileInputRef.current.value = "";
-
-      requestAnimationFrame(() => {
-        shouldPersistRef.current = true;
-      });
+      showToast(`Produto editado com sucesso`, 'success');
     } catch (err:unknown) {
       showToast("Ocorreu um erro: " + err, 'error');
     } finally {
@@ -103,32 +94,10 @@ const AddSellProductForm = () => {
     }
   }
 
-  useAddProductFormStore({
-    FORM_STORAGE_KEY,
-    shouldPersistRef,
-    watch,
-    reset,
-  });
-
   return (
     <form
     className="mb-4 sm:flex block gap-3 w-full max-w-200 mx-auto"
-    onSubmit={handleSubmit(
-      (data) => {
-        if (!imageFile) {
-          setImageError("A imagem do produto é obrigatória");
-          return;
-        }
-
-        setImageError(null);
-        onSubmit(data);
-      },
-      () => {
-        if (!imageFile) {
-          setImageError("A imagem do produto é obrigatória");
-        }
-      }
-    )}
+    onSubmit={handleSubmit(onSubmit)}
     >
       <input
         type="file"
@@ -153,17 +122,15 @@ const AddSellProductForm = () => {
           {preview ? (
             <img
               src={preview}
-              alt="Preview do produto"
+              alt={productToBeEdited.name}
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
-            <>
-              <FaImage className="text-7xl" />
-              <div className="w-[80%]">
-                <h4>Pressione aqui para pôr a imagem do produto</h4>
-                <h5>Dê preferência a uma imagem quadrada se possível</h5>
-              </div>
-            </>
+             <img
+              src={productToBeEdited.imageUrl}
+              alt={productToBeEdited.name}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
           )}
         </button>
         {imageError && <Error error={imageError}/>}
@@ -223,34 +190,32 @@ const AddSellProductForm = () => {
         </div>
         
         <Button
-          style="mt-3 text-xl"
-          colorScheme="primary"
-          label="Pôr à venda"
+          style={`mt-3 text-xl ${buttonColorsScheme.yellow}`}
+          label="Editar"
           type="submit"
           loading={loading}
-          loadingLabel='Processando'
+          loadingLabel='Editando'
+          onClick={closeModal}
         />
       </div>
       <div className='hidden sm:flex flex-col flex-1'>
         <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className={`relative sm:flex flex-1 hidden w-full flex-col justify-center items-center text-sm text-center mt-5 mb-1 border aspect-square rounded-3xl overflow-hidden ${buttonColorsScheme.primary} ${imageError ? 'shadow-[0px_0px_5px_red]' : ''}`}
+        className={`relative flex w-full flex-col justify-center items-center text-sm text-center mt-5 mb-1 border aspect-square rounded-3xl overflow-hidden ${buttonColorsScheme.primary} ${imageError ? 'shadow-[0px_0px_5px_red]' : ''}`}
         >
           {preview ? (
             <img
               src={preview}
-              alt="Preview do produto"
+              alt={productToBeEdited.name}
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
-            <>
-              <FaImage className="text-7xl" />
-              <div className="w-[80%]">
-                <h4>Pressione aqui para pôr a imagem do produto</h4>
-                <h5>Dê preferência a uma imagem quadrada se possível</h5>
-              </div>
-            </>
+             <img
+              src={productToBeEdited.imageUrl}
+              alt={productToBeEdited.name}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
           )}
         </button>
         {imageError && <Error error={imageError}/>}
@@ -259,4 +224,4 @@ const AddSellProductForm = () => {
   )
 }
 
-export default AddSellProductForm
+export default EditProductForm

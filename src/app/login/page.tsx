@@ -89,6 +89,7 @@ const Login = () => {
             loadingLabel='Entrando'
             style='mt-3'
             label={'Entrar'}
+            type='submit'
           />
 
           <Link 

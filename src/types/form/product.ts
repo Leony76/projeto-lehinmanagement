@@ -4,10 +4,13 @@ export type ProductDTO = {
   id: number;
   name: string;
   category: Category;
+  description: string | null;
   price: number;
   stock: number;
   imageUrl: string;
   createdAt: string;
+  sellerId: string;
+  sellerName: string | null;
 };
 
 

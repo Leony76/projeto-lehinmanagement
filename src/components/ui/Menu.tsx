@@ -7,6 +7,7 @@ import { authClient } from '@/src/lib/auth-client';
 import { useUserStore } from '@/src/store/useUserStore';
 import Spinner from './Spinner';
 import { ROLE_LABEL } from '@/src/constants/generalConfigs';
+import { getNameAndSurname } from '@/src/utils/getNameAndSurname';
 
 type Props = {
   menu: boolean;
@@ -14,9 +15,7 @@ type Props = {
 }
 
 const Menu = ({menu, showMenu}:Props) => {
-  const user = useUserStore((status) => status.user)
-
-  const nameAndSurname = user?.name.split(' ')[0] + ' ' + user?.name.split(' ')[1];
+  const user = useUserStore((status) => status.user);
 
   const router = useRouter();
 
@@ -73,7 +72,7 @@ const Menu = ({menu, showMenu}:Props) => {
           <ul className="mt-auto text-center mb-5">
             <li className={`${buttonColorsScheme.menuLi} text-secondary!`}>
               {user?.name 
-                ? nameAndSurname 
+                ? getNameAndSurname(user.name) 
                 : <Spinner color='primary'/> + "Carregando..."
               }
             </li>

@@ -66,6 +66,7 @@ const OrderProduct = ({
         </div>
         <div className='flex gap-2 mt-1'>
           <Button
+            type='button'
             onClick={() => showMoreActions(!moreActions)}
             style={`px-5 flex items-center justify-center ${
               moreActions
@@ -77,13 +78,25 @@ const OrderProduct = ({
               moreActions ? 'rotate-180' : 'rotate-0'
             }`}
           />
-          <Button style={`px-5 flex-1 text-xl ${buttonColorsScheme.green}`} label='Aprovado'/>
+          <Button 
+            type='button'
+            style={`px-5 flex-1 text-xl ${buttonColorsScheme.green}`} 
+            label='Aprovado'
+          />
         </div>
       </div>
     </div>
     <MoreActions direction='left' style={{container: '-mt-3'}} moreActions={moreActions} close={() => showMoreActions(false)}>
-      <Button label="Cancelar pedido" style={`px-5 ${buttonColorsScheme.red}`}/>
-      <Button label="Cancelar pedido" style={`px-5 ${buttonColorsScheme.red}`}/>
+      <Button 
+        type='button'
+        label="Cancelar pedido" 
+        style={`px-5 ${buttonColorsScheme.red}`}
+      />
+      <Button 
+        type='button'
+        label="Cancelar pedido" 
+        style={`px-5 ${buttonColorsScheme.red}`}
+      />
     </MoreActions>
     </>
   )
