@@ -15,7 +15,7 @@ import { useToast } from '@/src/contexts/ToastContext'
 import { useUserStore } from '@/src/store/useUserStore'
 import Error from '../ui/Error'
 import { useAddProductFormStore } from '@/src/store/useAddProductFormStore'
-import { createProduct } from '@/src/actions/product';
+import { createProduct } from '@/src/actions/productActions';
 
 const AddSellProductForm = () => {
   const user = useUserStore((stats) => stats.user);

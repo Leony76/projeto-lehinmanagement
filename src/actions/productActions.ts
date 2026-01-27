@@ -6,6 +6,7 @@ import { addProductSchema } from "@/src/schemas/addProductSchema";
 import { Category } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { OrderStatus, PaymentStatus } from "../constants/generalConfigs";
 
 export async function createProduct(input: unknown) {
   const session = await auth.api.getSession({
@@ -37,10 +38,13 @@ export async function createProduct(input: unknown) {
 };
 
 
-export async function removeProduct(id: number) {
+export async function removeProduct(id: number, removeJustify: string) {
   await prisma.product.update({
     where: { id },
-    data: { isActive: false },
+    data: { 
+      isActive: false,
+      removeJustify
+    },
   });
 
   revalidatePath('/products');
@@ -63,3 +67,44 @@ export async function updateProduct(input: unknown) {
 
   return updatedProduct;
 }
+
+export async function orderProduct(
+  productId: number, 
+  totalOrderPrice: number,
+  amountTobeOrdered: number,
+  status: OrderStatus,
+) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("Não autenticado");
+  } 
+
+  await prisma.order.create({
+    data: {
+      userId: session.user.id,
+      total: totalOrderPrice,
+      status: status,
+
+      orderItems: {
+        create: {
+          price: totalOrderPrice,
+          quantity: amountTobeOrdered,
+          productId: productId
+        }
+      },
+
+      orderHistory: {
+        create: [{
+          status: status,
+          changedById: session.user.id
+        }]
+      }
+    }
+  });
+
+  revalidatePath("/products");
+}
+

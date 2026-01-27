@@ -87,6 +87,7 @@ const Login = () => {
           <Button
             loading={loading}
             loadingLabel='Entrando'
+            colorScheme='secondary'
             style='mt-3'
             label={'Entrar'}
             type='submit'

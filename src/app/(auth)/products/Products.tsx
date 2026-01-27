@@ -7,7 +7,7 @@ import Product from "@/src/components/products/Product";
 import { useState } from "react";
 import OrderProduct from "@/src/components/modal/OrderProduct";
 import { lockScrollY } from "@/src/utils/lockScrollY";
-import { ProductDTO } from "@/src/types/form/product";
+import { ProductDTO } from "@/src/types/productDTO";
 import ProductCardsGrid from "@/src/components/ui/ProductCardsGrid";
 
 type Props = {

@@ -6,6 +6,8 @@ export type ColorScheme = 'primary' | 'secondary' | 'red';
 export type SystemRoles = "ADMIN" | "CUSTOMER" | "SELLER";
 export type OrderStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
 export type Buttontype = 'submit' | 'button';
+export type PaymentOptionsValue = 'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'BANK_SLIP';
+export type PaymentStatus = 'PENDING' | 'PROCESSING' | 'APPROVED' | 'DENIED';
 
 export const ROLE_LABEL: Record<SystemRoles, string> = {
   CUSTOMER: 'Cliente',
@@ -23,10 +25,10 @@ export const FILTER_OPTIONS = [
 ] as const;
 
 export const PAYMENT_OPTIONS = [
-  { value: 'pix' , label: 'Pix'},
-  { value: 'credit_card' , label: 'Cartão de crédito'},
-  { value: 'debit_card' , label: 'Cartão de débito'},
-  { value: 'bank_slip' , label: 'Boleto bancário'},
+  { value: 'PIX' , label: 'Pix'},
+  { value: 'CREDIT_CARD' , label: 'Cartão de crédito'},
+  { value: 'DEBIT_CARD' , label: 'Cartão de débito'},
+  { value: 'BANK_SLIP' , label: 'Boleto bancário'},
 ] as const;
 
 export const CATEGORY_OPTIONS = [

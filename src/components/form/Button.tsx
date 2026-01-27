@@ -10,6 +10,7 @@ type ButtonProps = {
   iconStyle?: string;
   icon?: IconType;
   type: Buttontype;
+  spinnerColor?: string;
 
   loading?: boolean;
   loadingLabel?: string;
@@ -25,6 +26,7 @@ const Button = ({
   iconStyle,
   loading,
   loadingLabel,
+  spinnerColor,
   type,
   onClick,
 }:ButtonProps) => {
@@ -37,9 +39,11 @@ const Button = ({
       :   buttonColorsScheme.secondary
     } text-left flex justify-center items-center gap-2`}>{
       loading && <Spinner color={
-        colorScheme === 'primary'
-         ? 'primary'
-         : 'secondary'
+        colorScheme 
+          ? colorScheme === 'primary'
+            ? 'primary'
+            : 'secondary'
+          : spinnerColor ? 'text-' + spinnerColor : 'white'
       }/> 
     }{
       Icon

@@ -99,6 +99,7 @@ model Product {
   isActive    Boolean     @map("is_active")
   category    Category
   imageUrl    String      @map("image_url")
+  removeJustify  String?   @map("remove_justify")
   orderItems  OrderItem[]
   seller      User        @relation(fields: [sellerId], references: [id])
   createdAt   DateTime    @default(now()) @map("created_at")
@@ -133,13 +134,13 @@ model OrderItem {
 }
 
 model OrderHistory {
-  id          Int      @id @default(autoincrement())
-  orderId     Int      @map("order_id")
+  id          Int       @id @default(autoincrement())
+  orderId     Int       @map("order_id")
   status      Status
-  changedById String   @map("changed_by")
-  createdAt   DateTime @default(now()) @map("created_at")
+  changedById String    @map("changed_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
   changedBy   User     @relation(fields: [changedById], references: [id])
-  order       Order    @relation(fields: [orderId], references: [id])
+  order       Order     @relation(fields: [orderId], references: [id])
 
   @@map("order_history")
 }
@@ -169,4 +170,10 @@ enum Status {
   APPROVED
   REJECTED
   CANCELED
+}
+enum PaymentMethods {
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_SLIP
+  PIX
 }

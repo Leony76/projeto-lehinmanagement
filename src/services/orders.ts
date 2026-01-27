@@ -1,9 +1,12 @@
 "use server"
 
+import { headers } from "next/headers";
 import { OrderStatus, SystemRoles } from "../constants/generalConfigs";
+import { auth } from "../lib/auth";
 import prisma from "../lib/prisma";
 import { orderStats } from "../utils/orderStats";
 import { timeAgo } from "../utils/timeAgo";
+import { getRequiredSession } from "../lib/get-session-user";
 
 export const getCustomerAndSellersOrdersStats = async (userId: string) => {
   const [
@@ -197,6 +200,33 @@ export const getOverallCustomersAndSellersOrderStats = async (role: BuyerRole) =
     averageOrderValue: Number(averageOrder._avg.total ?? 0),
     mostOrderedProduct
   }
+}
+
+export const getSellerOrders = async() => {
+  const session = await getRequiredSession();
+
+  const orders = await prisma.orderItem.findMany({
+    where: {
+      product: {
+        sellerId: session.user.id
+      }
+    },
+    include: {
+      product: true,
+    },
+    orderBy: { createdAt: 'desc'}
+  });
+
+  return orders.map((order) => ({
+    id: order.product.id,
+    name: order.product.name,
+    category: order.product.category,
+    description: order.product.description,
+    imageUrl: order.product.imageUrl,
+    stock: order.product.stock,
+    createdAt: order.product.createdAt?.toISOString() ?? null,
+    price: order.product.price.toNumber(),
+  }));
 }
 
 

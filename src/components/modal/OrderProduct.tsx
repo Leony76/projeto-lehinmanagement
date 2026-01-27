@@ -4,11 +4,20 @@ import Input from '../form/Input'
 import Select from '../form/Select'
 import { IoIosCheckmarkCircleOutline } from 'react-icons/io'
 import Button from '../form/Button'
-import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet'
+import { buttonColorsScheme, staticButtonColorScheme, textColors } from '@/src/constants/systemColorsPallet'
 import Modal from './Modal'
-import { useState } from 'react';
-import { ProductDTO } from '@/src/types/form/product';
+import { useEffect, useState } from 'react';
+import { ProductDTO } from '@/src/types/productDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
+import { OrderStatus, PaymentOptionsValue, PaymentStatus } from '@/src/constants/generalConfigs';
+import { FaRegCircleCheck, FaRegClock } from 'react-icons/fa6';
+import { IoCloseCircleOutline } from 'react-icons/io5';
+import { CgCloseO } from 'react-icons/cg';
+import StaticButton from '../ui/StaticButton';
+import { lockScrollY } from '@/src/utils/lockScrollY';
+import { orderProduct } from '@/src/actions/productActions';
+import Error from '../ui/Error';
+import { useToast } from '@/src/contexts/ToastContext';
 
 type Props = {
   isOpen: boolean;
@@ -21,11 +30,64 @@ const OrderProduct = ({
   showOrderProductMenu, 
   isOpen
 }:Props) => {  
+  const { showToast } = useToast();
 
   const [confirmModal, showConfirmModal] = useState(false);
+
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PENDING');
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const [error, setError] = useState<string>('');
+
   const [amountTobeOrdered, setAmountTobeOrdered] = useState<number | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentOptionsValue | null>(null);
 
   const totalOrderPrice = (amountTobeOrdered ?? 1) * (selectedProduct?.price ?? 0);
+
+  const handleOrderProduct = async() => {
+    if (!selectedProduct || loading) return;
+
+    setLoading(true);
+
+    try {
+      await orderProduct(
+        selectedProduct.id,
+        totalOrderPrice,
+        amountTobeOrdered ?? 1, 
+        paymentStatus as OrderStatus,     
+      );
+
+      setPaymentStatus('PENDING');
+      showConfirmModal(false);
+      setAmountTobeOrdered(null);
+      setPaymentMethod(null);
+
+      showToast('Produto pedido com sucesso');
+    } catch (err:unknown) {
+      showToast('Houve um erro: ' + err, 'error')
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (paymentMethod) {
+      setPaymentStatus('PROCESSING');
+
+      const timerFinalResult = setTimeout(() => {
+
+        const isApproved = Math.random() < 0.75;
+        
+        setPaymentStatus(isApproved ? 'APPROVED' : 'DENIED');
+      }, 3000);
+
+      return () => {
+        clearTimeout(timerFinalResult);
+      };
+    } 
+  }, [paymentMethod]);
+
+  lockScrollY(confirmModal);
 
   return (
     <>
@@ -33,7 +95,12 @@ const OrderProduct = ({
       hasXClose
       isOpen={isOpen} 
       modalTitle='Pedir produto' 
-      openedModal={showOrderProductMenu}
+      onCloseModalActions={() => {
+        showOrderProductMenu(false);
+        setPaymentStatus('PENDING');
+        setAmountTobeOrdered(null);
+        setPaymentMethod(null);
+      }}
     >
       <p className={`${textColors.secondaryDark}`}>
         Peça uma quantidade dentro do estoque disponível.
@@ -42,32 +109,37 @@ const OrderProduct = ({
         <span className={`flex-1 ${textColors.uiStock}`}>
           Estoque: {selectedProduct?.stock ?? 'Sem informação'}
         </span>
-        <Input
-          style={{ container: 'w-[60%]' }}
-          miscConfigs={{
-            min: 1,
-            max: selectedProduct?.stock,
-          }}
-          type="number"
-          placeholder="Insira a quantidade"
-          value={amountTobeOrdered ?? ""}
-          onChange={(e) => {
-            setAmountTobeOrdered(e.target.value === "" ? null : Number(e.target.value));
-          }}
-          onBlur={() => {
-            if (!selectedProduct) return;
+        <div className='w-[60%] space-y-1'>
+          <Input
+            style={{input: error ? 'shadow-[0px_0px_5px_red]' : ''}}
+            miscConfigs={{
+              min: 1,
+              max: selectedProduct?.stock,
+            }}
+            type="number"
+            placeholder="Insira a quantidade"
+            value={amountTobeOrdered ?? ""}
+            onChange={(e) => {
+              setAmountTobeOrdered(e.target.value === "" ? null : Number(e.target.value));
+              setError('');
+            }}
+            onBlur={() => {
+              if (!selectedProduct) return;
 
-            const max = selectedProduct.stock;
-            const min = 1;
+              const max = selectedProduct.stock;
+              const min = 1;
 
-            let value = Math.floor(Number(amountTobeOrdered));
+              let value = Math.floor(Number(amountTobeOrdered));
 
-            if (Number.isNaN(value)) value = min;
-            value = Math.max(min, Math.min(max, value));
+              if (Number.isNaN(value)) value = min;
+              value = Math.max(min, Math.min(max, value));
 
-            setAmountTobeOrdered(value);
-          }}
-        />
+              setError('');
+              setAmountTobeOrdered(value);
+            }}
+          />
+          {error && <Error error={error}/>}
+        </div>
       </div>
       <p className={`${textColors.gray} flex gap-2`}>
         A ser pedido:  
@@ -76,7 +148,7 @@ const OrderProduct = ({
         </span> 
         x 
         <span className={textColors.uiStock}> 
-          {amountTobeOrdered}
+          {amountTobeOrdered ?? '?'}
         </span>
       </p>
       <h3 className={`text-2xl ${textColors.gray} flex gap-2`}>
@@ -94,47 +166,100 @@ const OrderProduct = ({
           selectSetup={'PAYMENT'} 
           hasTopLabel 
           label={'Pagamento'}
+          onChange={(e) => setPaymentMethod(e.target.value as PaymentOptionsValue)}
         />
-        <span className='flex flex-1 mb-1 text-lg font-bold self-end items-center gap-1 text-green'>
-          <IoIosCheckmarkCircleOutline size={20}/>
-          APROVADO
-        </span>
+        <div className="flex flex-1 items-center gap-1 mb-1 text-lg font-bold self-end">
+          {paymentStatus === 'PENDING' && (
+            <span className="flex items-center tracking-wider gap-1 text-yellow-dark">
+              <FaRegClock size={20} /> PENDENTE
+            </span>
+          )}
+
+          {paymentStatus === 'PROCESSING' && (
+            <span className="flex items-center gap-1 text-gray animate-pulse">
+              <div className="h-4 w-4 border-2 border-blue-gray border-t-transparent rounded-full animate-spin" />
+              PROCESSANDO...
+            </span>
+          )}
+
+          {paymentStatus === 'APPROVED' && (
+            <>
+            <span className="flex items-center gap-1 text-green">
+              <FaRegCircleCheck  size={20} /> APROVADO
+            </span>          
+            </>
+          )}
+
+          {paymentStatus === 'DENIED' && (
+            <>
+            <span className="flex items-center gap-1 text-red">
+              <CgCloseO size={23} /> REJEITADO
+            </span>        
+            </>
+          )}
+        </div>
       </div>
+    {amountTobeOrdered ? (
       <Button 
         type='button'
         style='mt-2 text-lg' label='Prosseguir' 
         colorScheme='primary'
         onClick={() => {
           showConfirmModal(true); 
-          showOrderProductMenu(false)
+          showOrderProductMenu(false);
         }} 
       />
+    ) : (
+      <Button 
+        type='button'
+        style='mt-2 text-lg' label='Prosseguir' 
+        colorScheme='primary'
+        onClick={() => setError('Selecione a quantidade que deseja pedir')} 
+      />
+    )}
     </Modal>
 
     <Modal    
       isOpen={confirmModal} 
       modalTitle={'Confirmar pedido'} 
-      openedModal={showConfirmModal} 
-      reopenPrevModal={showOrderProductMenu}
+      onCloseModalActions={() => {
+        showConfirmModal(false);
+        showOrderProductMenu(true);
+      }} 
     >
       <p className={textColors.secondaryDark}>
         Tem certeza que deseja pedir <span className={textColors.uiStock}>{amountTobeOrdered}</span> {(amountTobeOrdered ?? 1) > 1 ? 'unidades' : 'unidade'} desse produto por <span className={textColors.uiMoney}>{formatCurrency(totalOrderPrice)}</span> ? 
       </p>
+    {paymentStatus === 'APPROVED' ? (
       <p className={`text-sm ${textColors.secondaryMiddleDark}`}>
-        Após o pedido, você terá o direito de o cancelar e receber o reembolso ( caso tenha pago no momentodo pedido ) a qualquer momento desde que o mesmo ainda não tenha sido processado pelo vendedor. Caso o pedido seja rejeitado ou cancelado pelo vendedor ou administrador, será avisado sobre as circunstâncias de tal
+        Após o pedido, você terá o direito de o cancelar e receber o reembolso a qualquer momento desde que o mesmo ainda não tenha sido processado pelo vendedor. Caso o pedido seja rejeitado ou cancelado pelo vendedor ou administrador, será avisado sobre as circunstâncias de tal e reembolsado a valor do pedido
+      </p>
+    ) : (
+      <>
+      <p className={`text-sm ${textColors.secondaryMiddleDark}`}>
+        Após o pedido, você terá o direito de o cancelar a qualquer momento na aba 'Meus pedidos'.
       </p>
       <p className={`text-sm ${textColors.yellow}`}>
         (!) Você não efetuou o pegamento. O seu pedido ficará em pendente até ser pago e poder ser processado.
       </p>
+      </>
+    )}
       <div className='flex gap-2 mt-2'>
         <Button 
           type='submit' 
           style={`text-xl flex-1 ${buttonColorsScheme.green}`} 
           label='Sim'
+          onClick={handleOrderProduct}
+          loading={loading}
+          loadingLabel='Processando'
+          spinnerColor='green'
         />
         <Button 
           type='button' 
-          onClick={() => {showConfirmModal(false); showOrderProductMenu(true)}} 
+          onClick={() => {
+            showConfirmModal(false); 
+            showOrderProductMenu(true);
+          }} 
           style={`text-xl flex-1 ${buttonColorsScheme.red}`} 
           label='Não'
         />

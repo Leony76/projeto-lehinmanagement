@@ -13,8 +13,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useToast } from '@/src/contexts/ToastContext'
 import Error from '../ui/Error'
-import { createProduct, updateProduct } from '@/src/actions/product';
-import { ProductDTO } from '@/src/types/form/product'
+import { createProduct, updateProduct } from '@/src/actions/productActions';
+import { ProductDTO } from '@/src/types/productDTO'
 
 const EditProductForm = ({
   productToBeEdited,
@@ -44,8 +44,8 @@ const EditProductForm = ({
       name: productToBeEdited.name,
       category: productToBeEdited.category,
       description: productToBeEdited.description ?? "",
-      price: String(productToBeEdited.price),
-      stock: String(productToBeEdited.stock),
+      price: productToBeEdited.price,
+      stock: productToBeEdited.stock,
     }
   })
 
@@ -73,8 +73,10 @@ const EditProductForm = ({
       const payload = {
         ...data,
         id: productToBeEdited.id,
-        ...(imageUrl ? { imageUrl } : {}),
-      }
+        price: Number(data.price),
+        stock: Number(data.stock),
+        ...(imageUrl ? { imageUrl } : { imageUrl: productToBeEdited.imageUrl }),
+      };
 
       await updateProduct(payload)
 
@@ -85,6 +87,8 @@ const EditProductForm = ({
             : product
         )
       );
+
+      closeModal();
    
       showToast(`Produto editado com sucesso`, 'success');
     } catch (err:unknown) {
@@ -195,7 +199,6 @@ const EditProductForm = ({
           type="submit"
           loading={loading}
           loadingLabel='Editando'
-          onClick={closeModal}
         />
       </div>
       <div className='hidden sm:flex flex-col flex-1'>

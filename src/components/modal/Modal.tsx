@@ -13,8 +13,7 @@ type Props = {
   };
   hasXClose?: boolean;
   children: React.ReactNode;
-  openedModal: React.Dispatch<React.SetStateAction<boolean>>;
-  reopenPrevModal?: React.Dispatch<React.SetStateAction<boolean>>; 
+  onCloseModalActions: () => void;
 }
 
 const Modal = ({isOpen,
@@ -22,8 +21,7 @@ const Modal = ({isOpen,
   modalTitle,
   hasXClose,
   style,
-  openedModal,
-  reopenPrevModal,  
+  onCloseModalActions, 
 }:Props) => {
   return (
     <>
@@ -33,7 +31,7 @@ const Modal = ({isOpen,
         transition-opacity duration-300
         ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
       `}
-      onClick={() => {openedModal(false); reopenPrevModal?.(true)}}
+      onClick={onCloseModalActions}
     />
     <div
       className={`
@@ -53,7 +51,7 @@ const Modal = ({isOpen,
     >
       <div className='flex justify-between'>
         <h2 className={`${style?.modalTitle ?? 'text-3xl'} ${titleColors.primaryDark}`}>{modalTitle}</h2>
-        {hasXClose && <Button type='button' onClick={() => {openedModal(false); reopenPrevModal?.(true)}} colorScheme='red' style={style?.xClose ?? 'text-2xl px-1.25 border rounded-[50%]!'} icon={IoClose}/>}
+        {hasXClose && <Button type='button' onClick={onCloseModalActions} colorScheme='red' style={style?.xClose ?? 'text-2xl px-1.25 border rounded-[50%]!'} icon={IoClose}/>}
       </div>
       {children}
     </div>

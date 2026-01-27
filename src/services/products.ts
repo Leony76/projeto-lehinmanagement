@@ -12,6 +12,7 @@ export const getProducts = async() => {
         select: {
           id: true,
           name: true,
+          role: true,
         },
       },
     },
@@ -29,6 +30,33 @@ export const getProducts = async() => {
     price: product.price.toNumber(),
     sellerId: product.seller.id,
     sellerName: product.seller.name,
+    sellerRole: product.seller.role,
   }));
+}
+
+export const getUserProducts = async(userId: string) => {
+  const orderItems = await prisma.orderItem.findMany({
+    where: {
+      order: {
+        status: 'APPROVED',
+        userId
+      }
+    },
+    include: {
+      product: true
+    },
+    orderBy: { product: { id: 'desc' } },
+  });
+
+  return orderItems.map((orderItem) => ({
+    id: orderItem.product.id,
+    name: orderItem.product.name,
+    category: orderItem.product.category,
+    description: orderItem.product.description,
+    imageUrl: orderItem.product.imageUrl,
+    stock: orderItem.product.stock,
+    createdAt: orderItem.product.createdAt?.toISOString() ?? null,
+    price: orderItem.product.price.toNumber(),
+  }))
 }
 

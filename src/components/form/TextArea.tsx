@@ -5,21 +5,21 @@ import { ColorScheme } from "@/src/constants/generalConfigs"
 import { textColors, inputColorScheme } from "@/src/constants/systemColorsPallet"
 import Error from "../ui/Error"
 
-interface TextAreaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   style?: {
     label?: string
     input?: string
     container?: string
   }
   label?: string
+  placeholder: string;
   colorScheme?: ColorScheme
   error?: string
 }
 
 const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
   (
-    { style, label, colorScheme, error, name, ...props },
+    { style, label, placeholder, colorScheme, error, name, ...props },
     ref
   ) => {
     const statusClasses = error
@@ -44,6 +44,7 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
         )}
 
         <textarea
+          placeholder={placeholder}
           ref={ref}
           id={name}
           name={name}

@@ -5,16 +5,18 @@ import { IoStar } from 'react-icons/io5';
 import Button from '../form/Button';
 import { CATEGORY_LABEL_MAP } from '@/src/constants/generalConfigs';
 import { productCardSetup } from '@/src/constants/cardConfigs';
-import { ProductDTO } from '@/src/types/form/product';
+import { ProductDTO } from '@/src/types/productDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 import { useUserStore } from '@/src/store/useUserStore';
 import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
 import { getNameAndSurname } from '@/src/utils/getNameAndSurname';
-import { removeProduct } from '@/src/actions/product';
-import { SetStateAction, useState } from 'react';
+import { removeProduct } from '@/src/actions/productActions';
+import { useState } from 'react';
 import Modal from '../modal/Modal';
 import { useToast } from '@/src/contexts/ToastContext';
 import EditProductForm from '../form/EditProductForm';
+import TextArea from '../form/TextArea';
+import Error from '../ui/Error';
 
 type Props = {
   product: ProductDTO;
@@ -36,6 +38,11 @@ const Product = ({
   const category = CATEGORY_LABEL_MAP[product.category];
 
   const [confirmRemoveProduct, showConfirmRemoveProduct] = useState<boolean>(false);
+  const [removeProductJustify, showRemoveProductJustify] = useState<boolean>(false);
+
+  const [removeJustify, setRemoveJustify] = useState<string>('');
+  const [error, setError] = useState<string>('');
+
   const [editProduct, showEditProduct] = useState<boolean>(false);
 
   const user = useUserStore((stats) => stats.user);
@@ -43,6 +50,26 @@ const Product = ({
   console.log(user?.role)
 
   const canOrder = (product.sellerId !== user?.id) && (user?.role !== 'ADMIN');
+
+  const handleRemoveProduct = async() => {
+    if (!removeJustify) {
+      setError('A justificativa de remoção é obrigatória');
+      return;
+    }
+
+    try {
+      showRemoveProductJustify(false);
+      
+      await removeProduct(product.id, removeJustify);
+
+      setProducts((prev) => prev.filter((p) => p.id !== product.id));
+
+      setRemoveJustify('');
+      showToast('Produto removido com sucesso', 'success');
+    } catch (err) {
+      showToast('Erro ao remover produto', 'error');
+    }
+  };
 
   return (
     <div className={productCardSetup.mainContainer}>
@@ -66,6 +93,7 @@ const Product = ({
             <span className='xl:block md:hidden block'>Avaliação:</span>
             <IoStar/>{4}
           </div>
+        {(product.sellerRole !== 'ADMIN') ? (       
           <div className={productCardSetup.seller.container}>
             <span className={productCardSetup.seller.label}>
               Vendedor(a):
@@ -75,6 +103,11 @@ const Product = ({
               : getNameAndSurname(product.sellerName)
             }
           </div>
+        ) : (
+          <div className={productCardSetup.seller.container}> 
+            Ofertado pelo sistema
+          </div>
+        )}
         </div>
         <div className={productCardSetup.priceStockContainer}>
           <span className={productCardSetup.stock}><span className={productCardSetup.stockLabel}>Em estoque:</span> {product.stock}</span>
@@ -111,13 +144,14 @@ const Product = ({
 
       {/* ⇊ MODALS ⇊ */}
 
+
       <Modal 
       isOpen={confirmRemoveProduct} 
       modalTitle={'Confirmar remoção'}
       openedModal={showConfirmRemoveProduct}
       >
         <p className={textColors.secondaryDark}>Tem certeza que deseja tirar esse produto de venda ?</p>
-        <p className={textColors.secondaryMiddleDark}>Caso o queira à venda novamente depois, basta o pôr na aba 'Produtos removidos'.</p>
+        {user?.role !== 'ADMIN' && <p className={textColors.secondaryMiddleDark}>Caso o queira à venda novamente depois, basta o pôr na aba 'Produtos removidos'.</p>}
         <p className='text-sm text-yellow-dark'>*Clientes que tivem pedidos pendentes do mesmo serão automaticamente reembolsados caso tiverem já tenham pago pelo pedido.</p>
         <div className='flex gap-2'>
           <Button 
@@ -125,9 +159,8 @@ const Product = ({
             label='Sim'
             style={`flex-1 ${buttonColorsScheme.green}`}
             onClick={() => {
+              showRemoveProductJustify(true);
               showConfirmRemoveProduct(false);
-              removeProduct(product.id);
-              showToast('Produto removido com sucesso', 'success')
             }}
             />
           <Button 
@@ -135,6 +168,38 @@ const Product = ({
             label='Não'
             style={`flex-1 ${buttonColorsScheme.red}`}
             onClick={() => showConfirmRemoveProduct(false)}
+          />
+        </div>
+      </Modal>
+
+      <Modal 
+      isOpen={removeProductJustify} 
+      modalTitle={'Justificativa de remoção'}
+      openedModal={showRemoveProductJustify}
+      reopenPrevModal={showConfirmRemoveProduct}
+      >
+        <p className={textColors.secondaryDark}>Cite a justificativa para a remoção desse produto ofertado por {product.sellerName}</p>
+        <TextArea 
+          style={{input: `h-20 mb-[-3px] ${error ? 'shadow-[0px_0px_8px_red]' : ''}`}}
+          placeholder='Justificativa...'
+          onChange={(e) => {
+            setRemoveJustify(e.target.value);
+            setError('');
+          }}
+        />
+        {error && <Error error={error}/>}
+        <div className='flex gap-2 mt-2'>
+          <Button 
+            type={'button'}
+            label='Confirmar'
+            style={`flex-1 ${buttonColorsScheme.green}`}
+            onClick={handleRemoveProduct}
+          />
+          <Button 
+            type={'button'}
+            label='Cancelar'
+            style={`flex-1 ${buttonColorsScheme.red}`}
+            onClick={() => showRemoveProductJustify(false)}
           />
         </div>
       </Modal>

@@ -11,12 +11,4 @@ export const addProductSchema = z.object({
   stock: z.coerce.number().positive("O estoque deve ser um número superior a 0"),
 });
 
-export type AddProductFormData = {
-  id?: number
-  imageUrl?: string
-  name: string
-  category: Category
-  description?: string
-  price: string
-  stock: string
-}
+export type AddProductFormData = z.infer<typeof addProductSchema>;

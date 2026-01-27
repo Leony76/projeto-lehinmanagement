@@ -1,57 +1,47 @@
 "use client";
 
-import Image, { StaticImageData } from 'next/image'
+import Image from 'next/image'
 import { IoStar } from 'react-icons/io5';
 import Button from '../form/Button';
-import { CategoryTranslatedValue } from '@/src/constants/generalConfigs';
 import { productCardSetup } from '@/src/constants/cardConfigs';
 import { buttonColorsScheme } from '@/src/constants/systemColorsPallet';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import MoreActions from '../modal/MoreActions';
 import { useState } from 'react';
+import { userProductDTO } from '@/src/types/userProductDTO';
 
 type Props = {
-  image: string | StaticImageData;
-  name: string;
-  category: CategoryTranslatedValue;
-  datePutToSale: string;
-  rating: number;
-  price: number;
-  stock: number;
+  order: userProductDTO;
 }
 
-const OrderProduct = ({
-  image,
-  name,
-  category,
-  datePutToSale,
-  rating,
-}:Props) => {
+const OrderProduct = ({order}:Props) => {
 
   const [moreActions, showMoreActions] = useState(false);  
   
   return (
-    <>
     <div className={`relative ${productCardSetup.mainContainer}`}>
-      <Image 
-        src={image} 
-        alt={name}
-        className={productCardSetup.image}
-        onClick={() => showMoreActions(false)}
-      />
+      <div className="relative aspect-square w-full">
+        <Image 
+          src={order.imageUrl} 
+          alt={order.name}
+          fill
+          className={productCardSetup.image}
+          onClick={() => showMoreActions(false)}
+        />
+      </div>
       <div className='absolute top-3 left-3 text-yellow-dark bg-yellow-100 w-fit py-1 px-3 rounded-2xl border border-yellow'>Não analisado</div>
       <div className={productCardSetup.infosContainer}>
         <div onClick={() => showMoreActions(false)}>
-          <h3 className={productCardSetup.name}>{name}</h3>
+          <h3 className={productCardSetup.name}>{order.name}</h3>
           <div className={productCardSetup.categoryDateRatingContainer}>
             <div className={productCardSetup.categoryDate}>
-              <span>{category}</span>
+              <span>{order.category}</span>
               <span className="text-[10px] text-gray-400">●</span>
-              <span>{datePutToSale}</span>
+              <span>{order.createdAt}</span>
             </div>
             <div className={productCardSetup.rating}>
               <IoStar/>
-              {rating.toFixed(1).replace('.',',')}
+              {4}
             </div>
           </div>
           <div>
@@ -85,20 +75,21 @@ const OrderProduct = ({
           />
         </div>
       </div>
+      
+      <MoreActions direction='left' style={{container: '-mt-3'}} moreActions={moreActions} close={() => showMoreActions(false)}>
+        <Button 
+          type='button'
+          label="Cancelar pedido" 
+          style={`px-5 ${buttonColorsScheme.red}`}
+        />
+        <Button 
+          type='button'
+          label="Cancelar pedido" 
+          style={`px-5 ${buttonColorsScheme.red}`}
+        />
+      </MoreActions>
     </div>
-    <MoreActions direction='left' style={{container: '-mt-3'}} moreActions={moreActions} close={() => showMoreActions(false)}>
-      <Button 
-        type='button'
-        label="Cancelar pedido" 
-        style={`px-5 ${buttonColorsScheme.red}`}
-      />
-      <Button 
-        type='button'
-        label="Cancelar pedido" 
-        style={`px-5 ${buttonColorsScheme.red}`}
-      />
-    </MoreActions>
-    </>
+
   )
   {/* <Button style={`px-5 flex-1 text-xl ${buttonColorsScheme.red}`} label='Cancelado pelo cliente'/> */}
 }
