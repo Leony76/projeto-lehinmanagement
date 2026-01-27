@@ -1,18 +1,18 @@
 import PageTitle from "@/src/components/ui/PageTitle";
 import Select from "@/src/components/form/Select";
 import Search from "@/src/components/form/Search";
-import OrderProduct from "@/src/components/products/OrderProduct";
+import MyOrderProduct from "@/src/components/products/MyOrderProduct";
+import { UserOrderDTO } from "@/src/types/userOrderDTO";
 import ProductCardsGrid from "@/src/components/ui/ProductCardsGrid";
-import { OrderProductDTO } from "@/src/types/orderProductDTO";
 
 type Props = {
-  orders: OrderProductDTO[];
+  userOrders: UserOrderDTO[];
 }
 
-const Orders = ({orders}:Props) => {
+const MyOrders = ({userOrders}:Props) => {
   return (
     <div>
-      <PageTitle style="my-2" title="Pedidos"/>
+      <PageTitle style="my-2" title="Meus Pedidos"/>
       <div>
         <Search style={{input: 'mt-5'}} colorScheme="primary"/>
         <div className="flex gap-3 mt-3">
@@ -21,14 +21,14 @@ const Orders = ({orders}:Props) => {
         </div>
       </div>
       <ProductCardsGrid>
-      {orders.map((order) => (
-        <OrderProduct 
-          order={order}
-        /> 
+      {userOrders.map((userOrder) => (
+        <MyOrderProduct
+          userOrder={userOrder}
+        />
       ))}
       </ProductCardsGrid>
     </div>
   )
 }
 
-export default Orders
+export default MyOrders

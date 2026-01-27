@@ -3,10 +3,11 @@
 import { auth } from "@/src/lib/auth";
 import prisma from "@/src/lib/prisma";
 import { addProductSchema } from "@/src/schemas/addProductSchema";
-import { Category } from "@prisma/client";
+import { Category, Status } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { OrderStatus, PaymentStatus } from "../constants/generalConfigs";
+import { OrderStatus, PaymentOptionsValue, PaymentStatus } from "../constants/generalConfigs";
+import { getRequiredSession } from "../lib/get-session-user";
 
 export async function createProduct(input: unknown) {
   const session = await auth.api.getSession({
@@ -72,39 +73,69 @@ export async function orderProduct(
   productId: number, 
   totalOrderPrice: number,
   amountTobeOrdered: number,
-  status: OrderStatus,
+  paymentStatus?: Status,
+  paymentMethod?: PaymentOptionsValue,
 ) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getRequiredSession();
 
-  if (!session) {
-    throw new Error("Não autenticado");
-  } 
-
-  await prisma.order.create({
-    data: {
-      userId: session.user.id,
-      total: totalOrderPrice,
-      status: status,
-
-      orderItems: {
-        create: {
-          price: totalOrderPrice,
-          quantity: amountTobeOrdered,
-          productId: productId
+  await prisma.$transaction(async (tx) => {
+    const order = await tx.order.create({
+      data: {
+        userId: session.user.id,
+        total: totalOrderPrice,
+        status: 'PENDING',
+        orderItems: {
+          create: {
+            price: totalOrderPrice,
+            quantity: amountTobeOrdered,
+            productId
+          }
+        },
+        orderHistory: {
+          create: {
+            status: 'PENDING',
+            changedById: session.user.id
+          }
         }
-      },
+      }
+    });
 
+    if (paymentStatus && paymentMethod) {
+      await tx.payment.create({
+        data: {
+          amount: totalOrderPrice,
+          method: paymentMethod,
+          orderId: order.id,
+          status: paymentStatus
+        }
+      });
+    }
+  });
+  
+  revalidatePath("/products");
+}
+
+export async function acceptRejectProductOrder(
+  decision: 'APPROVED' | 'REJECTED',
+  orderId: number,
+) { 
+  const session = await getRequiredSession();
+
+  await prisma.order.update({
+    where: {
+      id: orderId,
+    },
+    data: {
+      status: decision,
       orderHistory: {
-        create: [{
-          status: status,
-          changedById: session.user.id
-        }]
+        create: {
+          status: decision,
+          changedById: session.user.id,
+        }
       }
     }
   });
 
-  revalidatePath("/products");
+  revalidatePath("/orders");
 }
 

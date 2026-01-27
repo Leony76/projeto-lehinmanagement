@@ -148,7 +148,9 @@ const Product = ({
       <Modal 
       isOpen={confirmRemoveProduct} 
       modalTitle={'Confirmar remoção'}
-      openedModal={showConfirmRemoveProduct}
+      onCloseModalActions={() => {
+        showConfirmRemoveProduct(false);
+      }}
       >
         <p className={textColors.secondaryDark}>Tem certeza que deseja tirar esse produto de venda ?</p>
         {user?.role !== 'ADMIN' && <p className={textColors.secondaryMiddleDark}>Caso o queira à venda novamente depois, basta o pôr na aba 'Produtos removidos'.</p>}
@@ -175,8 +177,10 @@ const Product = ({
       <Modal 
       isOpen={removeProductJustify} 
       modalTitle={'Justificativa de remoção'}
-      openedModal={showRemoveProductJustify}
-      reopenPrevModal={showConfirmRemoveProduct}
+      onCloseModalActions={() => {
+        showRemoveProductJustify(false);
+        showConfirmRemoveProduct(true);
+      }}
       >
         <p className={textColors.secondaryDark}>Cite a justificativa para a remoção desse produto ofertado por {product.sellerName}</p>
         <TextArea 
@@ -207,7 +211,9 @@ const Product = ({
       <Modal 
       isOpen={editProduct} 
       modalTitle={'Editar produto'}
-      openedModal={showEditProduct}
+      onCloseModalActions={() => {
+        showEditProduct(false);
+      }}
       hasXClose
       style={{container: '!max-w-215'}}
       > 

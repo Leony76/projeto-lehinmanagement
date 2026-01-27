@@ -211,10 +211,26 @@ export const getSellerOrders = async() => {
         sellerId: session.user.id
       }
     },
+    orderBy: {
+      createdAt: 'desc'
+    },
     include: {
       product: true,
+      order: {
+        include: {
+          user: {
+            select: {
+              name: true
+            }
+          },
+          payments: {
+            select: {
+              status: true
+            },
+          },
+        },
+      },
     },
-    orderBy: { createdAt: 'desc'}
   });
 
   return orders.map((order) => ({
@@ -226,8 +242,62 @@ export const getSellerOrders = async() => {
     stock: order.product.stock,
     createdAt: order.product.createdAt?.toISOString() ?? null,
     price: order.product.price.toNumber(),
+
+    orderId: order.order.id,
+    orderCreatedAt: order.createdAt.toISOString() ?? null,
+    orderedAmount: order.quantity,
+    orderComission: order.order.total.toNumber(),
+    orderCustomerName: order.order.user.name,
+    orderStatus: order.order.status,
+    orderPaymentStatus: order.order.payments.at(-1)?.status ?? 'PENDING'
   }));
 }
 
+export const getOrdersFromUser = async() => {
+  const session = await getRequiredSession();
+
+  const ordersFromUser = await prisma.orderItem.findMany({
+    where: {
+      order: {
+        userId: session.user.id
+      }
+    },
+    include: {
+      product: true,
+      order: {
+        select: {
+          total: true,
+          createdAt: true,
+          orderItems: {
+            select: {
+              quantity: true,
+            }
+          },
+          payments: {
+            select: {
+              status: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return ordersFromUser.map((item) => ({
+    id: item.product.id,
+    name: item.product.name,
+    category: item.product.category,
+    description: item.product.description,
+    imageUrl: item.product.imageUrl,
+    stock: item.product.stock,
+    createdAt: item.product.createdAt?.toISOString() ?? null,
+    price: item.product.price.toNumber(),
+
+    orderTotalPrice: item.order.total.toNumber(),
+    orderDate: item.order.createdAt?.toISOString() ?? null,
+    orderAmount: item.quantity,
+    orderPaymentStatus: item.order.payments.at(-1)?.status ?? 'PENDING',
+  }));
+}
 
 
