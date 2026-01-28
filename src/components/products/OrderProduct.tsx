@@ -50,7 +50,7 @@ const OrderProduct = ({order}:Props) => {
 
   const handleAcceptOrder = async() => {
 
-    if (loading.accepting)return;
+    if (loading.accepting) return;
     setLoading(prev => ({...prev, accepting: true}));
 
     try {

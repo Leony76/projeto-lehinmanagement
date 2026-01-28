@@ -34,12 +34,12 @@ const OrderProduct = ({
 
   const [confirmModal, showConfirmModal] = useState(false);
 
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PENDING');
   const [loading, setLoading] = useState<boolean>(false);
-
+  
   const [error, setError] = useState<string>('');
-
+  
   const [amountTobeOrdered, setAmountTobeOrdered] = useState<number | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PENDING');
   const [paymentMethod, setPaymentMethod] = useState<PaymentOptionsValue | null>(null);
 
   const totalOrderPrice = (amountTobeOrdered ?? 1) * (selectedProduct?.price ?? 0);
@@ -199,24 +199,16 @@ const OrderProduct = ({
           )}
         </div>
       </div>
-    {amountTobeOrdered ? (
       <Button 
         type='button'
         style='mt-2 text-lg' label='Prosseguir' 
         colorScheme='primary'
         onClick={() => {
-          showConfirmModal(true); 
-          showOrderProductMenu(false);
+          showConfirmModal(amountTobeOrdered ? true : false); 
+          showOrderProductMenu(amountTobeOrdered ? false : true);
+          setError(!amountTobeOrdered ? 'Insira a quantidade que deseja pedir' : '');
         }} 
       />
-    ) : (
-      <Button 
-        type='button'
-        style='mt-2 text-lg' label='Prosseguir' 
-        colorScheme='primary'
-        onClick={() => setError('Selecione a quantidade que deseja pedir')} 
-      />
-    )}
     </Modal>
 
     <Modal    

@@ -47,8 +47,6 @@ const Product = ({
 
   const user = useUserStore((stats) => stats.user);
 
-  console.log(user?.role)
-
   const canOrder = (product.sellerId !== user?.id) && (user?.role !== 'ADMIN');
 
   const handleRemoveProduct = async() => {

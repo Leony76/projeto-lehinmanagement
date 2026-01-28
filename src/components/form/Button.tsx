@@ -11,6 +11,7 @@ type ButtonProps = {
   icon?: IconType;
   type: Buttontype;
   spinnerColor?: string;
+  disabled?: boolean;
 
   loading?: boolean;
   loadingLabel?: string;
@@ -22,6 +23,7 @@ const Button = ({
   colorScheme,
   label,
   style,
+  disabled,
   icon: Icon,
   iconStyle,
   loading,
@@ -31,7 +33,7 @@ const Button = ({
   onClick,
 }:ButtonProps) => {
   return (
-    <button type={type ?? 'submit'} onClick={onClick} className={`${style ?? ""} ${
+    <button disabled={disabled} type={type ?? 'submit'} onClick={onClick} className={`${style ?? ""} ${
       colorScheme === 'primary' 
         ? buttonColorsScheme.primary
       : colorScheme == 'red'

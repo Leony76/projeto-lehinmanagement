@@ -3,16 +3,20 @@
 import Image, { StaticImageData } from 'next/image'
 import { IoStar } from 'react-icons/io5';
 import Button from '../form/Button';
-import { CATEGORY_LABEL_MAP, CategoryTranslatedValue } from '@/src/constants/generalConfigs';
+import { CATEGORY_LABEL_MAP, CategoryTranslatedValue, PaymentOptionsValue, PaymentStatus } from '@/src/constants/generalConfigs';
 import { productCardSetup } from '@/src/constants/cardConfigs';
-import { buttonColorsScheme, staticButtonColorScheme } from '@/src/constants/systemColorsPallet';
+import { buttonColorsScheme, staticButtonColorScheme, textColors } from '@/src/constants/systemColorsPallet';
 import StaticButton from '../ui/StaticButton';
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
-import React, { useState } from "react";
+import { FaChevronDown, FaChevronUp, FaRegClock } from 'react-icons/fa';
+import React, { useEffect, useState } from "react";
 import MoreActions from '../modal/MoreActions';
 import { UserOrderDTO } from '@/src/types/userOrderDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 import Modal from '../modal/Modal';
+import Select from '../form/Select';
+import { CgCloseO } from 'react-icons/cg';
+import { FaRegCircleCheck } from 'react-icons/fa6';
+import Error from '../ui/Error';
 
 type Props = {
   userOrder: UserOrderDTO;
@@ -22,12 +26,35 @@ const MyOrderProduct = ({
   userOrder,
 }:Props) => {
 
-  const [moreActions, showMoreActions] = useState(false);
+  const [moreActions, showMoreActions] = useState<boolean>(false);
   const datePutToSale = new Date(userOrder.createdAt).toLocaleDateString("pt-BR");
   const orderDate = new Date(userOrder.orderDate ?? 1).toLocaleDateString("pt-BR");
   const category = CATEGORY_LABEL_MAP[userOrder.category];
 
+  const [error, setError] = useState<string>('');
+
   const [payOrder, showPayOrder] = useState<boolean>(false);
+  const [finishOrderPayment, showFinishOrderPayment] = useState<boolean>(false);
+
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PENDING');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentOptionsValue | null>(null);
+
+  useEffect(() => {
+    if (paymentMethod) {
+      setPaymentStatus('PROCESSING');
+
+      const timerFinalResult = setTimeout(() => {
+
+        const isApproved = Math.random() < 0.75;
+        
+        setPaymentStatus(isApproved ? 'APPROVED' : 'DENIED');
+      }, 3000);
+
+      return () => {
+        clearTimeout(timerFinalResult);
+      };
+    } 
+  }, [paymentMethod]);
   
   return (
     <div className={`relative ${productCardSetup.mainContainer}`}>
@@ -126,19 +153,130 @@ const MyOrderProduct = ({
       <Modal 
       isOpen={payOrder} 
       modalTitle={'Pagar pedido'} 
+      hasXClose
       onCloseModalActions={() => {
+        setError('');
         showPayOrder(false);
+        setPaymentMethod(null);
+        setPaymentStatus('PENDING');
       }}
       >
-        <p>Foi Pedido: 
-          <span>
-            {formatCurrency(userOrder.orderTotalPrice)}
+        <p className='flex gap-1 text-gray'>Foi Pedido: 
+          <span className={textColors.uiMoney}>
+            {formatCurrency(userOrder.price)}
           </span>
           x
-          <span>
+          <span className={textColors.uiStock}>
             {userOrder.orderAmount}
           </span>
         </p>
+        <p className='text-2xl flex gap-1 text-ui-money'>
+          <span className={textColors.gray}>
+            Total:
+          </span>
+          {formatCurrency(userOrder.orderTotalPrice)}
+        </p>
+        <div className='flex -mb-1.75'>
+          <Select 
+            style={{input: `w-[97%] text-sm py-1.5 rounded-3xl ${error ? 'shadow-[0px_0px_5px_red]' : ''}`, container: 'flex-5'}} 
+            selectSetup={'PAYMENT'} 
+            hasTopLabel 
+            label={'Escolha um método de pagamento'}
+            onChange={(e) => {
+              setPaymentMethod(e.target.value as PaymentOptionsValue);
+              setError('');
+            }}
+          />
+          <div className="flex flex-1 items-center gap-1 justify-center mb-1 text-lg font-bold self-end">
+            {paymentStatus === 'PENDING' && (
+              <span className="flex items-center tracking-wider gap-1 text-yellow-dark">
+                <FaRegClock size={20} /> PENDENTE
+              </span>
+            )}
+
+            {paymentStatus === 'PROCESSING' && (
+              <span className="flex items-center gap-1 text-gray animate-pulse">
+                <div className="h-4 w-4 border-2 border-blue-gray border-t-transparent rounded-full animate-spin" />
+                PROCESSANDO...
+              </span>
+            )}
+
+            {paymentStatus === 'APPROVED' && (
+              <>
+              <span className="flex items-center gap-1 text-green">
+                <FaRegCircleCheck  size={20} /> APROVADO
+              </span>          
+              </>
+            )}
+
+            {paymentStatus === 'DENIED' && (
+              <>
+              <span className="flex items-center gap-1 text-red">
+                <CgCloseO size={23} /> REJEITADO
+              </span>        
+              </>
+            )}
+          </div>
+        </div>
+        {error && <Error error={error}/>}
+        <Button 
+          type="button"
+          label={
+            paymentStatus === 'PROCESSING'
+              ? 'Processando...'
+              : 'Prosseguir'
+          }
+          style={`mt-2 ${
+            paymentStatus === 'PROCESSING'
+              ? 'opacity-60 cursor-not-allowed'
+              : ''
+          }`}
+          colorScheme="primary"
+          disabled={
+            paymentStatus !== 'APPROVED' && paymentMethod
+          }
+          onClick={() => {
+            if (!paymentMethod) {
+              setError('Escolher um método de pagamento é obrigatório');
+              return;
+            }
+            showPayOrder(false);
+            showFinishOrderPayment(true);
+          }}
+        />
+      </Modal>
+      
+
+      <Modal 
+        isOpen={finishOrderPayment} 
+        modalTitle={'Finalizar pagamento'} 
+        onCloseModalActions={() => {
+          showFinishOrderPayment(false);
+          showPayOrder(true);
+        }}
+      >
+        <p className='text-secondary-dark'>
+          Tem certeza que quer finalizar o pagamento desse pedido?
+        </p>
+        <p className='text-sm text-yellow-dark'>
+          (!) Você pode cancelar o pedido para obter reembolso caso ainda não tenha sido  aprovado pelo vendedor
+        </p>
+        <div className='flex gap-4'>
+          <Button 
+            style={`flex-1 ${buttonColorsScheme.green}`} 
+            type={'submit'}
+            label='Sim'
+          />
+          <Button 
+            style={`flex-1 ${buttonColorsScheme.red}`}
+            type={'submit'}
+            label='Não'
+            onClick={() => {
+              showFinishOrderPayment(false);
+              showPayOrder(true);
+            }}
+          />
+        </div>
       </Modal>
     </div>
   )
