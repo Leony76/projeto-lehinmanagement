@@ -249,7 +249,7 @@ export const getSellerOrders = async() => {
     orderComission: order.order.total.toNumber(),
     orderCustomerName: order.order.user.name,
     orderStatus: order.order.status,
-    orderPaymentStatus: order.order.payments.at(-1)?.status ?? 'PENDING'
+    orderPaymentStatus: order.order.payments.at(-1)?.status ?? 'PENDING',
   }));
 }
 
@@ -259,7 +259,8 @@ export const getOrdersFromUser = async() => {
   const ordersFromUser = await prisma.orderItem.findMany({
     where: {
       order: {
-        userId: session.user.id
+        userId: session.user.id,
+        status: { not: 'DELETED_BY_USER' }
       }
     },
     include: {
@@ -268,6 +269,7 @@ export const getOrdersFromUser = async() => {
         select: {
           total: true,
           createdAt: true,
+          status: true,
           orderItems: {
             select: {
               quantity: true,
@@ -278,12 +280,24 @@ export const getOrdersFromUser = async() => {
               status: true,
             },
           },
+          orderHistory: {           
+            select: {
+              rejectionJustify: true,
+              changedBy: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
         },
       },
     },
   });
 
   return ordersFromUser.map((item) => ({
+    
+
     id: item.product.id,
     name: item.product.name,
     category: item.product.category,
@@ -293,10 +307,16 @@ export const getOrdersFromUser = async() => {
     createdAt: item.product.createdAt?.toISOString() ?? null,
     price: item.product.price.toNumber(),
 
+    orderId: item.orderId,
     orderTotalPrice: item.order.total.toNumber(),
     orderDate: item.order.createdAt?.toISOString() ?? null,
     orderAmount: item.quantity,
     orderPaymentStatus: item.order.payments.at(-1)?.status ?? 'PENDING',
+    orderStatus: item.order.status,
+    orderRejectionJustify: item.order.orderHistory.at(-1)?.rejectionJustify ?? null,
+    orderRejectedBy: item.order.orderHistory.at(-1)?.rejectionJustify 
+      ? item.order.orderHistory.at(-1)?.changedBy.name 
+      : null
   }));
 }
 

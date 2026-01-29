@@ -6,6 +6,7 @@ const ProductCardsGrid = ({children}:Props) => {
   return (
     <div className="
     grid 
+    items-start
     sm:grid-cols-1 
     md:grid-cols-2
     lg:grid-cols-3 

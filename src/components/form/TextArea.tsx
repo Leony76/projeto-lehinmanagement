@@ -53,10 +53,30 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
             rounded-xl
             ${style?.input ?? ""}
             ${colorScheme === "primary"
-              ? inputColorScheme.primary
-              : inputColorScheme.secondary}
+              ? inputColorScheme.primary + 
+                `
+              hover:scrollbar-thumb-primary-light
+              scrollbar-thumb-primary-middledark 
+                scrollbar-track-transparent
+                hover:scrollbar-track-transparent
+                scrollbar-active-track-transparent
+                scrollbar-active-thumb-primary-light
+                scrollbar-thin
+                `
+              : inputColorScheme.secondary + 
+                `
+              hover:scrollbar-thumb-secondary-light
+              scrollbar-thumb-secondary-middledark 
+              scrollbar-track-secondary-light/20
+                hover:scrollbar-track-transparent
+                scrollbar-active-track-transparent
+                scrollbar-active-thumb-secondary-light
+                scrollbar-thin
+                `
+            }
             ${statusClasses}
-           mb-1.5`}
+            mb-1.5
+          `}
         />
 
         {error && <Error error={error} />}

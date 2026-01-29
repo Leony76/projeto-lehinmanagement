@@ -77,10 +77,12 @@ model Verification {
 model Order {
   id           Int            @id @default(autoincrement())
   userId       String         @map("user_id")
-  status       Status         @default(PENDING)
   total        Decimal
   createdAt    DateTime?      @default(now()) @map("created_at")
   updatedAt    DateTime?      @updatedAt @map("updated_at")
+
+  status       OrderStatus         @default(PENDING)
+
   orderHistory OrderHistory[]
   orderItems   OrderItem[]
   user         User           @relation(fields: [userId], references: [id])
@@ -90,20 +92,20 @@ model Order {
 }
 
 model Product {
-  id          Int         @id @default(autoincrement())
-  sellerId    String      @map("seller_id")
-  name        String
-  price       Decimal
-  description String? 
-  stock       Int
-  isActive    Boolean     @map("is_active")
-  category    Category
-  imageUrl    String      @map("image_url")
-  removeJustify  String?   @map("remove_justify")
-  orderItems  OrderItem[]
-  seller      User        @relation(fields: [sellerId], references: [id])
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime?    @updatedAt @map("updated_at")
+  id             Int          @id @default(autoincrement())
+  sellerId       String       @map("seller_id")
+  name           String
+  price          Decimal
+  description    String? 
+  stock          Int
+  isActive       Boolean      @map("is_active")
+  category       Category
+  imageUrl       String       @map("image_url")
+  removeJustify  String?      @map("remove_justify")
+  orderItems     OrderItem[]
+  seller         User         @relation(fields: [sellerId], references: [id])
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime?    @updatedAt @map("updated_at")
 
   @@map("products")
 }
@@ -113,7 +115,7 @@ model Payment {
   orderId   Int      @map("order_id")
   amount    Decimal
   method    String
-  status    Status
+  status    PaymentStatus
   createdAt DateTime @default(now()) @map("created_at")
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
@@ -136,7 +138,8 @@ model OrderItem {
 model OrderHistory {
   id          Int       @id @default(autoincrement())
   orderId     Int       @map("order_id")
-  status      Status
+  rejectionJustify String?    @map("rejection_justify")
+  status      OrderStatus
   changedById String    @map("changed_by")
   createdAt   DateTime  @default(now()) @map("created_at")
   changedBy   User     @relation(fields: [changedById], references: [id])
@@ -165,12 +168,19 @@ enum Category {
   HANDMADE
 }
 
-enum Status {
+enum PaymentStatus {
+  APPROVED
+  REJECTED
+}
+
+enum OrderStatus {
   PENDING
   APPROVED
   REJECTED
   CANCELED
+  DELETED_BY_USER
 }
+
 enum PaymentMethods {
   CREDIT_CARD
   DEBIT_CARD

@@ -1,22 +1,26 @@
 "use client";
 
-import Image, { StaticImageData } from 'next/image'
+import Image from 'next/image'
 import { IoStar } from 'react-icons/io5';
 import Button from '../form/Button';
-import { CATEGORY_LABEL_MAP, CategoryTranslatedValue, PaymentOptionsValue, PaymentStatus } from '@/src/constants/generalConfigs';
+import { CATEGORY_LABEL_MAP, PaymentOptionsValue, PaymentStatus } from '@/src/constants/generalConfigs';
 import { productCardSetup } from '@/src/constants/cardConfigs';
 import { buttonColorsScheme, staticButtonColorScheme, textColors } from '@/src/constants/systemColorsPallet';
 import StaticButton from '../ui/StaticButton';
 import { FaChevronDown, FaChevronUp, FaRegClock } from 'react-icons/fa';
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import MoreActions from '../modal/MoreActions';
 import { UserOrderDTO } from '@/src/types/userOrderDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 import Modal from '../modal/Modal';
 import Select from '../form/Select';
 import { CgCloseO } from 'react-icons/cg';
-import { FaRegCircleCheck } from 'react-icons/fa6';
+import { FaCheck, FaRegCircleCheck } from 'react-icons/fa6';
 import Error from '../ui/Error';
+import { payForPeddingOrderPayment, removeOrderFromUserOrders } from '@/src/actions/productActions';
+import { useToast } from '@/src/contexts/ToastContext';
+import { useRouter } from 'next/navigation';
+import { motion } from "framer-motion";
 
 type Props = {
   userOrder: UserOrderDTO;
@@ -25,19 +29,66 @@ type Props = {
 const MyOrderProduct = ({
   userOrder,
 }:Props) => {
+  const { showToast } = useToast();
 
   const [moreActions, showMoreActions] = useState<boolean>(false);
+  const [payOrder, showPayOrder] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [finishOrderPayment, showFinishOrderPayment] = useState<boolean>(false);
+  const [rejectionJustify, showRejectionJustify] = useState<boolean>(false);
+  const [removeOrder, showRemoveOrder] = useState<boolean>(false);
+
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
   const datePutToSale = new Date(userOrder.createdAt).toLocaleDateString("pt-BR");
   const orderDate = new Date(userOrder.orderDate ?? 1).toLocaleDateString("pt-BR");
   const category = CATEGORY_LABEL_MAP[userOrder.category];
 
   const [error, setError] = useState<string>('');
 
-  const [payOrder, showPayOrder] = useState<boolean>(false);
-  const [finishOrderPayment, showFinishOrderPayment] = useState<boolean>(false);
-
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PENDING');
   const [paymentMethod, setPaymentMethod] = useState<PaymentOptionsValue | null>(null);
+
+  const handlePayOrder = async() => {   
+    if (loading || !paymentMethod) return;
+    setLoading(true);
+
+    try {
+      await payForPeddingOrderPayment(
+        paymentMethod,
+        userOrder.orderTotalPrice,
+        userOrder.orderId,
+      );
+
+      showToast('Pedido pago com sucesso', 'success');
+      showFinishOrderPayment(false);
+    } catch (err:unknown) {
+      showToast('Ocoreeu um erro: ' + err, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleRemoveOrder = async () => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      await removeOrderFromUserOrders(userOrder.orderId);
+
+      startTransition(() => {
+        router.refresh(); 
+      });
+
+      showToast('Pedido removido com sucesso', 'success');
+      showRemoveOrder(false);
+    } catch (err: unknown) {
+      showToast('Houve um erro: ' + err, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (paymentMethod) {
@@ -57,7 +108,19 @@ const MyOrderProduct = ({
   }, [paymentMethod]);
   
   return (
-    <div className={`relative ${productCardSetup.mainContainer}`}>
+    <motion.div
+      layout 
+      initial={{ opacity: 1, scale: 1 }}
+      exit={{ 
+        opacity: 0, 
+        scale: 2, 
+        filter: "blur(10px)",
+        transition: { duration: 0.25 } 
+      }}
+      className={`relative ${productCardSetup.mainContainer} ${
+        isPending ? "opacity-25 grayscale" : "opacity-100"
+      }`}
+    >
       <div className="relative aspect-square w-full">
         <Image 
           src={userOrder.imageUrl} 
@@ -67,9 +130,19 @@ const MyOrderProduct = ({
           onClick={() => showMoreActions(false)}
         />
       </div>
-    {userOrder.orderPaymentStatus === 'PENDING' ? (
+    {(userOrder.orderPaymentStatus === 'PENDING') ? (
       <StaticButton 
         value={'Pagamento pendente'} 
+        style={`absolute top-3 left-3 ${staticButtonColorScheme.red}`}
+      />
+    ) : (userOrder.orderStatus === 'APPROVED') ? (
+      <StaticButton 
+        value={'Aprovado'} 
+        style={`absolute top-3 left-3 ${staticButtonColorScheme.green}`}
+      />
+    ) : (userOrder.orderStatus === 'REJECTED') ? (
+      <StaticButton 
+        value={'Rejeitado'} 
         style={`absolute top-3 left-3 ${staticButtonColorScheme.red}`}
       />
     ) : (
@@ -112,12 +185,19 @@ const MyOrderProduct = ({
           </h3>
         </div>
         <div className='flex gap-2 mt-1'>
-          <Button 
-            type='button' 
-            label='Pagar' 
-            style={`px-5 flex-1 text-xl ${buttonColorsScheme.green}`}
-            onClick={() => showPayOrder(true)}
-          />
+          {(userOrder.orderPaymentStatus === 'APPROVED') ? (
+            <span className='flex py-1.5 items-center gap-1 justify-center w-full text-xl text-green'>
+              <FaCheck size={24}/>
+              Pago
+            </span>
+          ) : (
+            <Button 
+              type='button' 
+              label='Pagar' 
+              style={`px-5 flex-1 text-xl ${buttonColorsScheme.green}`}
+              onClick={() => showPayOrder(true)}
+            />
+          )}
 
           <Button
             type='button'
@@ -137,18 +217,51 @@ const MyOrderProduct = ({
 
       {/* ⇊ MODALS ⇊ */}
 
-      <MoreActions direction='right' moreActions={moreActions} close={() => showMoreActions(false)}>
+      <MoreActions 
+      style={{container: 'mt-2'}} 
+      direction='right' 
+      moreActions={moreActions} 
+      close={() => showMoreActions(false)}
+      >
+      {(userOrder.orderStatus === 'REJECTED') ? (
+        <>
+        <Button 
+          type='button' 
+          label="Ver Justificativa" 
+          style={`px-5 ${buttonColorsScheme.yellow}`}
+          onClick={() => showRejectionJustify(true)}
+        />
+        <Button 
+          type='button' 
+          label="Remover pedido" 
+          style={`px-5 ${buttonColorsScheme.red}`}
+          onClick={() => showRemoveOrder(true)}
+        />
+        </>
+      ) : (userOrder.orderStatus === 'APPROVED') ? (
+        <>
+        <Button 
+          type='button' 
+          label="Remover do histórico" 
+          style={`px-5 ${buttonColorsScheme.red}`}
+          onClick={() => showRemoveOrder(true)}
+        />
+        <Button 
+          type='button' 
+          label="Fazer outro pedido" 
+          style={`px-5 ${buttonColorsScheme.green}`}
+        />
+        </>
+      ) : (
         <Button 
           type='button' 
           label="Cancelar pedido" 
           style={`px-5 ${buttonColorsScheme.red}`}
+          onClick={() => showRemoveOrder(true)}
         />
-        <Button 
-          type='button' 
-          label="Cancelar pedido" 
-          style={`px-5 ${buttonColorsScheme.red}`}
-        />
+      )}
       </MoreActions>
+
 
       <Modal 
       isOpen={payOrder} 
@@ -158,7 +271,7 @@ const MyOrderProduct = ({
         setError('');
         showPayOrder(false);
         setPaymentMethod(null);
-        setPaymentStatus('PENDING');
+        setPaymentStatus(!paymentMethod ? 'PENDING' : paymentStatus);
       }}
       >
         <p className='flex gap-1 text-gray'>Foi Pedido: 
@@ -224,29 +337,32 @@ const MyOrderProduct = ({
           label={
             paymentStatus === 'PROCESSING'
               ? 'Processando...'
-              : 'Prosseguir'
+              : paymentStatus === 'DENIED' 
+                ? 'Não é possível prosseguir' 
+                : 'Prosseguir'
           }
           style={`mt-2 ${
             paymentStatus === 'PROCESSING'
               ? 'opacity-60 cursor-not-allowed'
-              : ''
+              : paymentStatus === 'DENIED'
+                ? 'bg-red-100 text-red border-red pointer-events-none'
+                : ''
           }`}
           colorScheme="primary"
           disabled={
-            paymentStatus !== 'APPROVED' && paymentMethod
+            !!(paymentStatus !== 'APPROVED' && paymentMethod)
           }
           onClick={() => {
             if (!paymentMethod) {
               setError('Escolher um método de pagamento é obrigatório');
               return;
-            }
+            } 
             showPayOrder(false);
             showFinishOrderPayment(true);
           }}
         />
       </Modal>
       
-
       <Modal 
         isOpen={finishOrderPayment} 
         modalTitle={'Finalizar pagamento'} 
@@ -266,25 +382,75 @@ const MyOrderProduct = ({
             style={`flex-1 ${buttonColorsScheme.green}`} 
             type={'submit'}
             label='Sim'
+            loading={loading}
+            loadingLabel='Processando'
+            onClick={handlePayOrder}
           />
           <Button 
             style={`flex-1 ${buttonColorsScheme.red}`}
             type={'submit'}
             label='Não'
             onClick={() => {
+              if (loading) return;
               showFinishOrderPayment(false);
-              showPayOrder(true);
+              showPayOrder(true);            
             }}
           />
         </div>
       </Modal>
-    </div>
+
+      <Modal 
+      isOpen={rejectionJustify} 
+      modalTitle={'Justificativa de rejeição'} 
+      onCloseModalActions={() => {
+        showRejectionJustify(false);
+      }}
+      >
+        <div>
+          <h3 className='text-sm text-gray'>Autor(a) da justificativa</h3>
+          <h4 className='text-xl text-cyan italic'>~ {userOrder.orderRejectedBy}</h4>
+        </div>
+        <div>
+          <label className='text-secondary-dark'>Justificativa:</label>
+          <p className='text-primary-middledark bg-primary-ultralight/20 p-1 pl-2 rounded-md'>{userOrder.orderRejectionJustify}</p>
+        </div>
+
+        <Button
+          onClick={() => showRejectionJustify(false)}
+          label='Voltar'
+          type='button'
+        />
+      </Modal>
+
+      <Modal 
+      isOpen={removeOrder} 
+      modalTitle={'Remover pedido'} 
+      onCloseModalActions={() => {
+        showRemoveOrder(false);
+      }}
+      >
+        <p className='text-secondary-dark'>Tem certeza que deseja remover esse pedido ?</p>
+        <p className='text-sm text-yellow-dark'>(!) Essa ação é irrervesível</p>
+        <div className='flex gap-4'>
+          <Button 
+            style={`flex-1 ${buttonColorsScheme.green}`} 
+            type={'submit'}
+            label='Sim'
+            loading={loading}
+            loadingLabel='Processando'
+            onClick={handleRemoveOrder}
+          />
+          <Button 
+            style={`flex-1 ${buttonColorsScheme.red}`}
+            type={'submit'}
+            label='Não'     
+            onClick={() => showRemoveOrder(false)}    
+          />
+        </div>
+      </Modal>
+    </motion.div>
   )
 }
 
-export default MyOrderProduct
+export default MyOrderProduct;
 
-{/* <StaticButton style={`flex-1 text-xl mt-1 ${staticButtonColorScheme.green}`} value={'Aprovado'}/> */}
-{/* <StaticButton style={`flex-1 text-xl mt-1 ${staticButtonColorScheme.yellow}`} value={'Pendente'}/>
-<StaticButton style={`flex-1 text-xl mt-1 ${staticButtonColorScheme.red}`} value={'Cancelado'}/>
-<StaticButton style={`flex-1 text-xl mt-1 ${staticButtonColorScheme.red}`} value={'Rejeitado'}/> */}

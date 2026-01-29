@@ -1,5 +1,4 @@
-import { Category } from "@prisma/client";
-import { OrderStatus } from "../constants/generalConfigs";
+import { Category, OrderStatus } from "@prisma/client";
 
 export type OrderProductDTO = {
   id: number;
@@ -16,6 +15,6 @@ export type OrderProductDTO = {
   orderedAmount: number;
   orderComission: number;
   orderCustomerName: string | null;
-  orderStatus: OrderStatus;
   orderPaymentStatus: OrderStatus;
+  orderStatus: OrderStatus;
 };

@@ -53,8 +53,8 @@ const OrderProduct = ({
       await orderProduct(
         selectedProduct.id,
         totalOrderPrice,
-        amountTobeOrdered ?? 1, 
-        paymentStatus as OrderStatus,     
+        amountTobeOrdered ?? 1,   
+        paymentMethod,
       );
 
       setPaymentStatus('PENDING');
@@ -97,7 +97,7 @@ const OrderProduct = ({
       modalTitle='Pedir produto' 
       onCloseModalActions={() => {
         showOrderProductMenu(false);
-        setPaymentStatus('PENDING');
+        setPaymentStatus(!paymentMethod ? 'PENDING' : paymentStatus);
         setAmountTobeOrdered(null);
         setPaymentMethod(null);
       }}
@@ -200,24 +200,44 @@ const OrderProduct = ({
         </div>
       </div>
       <Button 
-        type='button'
-        style='mt-2 text-lg' label='Prosseguir' 
-        colorScheme='primary'
-        onClick={() => {
-          showConfirmModal(amountTobeOrdered ? true : false); 
-          showOrderProductMenu(amountTobeOrdered ? false : true);
-          setError(!amountTobeOrdered ? 'Insira a quantidade que deseja pedir' : '');
-        }} 
+          type="button"
+          label={
+            paymentStatus === 'PROCESSING'
+              ? 'Processando...'
+              : paymentStatus === 'DENIED' 
+                ? 'Não é possível prosseguir' 
+                : 'Prosseguir'
+          }
+          style={`mt-2 ${
+            paymentStatus === 'PROCESSING'
+              ? 'opacity-60 cursor-not-allowed'
+              : paymentStatus === 'DENIED'
+                ? 'bg-red-100 text-red border-red pointer-events-none'
+                : ''
+          }`}
+          colorScheme="primary"
+          disabled={
+            !!(paymentStatus !== 'APPROVED' && paymentMethod)
+          }
+          onClick={() => {
+            if (!amountTobeOrdered) {
+              setError('Insira a quantidade que deseja pedir');
+              return;
+            } 
+            showOrderProductMenu(false);
+            showConfirmModal(true);
+          }}
       />
     </Modal>
 
     <Modal    
-      isOpen={confirmModal} 
-      modalTitle={'Confirmar pedido'} 
-      onCloseModalActions={() => {
-        showConfirmModal(false);
-        showOrderProductMenu(true);
-      }} 
+    isOpen={confirmModal} 
+    modalTitle={'Confirmar pedido'} 
+    onCloseModalActions={() => {
+      showConfirmModal(false);
+      showOrderProductMenu(true);
+      setPaymentMethod(null);
+    }} 
     >
       <p className={textColors.secondaryDark}>
         Tem certeza que deseja pedir <span className={textColors.uiStock}>{amountTobeOrdered}</span> {(amountTobeOrdered ?? 1) > 1 ? 'unidades' : 'unidade'} desse produto por <span className={textColors.uiMoney}>{formatCurrency(totalOrderPrice)}</span> ? 

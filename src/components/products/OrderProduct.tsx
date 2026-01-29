@@ -1,11 +1,11 @@
 "use client";
 
 import Image from 'next/image'
-import { IoStar } from 'react-icons/io5';
+import { IoClose, IoStar } from 'react-icons/io5';
 import Button from '../form/Button';
 import { productCardSetup } from '@/src/constants/cardConfigs';
 import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
-import { FaChevronDown } from 'react-icons/fa';
+import { FaCheck, FaChevronDown } from 'react-icons/fa';
 import MoreActions from '../modal/MoreActions';
 import { useState } from 'react';
 import { CATEGORY_LABEL_MAP } from '@/src/constants/generalConfigs';
@@ -18,6 +18,7 @@ import Error from '../ui/Error';
 import { useToast } from '@/src/contexts/ToastContext';
 import { acceptRejectProductOrder } from '@/src/actions/productActions';
 import { MdOutlinePending } from 'react-icons/md';
+import { motion } from 'framer-motion';
 
 type Props = {
   order: OrderProductDTO;
@@ -34,7 +35,7 @@ const OrderProduct = ({order}:Props) => {
   const category = CATEGORY_LABEL_MAP[order.category];
 
   const [acceptanceOrderConfirm, showAcceptanceOrderConfirm] = useState<boolean>(false);
-  const [rejectionOrderConfirm, showRejectionOrderConfirm] = useState<boolean>(false);
+  const [rejectionJustifyConfirm, showRejectionJustifyConfirm] = useState<boolean>(false);
 
   const [loading, setLoading] = useState<{
     rejecting: boolean;
@@ -45,16 +46,20 @@ const OrderProduct = ({order}:Props) => {
   });
 
   const [error, setError] = useState<string>('');
-  const [rejectionOrder, setRejectionOrder] = useState<string>('');
+  const [rejectionJustify, setRejectionJustify] = useState<string>('');
   
-
   const handleAcceptOrder = async() => {
 
     if (loading.accepting) return;
     setLoading(prev => ({...prev, accepting: true}));
 
     try {
-      await acceptRejectProductOrder('APPROVED', order.orderId);
+      await acceptRejectProductOrder(
+        'APPROVED',
+        order.orderId,
+        order.id,
+        order.orderedAmount,
+      );
 
       showToast('Pedido aprovado com sucesso');
       showAcceptanceOrderConfirm(false);
@@ -65,9 +70,9 @@ const OrderProduct = ({order}:Props) => {
     }
   }
 
-  const handleRejectOrder = () => {
+  const handleRejectOrder = async() => {
 
-    if (!rejectionOrder) {
+    if (!rejectionJustify) {
       setError('A justificativa de rejeição é obrigatória');
       setLoading(prev => ({...prev, rejecting: false}));
       return;
@@ -76,10 +81,37 @@ const OrderProduct = ({order}:Props) => {
     if (loading.rejecting)return;
     setLoading(prev => ({...prev, rejecting: true}));
 
+    try {
+      await acceptRejectProductOrder(
+        'REJECTED',
+        order.orderId,
+        order.id,
+        order.orderedAmount,
+        rejectionJustify
+      );
+
+      showToast('Pedido rejeitado com sucesso');
+      showRejectionJustifyConfirm(false);
+    } catch (err:unknown) {
+      showToast('Houve um erro: ' + err, 'error');
+    } finally {
+      setLoading(prev => ({...prev, rejecting: false}));
+    }
   }
 
   return (
-    <div className={`relative ${productCardSetup.mainContainer}`}>
+    <motion.div
+      layout 
+      initial={{ opacity: 1, scale: 1 }}
+      className={`relative ${productCardSetup.mainContainer}`}
+      exit={{ 
+        opacity: 0, 
+        scale: 2, 
+        filter: "blur(10px)",
+        transition: { duration: 0.25 } 
+      }}
+      // ${isPending ? "opacity-25 grayscale" : "opacity-100"}
+    >
       <div className="relative aspect-square w-full">
         <Image 
           src={order.imageUrl} 
@@ -92,6 +124,10 @@ const OrderProduct = ({order}:Props) => {
     {order.orderPaymentStatus === 'PENDING' ? (
       <div className='absolute top-3 left-3 text-red-dark bg-red-100 w-fit py-1 px-3 rounded-2xl border border-red'>
         Pagamento pendente
+      </div>
+    ) : order.orderStatus !== 'PENDING' ? (
+      <div className='absolute top-3 left-3 text-green bg-green-100 w-fit py-1 px-3 rounded-2xl border border-green'>
+        Analisado
       </div>
     ) : (
       <div className='absolute top-3 left-3 text-yellow-dark bg-yellow-100 w-fit py-1 px-3 rounded-2xl border border-yellow'>
@@ -131,12 +167,14 @@ const OrderProduct = ({order}:Props) => {
                 {order.orderedAmount}
               </span>
             </h4>
+          {(order.orderStatus === 'REJECTED' || order.orderStatus === 'PENDING') && (
             <h4 className='text-gray flex gap-1'>
               Estoque se aceito: 
               <span className='text-ui-stock'>
                 {stockIfOrderAccepted}
               </span>
             </h4>
+          )}
           </div>
           <h3 className='text-gray text-xl w-full lg:text-lg md:text-xl sm:text-2xl sm:max-w-87.5 max-w-68.5 flex gap-1'>
             Comissão: 
@@ -144,44 +182,17 @@ const OrderProduct = ({order}:Props) => {
               {formatCurrency(order.orderComission)}
             </span>
           </h3>
+
+        {(order.orderPaymentStatus === 'APPROVED' && order.orderStatus !== 'APPROVED') && (
+          <span className='flex py-1.5 items-center gap-1 bg-linear-to-r from-transparent via-green/10 to-transparent justify-center w-full text-xl text-green'>
+            <FaCheck size={24}/>
+            Pago
+          </span>
+        )}
+        
         </div>
         <div className='flex gap-2 mt-1'>
-        {(order.orderPaymentStatus === 'PENDING') ? (
-          <>
-         <Button
-            type='button'
-            onClick={() => showMoreActions(!moreActions)}
-            style={`px-5 flex items-center justify-center ${
-              moreActions
-                ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!'
-                : buttonColorsScheme.gray
-            }`}
-            icon={FaChevronDown}
-            iconStyle={`transition-transform duration-300 ${
-              moreActions ? 'rotate-180' : 'rotate-0'
-            }`}
-          />
-          <span className='flex items-center gap-1 justify-center w-full text-xl text-yellow-dark'>
-            <MdOutlinePending size={24}/>
-            Pendente
-          </span>
-          </>
-        ) : ((order.orderPaymentStatus === 'APPROVED') && (order.orderStatus === 'PENDING')) ? (
-          <>
-          <Button 
-            type='button'
-            style={`px-5 flex-1 text-xl ${buttonColorsScheme.green}`} 
-            label='Aceitar'
-            onClick={() => showAcceptanceOrderConfirm(true)}
-          />
-          <Button 
-            type='button'
-            style={`px-5 flex-1 text-xl ${buttonColorsScheme.red}`} 
-            label='Rejeitar'
-            onClick={() => showRejectionOrderConfirm(true)}
-          />
-          </>
-        ) : (order.orderStatus === 'APPROVED') ? (
+        {order.orderStatus === 'DELETED_BY_USER' && order.orderPaymentStatus === 'APPROVED' ? (
           <>
           <Button
             type='button'
@@ -196,10 +207,84 @@ const OrderProduct = ({order}:Props) => {
               moreActions ? 'rotate-180' : 'rotate-0'
             }`}
           />
-          <Button 
+          <span className='flex py-1.5 items-center gap-1 justify-center w-full text-xl text-green'>
+            <FaCheck size={24}/>
+            Aprovado
+          </span>
+          </>
+        ) : order.orderStatus === 'DELETED_BY_USER' && order.orderPaymentStatus !== 'APPROVED' ? (
+          <>
+          <Button
             type='button'
-            style={`px-5 flex-1 text-xl ${buttonColorsScheme.green}`} 
-            label='Aprovado'
+            onClick={() => showMoreActions(!moreActions)}
+            style={`px-5 flex items-center justify-center ${
+              moreActions
+                ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!'
+                : buttonColorsScheme.gray
+            }`}
+            icon={FaChevronDown}
+            iconStyle={`transition-transform duration-300 ${
+              moreActions ? 'rotate-180' : 'rotate-0'
+            }`}
+          />
+          <span className='flex items-center py-1.5 gap-1 justify-center w-full text-xl text-red-dark'>
+            <IoClose size={30}/>
+            Cancelado
+          </span>
+          </>
+        ) : order.orderStatus === 'APPROVED' ? (
+          <>
+          <Button
+            type='button'
+            onClick={() => showMoreActions(!moreActions)}
+            style={`px-5 flex items-center justify-center ${
+              moreActions
+                ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!'
+                : buttonColorsScheme.gray
+            }`}
+            icon={FaChevronDown}
+            iconStyle={`transition-transform duration-300 ${
+              moreActions ? 'rotate-180' : 'rotate-0'
+            }`}
+          />
+          <span className='flex py-1.5 items-center gap-1 justify-center w-full text-xl text-green'>
+            <FaCheck size={24}/>
+            Aprovado
+          </span>
+          </>
+        ) : order.orderStatus === 'REJECTED' ? ( 
+          <>
+          <Button
+            type='button'
+            onClick={() => showMoreActions(!moreActions)}
+            style={`px-5 flex items-center justify-center ${
+              moreActions
+                ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!'
+                : buttonColorsScheme.gray
+            }`}
+            icon={FaChevronDown}
+            iconStyle={`transition-transform duration-300 ${
+              moreActions ? 'rotate-180' : 'rotate-0'
+            }`}
+          />
+          <span className='flex items-center py-1.5 gap-1 justify-center w-full text-xl text-red-dark'>
+            <IoClose size={30}/>
+            Rejeitado
+          </span>
+          </>
+        ) : order.orderPaymentStatus === 'APPROVED' && order.orderStatus === 'PENDING' ? (
+          <>
+           <Button
+            type='button'
+            style={`px-5 flex-1 text-xl ${buttonColorsScheme.green}`}
+            label='Aceitar'
+            onClick={() => showAcceptanceOrderConfirm(true)}
+          />
+          <Button
+            type='button'
+            style={`px-5 flex-1 text-xl ${buttonColorsScheme.red}`}
+            label='Rejeitar'
+            onClick={() => showRejectionJustifyConfirm(true)}
           />
           </>
         ) : (
@@ -217,9 +302,9 @@ const OrderProduct = ({order}:Props) => {
               moreActions ? 'rotate-180' : 'rotate-0'
             }`}
           />
-          <span className='flex items-center gap-1 justify-center w-full text-xl text-red-dark'>
+          <span className='flex items-center py-1.5 gap-1 justify-center w-full text-xl text-yellow-dark'>
             <MdOutlinePending size={24}/>
-            Rejeitado
+            Pendente
           </span>
           </>
         )}
@@ -277,10 +362,10 @@ const OrderProduct = ({order}:Props) => {
       </Modal>
 
       <Modal 
-      isOpen={rejectionOrderConfirm} 
+      isOpen={rejectionJustifyConfirm} 
       modalTitle={'Confirmar ação'}
       onCloseModalActions={() => {
-        showRejectionOrderConfirm(false);
+        showRejectionJustifyConfirm(false);
         setError('');
       }}
       >
@@ -291,11 +376,12 @@ const OrderProduct = ({order}:Props) => {
           } desse produto pela comissão de <span className='text-ui-money'>{formatCurrency(order.orderComission)}</span> ?
         </p>
         <TextArea 
-          style={{input: `mb-[-2px] ${error ? 'shadow-[0px_0px_5px_red]' : ''}`}}
+          style={{input: `mb-[-2px] h-30 ${error ? 'shadow-[0px_0px_5px_red]' : ''}`}}
+          maxLength={1000}
           placeholder={'Justificativa'}
           label='Justificativa da rejeição'
           onChange={(e) => {
-            setRejectionOrder(e.target.value);
+            setRejectionJustify(e.target.value);
             setError('');
           }}
         />
@@ -308,6 +394,9 @@ const OrderProduct = ({order}:Props) => {
             type='button'
             style={`px-5 flex-1 text-xl ${buttonColorsScheme.green}`} 
             label='Sim'
+            loading={loading.rejecting}
+            spinnerColor='text-green'
+            loadingLabel='Processando'
             onClick={handleRejectOrder}
           />
           <Button 
@@ -315,13 +404,13 @@ const OrderProduct = ({order}:Props) => {
             style={`px-5 flex-1 text-xl ${buttonColorsScheme.red}`} 
             label='Não'
             onClick={() => {
-              showRejectionOrderConfirm(false);
+              showRejectionJustifyConfirm(false);
               setError('');
             }}
           />
         </div>
       </Modal>
-    </div>
+    </motion.div>
   )
 }
 

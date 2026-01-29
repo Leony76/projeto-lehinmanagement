@@ -75,7 +75,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             text-center py-1 cursor-pointer mb-1
           `}
         >
-          <option value="">
+          <option value="" selected disabled>
             {hasTopLabel ? "-- Selecione --" : label}
           </option>
 
