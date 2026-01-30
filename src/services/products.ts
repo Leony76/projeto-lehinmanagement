@@ -35,28 +35,42 @@ export const getProducts = async() => {
 }
 
 export const getUserProducts = async(userId: string) => {
-  const orderItems = await prisma.orderItem.findMany({
+  const items = await prisma.orderItem.findMany({
     where: {
       order: {
         status: 'APPROVED',
         userId
       }
     },
-    include: {
-      product: true
+    select: {
+      product: true,
+      order: {
+        include: {
+          orderItems: true,
+          orderHistory: {
+            select: {
+              createdAt: true,
+            }
+          }
+        },
+      },
     },
     orderBy: { product: { id: 'desc' } },
   });
 
-  return orderItems.map((orderItem) => ({
-    id: orderItem.product.id,
-    name: orderItem.product.name,
-    category: orderItem.product.category,
-    description: orderItem.product.description,
-    imageUrl: orderItem.product.imageUrl,
-    stock: orderItem.product.stock,
-    createdAt: orderItem.product.createdAt?.toISOString() ?? null,
-    price: orderItem.product.price.toNumber(),
+  return items.map((item) => ({
+    id: item.product.id,
+    name: item.product.name,
+    category: item.product.category,
+    description: item.product.description,
+    imageUrl: item.product.imageUrl,
+    stock: item.product.stock,
+    createdAt: item.product.createdAt?.toISOString() ?? null,
+    price: item.product.price.toNumber(),
+
+    orderedAmount: item.order.orderItems.at(-1)?.quantity,
+    orderTotalPrice: item.order.total.toNumber(),
+    orderAcceptedAt: item.order.orderHistory.at(-1)?.createdAt.toISOString() ?? null
   }))
 }
 

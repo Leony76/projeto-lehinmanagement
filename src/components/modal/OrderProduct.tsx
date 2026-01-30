@@ -87,8 +87,6 @@ const OrderProduct = ({
     } 
   }, [paymentMethod]);
 
-  lockScrollY(confirmModal);
-
   return (
     <>
     <Modal 

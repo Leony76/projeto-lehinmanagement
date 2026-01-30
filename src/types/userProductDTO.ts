@@ -9,5 +9,9 @@ export type userProductDTO = {
   stock: number;
   imageUrl: string;
   createdAt: string;
+
+  orderedAmount: number | null;
+  orderTotalPrice: number;
+  orderAcceptedAt: string | null;
 };
 
