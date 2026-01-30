@@ -1,14 +1,14 @@
 "use client";
 
 import Image from 'next/image'
-import { IoStar } from 'react-icons/io5';
+import { IoClose, IoStar } from 'react-icons/io5';
 import Button from '../form/Button';
 import { CATEGORY_LABEL_MAP, PaymentOptionsValue, PaymentStatus } from '@/src/constants/generalConfigs';
 import { productCardSetup } from '@/src/constants/cardConfigs';
 import { buttonColorsScheme, staticButtonColorScheme, textColors } from '@/src/constants/systemColorsPallet';
 import StaticButton from '../ui/StaticButton';
-import { FaChevronDown, FaChevronUp, FaRegClock } from 'react-icons/fa';
-import React, { useEffect, useState, useTransition } from "react";
+import { FaChevronDown, FaRegClock } from 'react-icons/fa';
+import { useEffect, useState, useTransition } from "react";
 import MoreActions from '../modal/MoreActions';
 import { UserOrderDTO } from '@/src/types/userOrderDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
@@ -21,6 +21,8 @@ import { payForPeddingOrderPayment, removeOrderFromUserOrders } from '@/src/acti
 import { useToast } from '@/src/contexts/ToastContext';
 import { useRouter } from 'next/navigation';
 import { motion } from "framer-motion";
+import { useUserStore } from '@/src/store/useUserStore';
+import OrderProduct from '../modal/OrderProduct';
 
 type Props = {
   userOrder: UserOrderDTO;
@@ -31,12 +33,16 @@ const MyOrderProduct = ({
 }:Props) => {
   const { showToast } = useToast();
 
+  const userRole = useUserStore((stats) => stats.user?.role);
+
   const [moreActions, showMoreActions] = useState<boolean>(false);
   const [payOrder, showPayOrder] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [finishOrderPayment, showFinishOrderPayment] = useState<boolean>(false);
   const [rejectionJustify, showRejectionJustify] = useState<boolean>(false);
   const [removeOrder, showRemoveOrder] = useState<boolean>(false);
+  const [cancelOrder, showCancelOrder] = useState<boolean>(false);
+  const [makeAnotherOrder, showMakeAnotherOrder] = useState<boolean>(false);
 
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -71,18 +77,28 @@ const MyOrderProduct = ({
   }
 
   const handleRemoveOrder = async () => {
-    if (loading) return;
+    if (loading || !userRole) return;
     setLoading(true);
 
     try {
-      await removeOrderFromUserOrders(userOrder.orderId);
+      await removeOrderFromUserOrders(
+        userOrder.orderId,
+        userOrder.orderStatus,
+        userRole,
+        cancelOrder,
+      );
 
       startTransition(() => {
         router.refresh(); 
       });
 
-      showToast('Pedido removido com sucesso', 'success');
-      showRemoveOrder(false);
+      if (cancelOrder) {
+        showToast('Pedido cancelado com sucesso', 'success');
+        showCancelOrder(false);
+      } else {
+        showToast('Pedido removido com sucesso', 'success');
+        showRemoveOrder(false);
+      }
     } catch (err: unknown) {
       showToast('Houve um erro: ' + err, 'error');
     } finally {
@@ -111,15 +127,13 @@ const MyOrderProduct = ({
     <motion.div
       layout 
       initial={{ opacity: 1, scale: 1 }}
+      className={`relative ${productCardSetup.mainContainer}`}
       exit={{ 
         opacity: 0, 
         scale: 2, 
         filter: "blur(10px)",
         transition: { duration: 0.25 } 
       }}
-      className={`relative ${productCardSetup.mainContainer} ${
-        isPending ? "opacity-25 grayscale" : "opacity-100"
-      }`}
     >
       <div className="relative aspect-square w-full">
         <Image 
@@ -130,7 +144,7 @@ const MyOrderProduct = ({
           onClick={() => showMoreActions(false)}
         />
       </div>
-    {(userOrder.orderPaymentStatus === 'PENDING') ? (
+    {(userOrder.orderPaymentStatus !== 'APPROVED' && userOrder.orderStatus !== 'CANCELED') ? (
       <StaticButton 
         value={'Pagamento pendente'} 
         style={`absolute top-3 left-3 ${staticButtonColorScheme.red}`}
@@ -143,6 +157,11 @@ const MyOrderProduct = ({
     ) : (userOrder.orderStatus === 'REJECTED') ? (
       <StaticButton 
         value={'Rejeitado'} 
+        style={`absolute top-3 left-3 ${staticButtonColorScheme.red}`}
+      />
+    ) : (userOrder.orderStatus === 'CANCELED') ? (
+      <StaticButton 
+        value={'Cancelado por você'} 
         style={`absolute top-3 left-3 ${staticButtonColorScheme.red}`}
       />
     ) : (
@@ -185,12 +204,27 @@ const MyOrderProduct = ({
           </h3>
         </div>
         <div className='flex gap-2 mt-1'>
-          {(userOrder.orderPaymentStatus === 'APPROVED') ? (
+          {(userOrder.orderPaymentStatus === 'APPROVED' && userOrder.orderStatus !== 'CANCELED' && userOrder.orderStatus === 'PENDING') ? (
             <span className='flex py-1.5 items-center gap-1 justify-center w-full text-xl text-green'>
               <FaCheck size={24}/>
               Pago
             </span>
-          ) : (
+          ) : (userOrder.orderStatus === 'CANCELED') ? (
+            <span className='flex py-1.5 items-center gap-1 justify-center w-full text-xl text-red'>
+              <IoClose size={30}/>
+              Cancelado
+            </span>
+          ) : (userOrder.orderStatus === 'APPROVED') ? (
+            <span className='flex py-1.5 items-center gap-1 justify-center w-full text-xl text-green'>
+              <FaCheck size={24}/>
+              Aprovado
+            </span>
+          ) : (userOrder.orderStatus === 'REJECTED') ? (
+            <span className='flex py-1.5 items-center gap-1 justify-center w-full text-xl text-red'>
+              <IoClose size={30}/>
+              Rejeitado
+            </span>
+          ) : (userOrder.orderPaymentStatus !== 'APPROVED' && userOrder.orderStatus === 'PENDING') && (
             <Button 
               type='button' 
               label='Pagar' 
@@ -250,15 +284,25 @@ const MyOrderProduct = ({
           type='button' 
           label="Fazer outro pedido" 
           style={`px-5 ${buttonColorsScheme.green}`}
+          onClick={() => showMakeAnotherOrder(true)}
         />
         </>
       ) : (
+        userOrder.orderStatus === 'CANCELED' ? (
+        <Button 
+          type='button' 
+          label="Remover pedido" 
+          style={`px-5 ${buttonColorsScheme.red}`}
+          onClick={() => showRemoveOrder(true)}
+        />
+        ) : (
         <Button 
           type='button' 
           label="Cancelar pedido" 
           style={`px-5 ${buttonColorsScheme.red}`}
-          onClick={() => showRemoveOrder(true)}
+          onClick={() => showCancelOrder(true)}
         />
+        )
       )}
       </MoreActions>
 
@@ -423,14 +467,35 @@ const MyOrderProduct = ({
       </Modal>
 
       <Modal 
-      isOpen={removeOrder} 
-      modalTitle={'Remover pedido'} 
+      isOpen={removeOrder || cancelOrder} 
+      modalTitle={
+        removeOrder 
+        ? 'Remover pedido' 
+        : 'Cancelar pedido'
+      } 
       onCloseModalActions={() => {
-        showRemoveOrder(false);
+        if (removeOrder) {
+          showRemoveOrder(false);
+        } else {
+          showCancelOrder(false);
+        }
       }}
       >
-        <p className='text-secondary-dark'>Tem certeza que deseja remover esse pedido ?</p>
-        <p className='text-sm text-yellow-dark'>(!) Essa ação é irrervesível</p>
+        <p className='text-secondary-dark'>{
+          removeOrder 
+          ? 'Tem certeza que deseja remover esse pedido ?' 
+          : 'Tem certeza que deseja cancelar esse pedido ?'
+        } </p>
+        <p className='text-sm text-yellow-dark'>{
+          removeOrder
+          ? '(!) Você pode o pedir novamente na aba "Produtos"'  
+          : '(!) Essa ação é irrervesível'
+        }</p>
+      {userOrder.orderPaymentStatus === 'APPROVED' && cancelOrder && (
+        <p className='text-secondary-middledark text-sm'>
+          Por você já ter pago pelo pedido, será reembolsado a devida quantia em sua conta novamente!
+        </p>
+      )}
         <div className='flex gap-4'>
           <Button 
             style={`flex-1 ${buttonColorsScheme.green}`} 
@@ -444,10 +509,35 @@ const MyOrderProduct = ({
             style={`flex-1 ${buttonColorsScheme.red}`}
             type={'submit'}
             label='Não'     
-            onClick={() => showRemoveOrder(false)}    
+            onClick={() => {
+              if (removeOrder) {
+                showRemoveOrder(false);
+              } else {
+                showCancelOrder(false);
+              }
+            }}    
           />
         </div>
       </Modal>
+
+ 
+      <OrderProduct 
+        isOpen={makeAnotherOrder} 
+        showOrderProductMenu={showMakeAnotherOrder} 
+        selectedProduct={{
+          id: userOrder.id,
+          name: userOrder.name,
+          category: userOrder.category,
+          createdAt: userOrder.createdAt,
+          description: userOrder.description,
+          imageUrl: userOrder.imageUrl,
+          price: userOrder.price,
+          stock: userOrder.stock,
+          sellerName: '',
+          sellerRole: '',
+          sellerId: '',
+        }}
+      />
     </motion.div>
   )
 }

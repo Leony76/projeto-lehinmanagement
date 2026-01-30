@@ -4,12 +4,16 @@ import Search from "@/src/components/form/Search";
 import MyOrderProduct from "@/src/components/products/MyOrderProduct";
 import { UserOrderDTO } from "@/src/types/userOrderDTO";
 import ProductCardsGrid from "@/src/components/ui/ProductCardsGrid";
+import NoContentFoundMessage from "@/src/components/ui/NoContentFoundMessage";
 
 type Props = {
   userOrders: UserOrderDTO[];
 }
 
 const MyOrders = ({userOrders}:Props) => {
+
+  const hasUserOrders = userOrders.length > 0;
+
   return (
     <div>
       <PageTitle style="my-2" title="Meus Pedidos"/>
@@ -20,6 +24,7 @@ const MyOrders = ({userOrders}:Props) => {
           <Select style={{input: 'flex-1 w-full'}} selectSetup={"CATEGORY"} colorScheme={"primary"} label={"Categoria"}/>
         </div>
       </div>
+    {(hasUserOrders) ? (
       <ProductCardsGrid>
       {userOrders.map((userOrder) => (
         <MyOrderProduct
@@ -27,6 +32,11 @@ const MyOrders = ({userOrders}:Props) => {
         />
       ))}
       </ProductCardsGrid>
+    ) : ( 
+      <NoContentFoundMessage
+        text="Nenhum pedido realizado!"
+      />
+    )}
     </div>
   )
 }

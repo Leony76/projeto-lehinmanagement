@@ -8,6 +8,7 @@ import MyProduct from "@/src/components/products/MyProduct";
 import { useToast } from "@/src/contexts/ToastContext";
 import { userProductDTO } from "@/src/types/userProductDTO";
 import ProductCardsGrid from "@/src/components/ui/ProductCardsGrid";
+import NoContentFoundMessage from "@/src/components/ui/NoContentFoundMessage";
 
 type Props = {
   myProducts: userProductDTO[];
@@ -21,6 +22,8 @@ const MyProducts = ({myProducts}:Props) => {
     showToast("Comentário enviado com sucesso!", "success");
   };
 
+  const hasUserProducts = myProducts.length > 0; 
+
   return (
     <div>
       <PageTitle style="my-2" title="Meus Produtos"/>
@@ -31,6 +34,7 @@ const MyProducts = ({myProducts}:Props) => {
           <Select style={{input: 'flex-1 w-full'}} selectSetup={"CATEGORY"} colorScheme={"primary"} label={"Categoria"}/>
         </div>
       </div>
+    {(hasUserProducts) ? (
       <ProductCardsGrid>
       {myProducts.map((userProduct) => (
         <MyProduct 
@@ -40,6 +44,11 @@ const MyProducts = ({myProducts}:Props) => {
         />
       ))}
       </ProductCardsGrid>
+    ) : ( 
+      <NoContentFoundMessage
+        text="Nenhum produto adiquirido!"
+      />
+    )}
     </div>
   )
 }

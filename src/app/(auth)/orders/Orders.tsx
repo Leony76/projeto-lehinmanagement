@@ -4,12 +4,16 @@ import Search from "@/src/components/form/Search";
 import OrderProduct from "@/src/components/products/OrderProduct";
 import ProductCardsGrid from "@/src/components/ui/ProductCardsGrid";
 import { OrderProductDTO } from "@/src/types/orderProductDTO";
+import NoContentFoundMessage from "@/src/components/ui/NoContentFoundMessage";
 
 type Props = {
   orders: OrderProductDTO[];
 }
 
 const Orders = ({orders}:Props) => {
+
+  const hasOrders = orders.length > 0;
+  
   return (
     <div>
       <PageTitle style="my-2" title="Pedidos"/>
@@ -20,13 +24,20 @@ const Orders = ({orders}:Props) => {
           <Select style={{input: 'flex-1 w-full'}} selectSetup={"CATEGORY"} colorScheme={"primary"} label={"Categoria"}/>
         </div>
       </div>
+    {(hasOrders) ? (
       <ProductCardsGrid>
       {orders.map((order) => (
         <OrderProduct 
+          key={order.orderId}
           order={order}
         /> 
       ))}
       </ProductCardsGrid>
+    ) : (
+      <NoContentFoundMessage
+        text="Nenhum pedido no momento!"
+      />
+    )}
     </div>
   )
 }

@@ -188,6 +188,7 @@ const AddSellProductForm = () => {
         />
 
         <TextArea
+          maxLength={500}
           style={{ input: 'h-26' }}
           label="Descrição (opcional)"
           placeholder="Descrição"

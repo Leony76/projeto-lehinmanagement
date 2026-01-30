@@ -9,6 +9,7 @@ import OrderProduct from "@/src/components/modal/OrderProduct";
 import { lockScrollY } from "@/src/utils/lockScrollY";
 import { ProductDTO } from "@/src/types/productDTO";
 import ProductCardsGrid from "@/src/components/ui/ProductCardsGrid";
+import NoContentFoundMessage from "@/src/components/ui/NoContentFoundMessage";
 
 type Props = {
   products: ProductDTO[];
@@ -24,6 +25,8 @@ const Products = ({
 
   lockScrollY(orderProductMenu);
 
+  const hasProducts = products.length > 0;
+
   return (
     <div>
       <PageTitle style="my-2" title="Produtos"/>
@@ -34,17 +37,23 @@ const Products = ({
           <Select style={{input: 'flex-1 w-full'}} selectSetup={"CATEGORY"} colorScheme={"primary"} label={"Categoria"}/>
         </div>
       </div>
+    {(hasProducts) ? (
       <ProductCardsGrid>
-        {productsState.map(product => (
-          <Product
-            key={product.id}
-            product={product}
-            setProducts={setProductsState}
-            showOrderProductModal={showOrderProductMenu}
-            selectedProduct={setSelectedProduct}
-          />
-        ))}
+      {productsState.map((product) => (
+        <Product
+          key={product.id}
+          product={product}
+          setProducts={setProductsState}
+          showOrderProductModal={showOrderProductMenu}
+          selectedProduct={setSelectedProduct}
+        />
+      ))}
       </ProductCardsGrid>
+    ) : (
+      <NoContentFoundMessage 
+        text="Nenhum produto no estoque no momento!"
+      />
+    )}
 
       {/* ⇊ MODALS ⇊ */}
 

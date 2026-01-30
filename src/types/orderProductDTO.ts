@@ -1,4 +1,4 @@
-import { Category, OrderStatus } from "@prisma/client";
+import { Category, DeletedBy, OrderStatus } from "@prisma/client";
 
 export type OrderProductDTO = {
   id: number;
@@ -17,4 +17,6 @@ export type OrderProductDTO = {
   orderCustomerName: string | null;
   orderPaymentStatus: OrderStatus;
   orderStatus: OrderStatus;
+  orderDeletedByCustomer: DeletedBy;
+  orderRejectionJustify: string | null;
 };

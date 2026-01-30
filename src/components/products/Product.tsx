@@ -108,10 +108,27 @@ const Product = ({
         )}
         </div>
         <div className={productCardSetup.priceStockContainer}>
-          <span className={productCardSetup.stock}><span className={productCardSetup.stockLabel}>Em estoque:</span> {product.stock}</span>
-          <span className={productCardSetup.price}>{formatCurrency(product.price)}</span>
+        {product.stock > 0 ? (
+          <span className={
+            product.stock > 0 
+            ? productCardSetup.stock + ' flex gap-1 items-center'
+            : 'text-red flex gap-1 items-center'
+          }>
+            <span className={productCardSetup.stockLabel}>
+              Em estoque:
+            </span> 
+            {product.stock}
+          </span>
+        ) : (
+          <span className='text-red italic bg-linear-to-r from-red/20 pl-2 rounded-tl-xl to-transparent'>
+            Sem estoque
+          </span> 
+        )}
+          <span className={productCardSetup.price}>
+            {formatCurrency(product.price)}
+          </span>
         </div>
-      {(canOrder) ? (
+      {(canOrder && product.stock > 0) ? (
         <Button
           style='text-xl' 
           label={"Fazer pedido"}
@@ -120,6 +137,13 @@ const Product = ({
             showOrderProductModal(true)
             selectedProduct(product)
           }}
+          type='button'
+        />
+      ) : (canOrder && product.stock === 0) ? (
+        <Button
+          style={`text-xl pointer-events-none ${buttonColorsScheme.red}`} 
+          label={"Fora do estoque"}
+          colorScheme={'primary'}
           type='button'
         />
       ) : (

@@ -7,7 +7,7 @@ import { productCardSetup } from '@/src/constants/cardConfigs';
 import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
 import { FaCheck, FaChevronDown } from 'react-icons/fa';
 import MoreActions from '../modal/MoreActions';
-import { useState } from 'react';
+import { startTransition, useState } from 'react';
 import { CATEGORY_LABEL_MAP } from '@/src/constants/generalConfigs';
 import { OrderProductDTO } from '@/src/types/orderProductDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
@@ -16,9 +16,13 @@ import Modal from '../modal/Modal';
 import TextArea from '../form/TextArea';
 import Error from '../ui/Error';
 import { useToast } from '@/src/contexts/ToastContext';
-import { acceptRejectProductOrder } from '@/src/actions/productActions';
+import { acceptRejectProductOrder, removeOrderFromUserOrders } from '@/src/actions/productActions';
 import { MdOutlinePending } from 'react-icons/md';
 import { motion } from 'framer-motion';
+import { useUserStore } from '@/src/store/useUserStore';
+import { useRouter } from 'next/navigation';
+import { editOrderRejectionJustify as editRejectionJustify } from '@/src/actions/productActions';
+
 
 type Props = {
   order: OrderProductDTO;
@@ -28,24 +32,37 @@ const OrderProduct = ({order}:Props) => {
 
   const { showToast } = useToast();
 
+  const userRole = useUserStore((stats) => stats.user?.role);
+
   const [moreActions, showMoreActions] = useState(false);  
   const datePutToSale = new Date(order.createdAt).toLocaleDateString("pt-BR");
   const orderDate = new Date(order.orderCreatedAt).toLocaleDateString("pt-BR");
   const stockIfOrderAccepted = (order.stock - order.orderedAmount); 
   const category = CATEGORY_LABEL_MAP[order.category];
 
+  const router = useRouter();
+
   const [acceptanceOrderConfirm, showAcceptanceOrderConfirm] = useState<boolean>(false);
   const [rejectionJustifyConfirm, showRejectionJustifyConfirm] = useState<boolean>(false);
+  const [orderRejectionJustify, showOrderRejectionJustify] = useState<boolean>(false);
+  const [editOrderRejectionJustify, showEditOrderRejectionJustify] = useState<boolean>(false);
+  const [newOrderRejectionJustifyCorfirm, showNewOrderRejectionJustifyCorfirm] = useState<boolean>(false);
+  const [removeOrder, showRemoveOrder] = useState<boolean>(false);
 
   const [loading, setLoading] = useState<{
     rejecting: boolean;
     accepting: boolean;
+    removing: boolean;
+    editing: boolean;
   }>({
     rejecting: false,
     accepting: false,
+    removing: false,
+    editing: false,
   });
 
   const [error, setError] = useState<string>('');
+  const [newOrderRejectionJustify, setNewOrderRejectionJustify] = useState<string | null>(order.orderRejectionJustify)
   const [rejectionJustify, setRejectionJustify] = useState<string>('');
   
   const handleAcceptOrder = async() => {
@@ -99,6 +116,50 @@ const OrderProduct = ({order}:Props) => {
     }
   }
 
+  const handleRemoveOrder = async() => {
+    if (loading.removing || !userRole) return;
+    setLoading(prev => ({...prev, removing: true}));
+
+    try {
+      await removeOrderFromUserOrders(
+        order.orderId,
+        order.orderStatus,
+        userRole,
+      );
+
+      startTransition(() => {
+        router.refresh(); 
+      });
+
+      showToast('Pedido removido com sucesso', 'success');
+      showRemoveOrder(false);
+    
+    } catch (err: unknown) {
+      showToast('Houve um erro: ' + err, 'error');
+    } finally {
+      setLoading(prev => ({...prev, removing: false}));
+    }
+  };
+
+  const handleEditOrderRejectionJustify = async() => {
+    if (loading.editing) return;
+    setLoading(prev => ({...prev, editing: true}));
+
+    try {
+      await editRejectionJustify(
+        newOrderRejectionJustify ?? '',
+        order.orderId,
+      );
+
+      showToast('Justificativa de rejeição do pedido editada com sucesso', 'success');
+      showNewOrderRejectionJustifyCorfirm(false);
+    } catch (err:unknown) {
+      showToast('Houve um erro:' + err, 'error');
+    } finally {
+      setLoading(prev => ({...prev, editing: false}));
+    }
+  }
+
   return (
     <motion.div
       layout 
@@ -110,7 +171,6 @@ const OrderProduct = ({order}:Props) => {
         filter: "blur(10px)",
         transition: { duration: 0.25 } 
       }}
-      // ${isPending ? "opacity-25 grayscale" : "opacity-100"}
     >
       <div className="relative aspect-square w-full">
         <Image 
@@ -121,9 +181,13 @@ const OrderProduct = ({order}:Props) => {
           onClick={() => showMoreActions(false)}
         />
       </div>
-    {order.orderPaymentStatus === 'PENDING' ? (
+    {order.orderPaymentStatus === 'PENDING' && order.orderStatus !== 'CANCELED' ? (
       <div className='absolute top-3 left-3 text-red-dark bg-red-100 w-fit py-1 px-3 rounded-2xl border border-red'>
         Pagamento pendente
+      </div>
+    ) : order.orderStatus === 'CANCELED' ? (
+      <div className='absolute top-3 left-3 text-red-dark bg-red-100 w-fit py-1 px-3 rounded-2xl border border-red'>
+        Cancelado pelo cliente
       </div>
     ) : order.orderStatus !== 'PENDING' ? (
       <div className='absolute top-3 left-3 text-green bg-green-100 w-fit py-1 px-3 rounded-2xl border border-green'>
@@ -167,7 +231,7 @@ const OrderProduct = ({order}:Props) => {
                 {order.orderedAmount}
               </span>
             </h4>
-          {(order.orderStatus === 'REJECTED' || order.orderStatus === 'PENDING') && (
+          {(order.orderStatus !== 'CANCELED' && order.orderStatus !== 'APPROVED' &&  order.orderStatus !== 'REJECTED') && (
             <h4 className='text-gray flex gap-1'>
               Estoque se aceito: 
               <span className='text-ui-stock'>
@@ -183,7 +247,7 @@ const OrderProduct = ({order}:Props) => {
             </span>
           </h3>
 
-        {(order.orderPaymentStatus === 'APPROVED' && order.orderStatus !== 'APPROVED') && (
+        {(order.orderPaymentStatus === 'APPROVED' && order.orderStatus !== 'APPROVED' && order.orderStatus !== 'REJECTED' && !order.orderDeletedByCustomer && order.orderStatus !== 'CANCELED') && (
           <span className='flex py-1.5 items-center gap-1 bg-linear-to-r from-transparent via-green/10 to-transparent justify-center w-full text-xl text-green'>
             <FaCheck size={24}/>
             Pago
@@ -192,7 +256,7 @@ const OrderProduct = ({order}:Props) => {
         
         </div>
         <div className='flex gap-2 mt-1'>
-        {order.orderStatus === 'DELETED_BY_USER' && order.orderPaymentStatus === 'APPROVED' ? (
+        {order.orderStatus === 'APPROVED' ? (
           <>
           <Button
             type='button'
@@ -212,7 +276,7 @@ const OrderProduct = ({order}:Props) => {
             Aprovado
           </span>
           </>
-        ) : order.orderStatus === 'DELETED_BY_USER' && order.orderPaymentStatus !== 'APPROVED' ? (
+        ) : (order.orderStatus === 'CANCELED') ? (
           <>
           <Button
             type='button'
@@ -230,26 +294,6 @@ const OrderProduct = ({order}:Props) => {
           <span className='flex items-center py-1.5 gap-1 justify-center w-full text-xl text-red-dark'>
             <IoClose size={30}/>
             Cancelado
-          </span>
-          </>
-        ) : order.orderStatus === 'APPROVED' ? (
-          <>
-          <Button
-            type='button'
-            onClick={() => showMoreActions(!moreActions)}
-            style={`px-5 flex items-center justify-center ${
-              moreActions
-                ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!'
-                : buttonColorsScheme.gray
-            }`}
-            icon={FaChevronDown}
-            iconStyle={`transition-transform duration-300 ${
-              moreActions ? 'rotate-180' : 'rotate-0'
-            }`}
-          />
-          <span className='flex py-1.5 items-center gap-1 justify-center w-full text-xl text-green'>
-            <FaCheck size={24}/>
-            Aprovado
           </span>
           </>
         ) : order.orderStatus === 'REJECTED' ? ( 
@@ -272,7 +316,7 @@ const OrderProduct = ({order}:Props) => {
             Rejeitado
           </span>
           </>
-        ) : order.orderPaymentStatus === 'APPROVED' && order.orderStatus === 'PENDING' ? (
+        ) : order.orderPaymentStatus === 'APPROVED' && order.orderStatus === 'PENDING' && !order.orderDeletedByCustomer ? (
           <>
            <Button
             type='button'
@@ -287,7 +331,7 @@ const OrderProduct = ({order}:Props) => {
             onClick={() => showRejectionJustifyConfirm(true)}
           />
           </>
-        ) : (
+        ) : (order.orderPaymentStatus !== 'APPROVED') && (
           <>
           <Button
             type='button'
@@ -312,18 +356,44 @@ const OrderProduct = ({order}:Props) => {
       </div>
       
       {/* ⇊ MODALS ⇊ */}
-
+{/* order.orderPaymentStatus !== 'APPROVED' && !order.orderDeletedByCustomer && order.orderPaymentStatus !== 'CANCELED' && order.orderStatus !== 'REJECTED' */}
       <MoreActions direction='left' style={{container: 'mt-3'}} moreActions={moreActions} close={() => showMoreActions(false)}>
+      {order.orderStatus !== 'CANCELED' && order.orderStatus === 'PENDING' ? (
         <Button 
           type='button'
-          label="Cancelar pedido" 
+          label="Rejeitar pedido" 
           style={`px-5 ${buttonColorsScheme.red}`}
+          onClick={() => showRejectionJustifyConfirm(true)}
+        />
+      ) :  order.orderStatus === 'REJECTED' ? (
+        <>
+        <Button 
+          type='button'
+          label="Remover do histórico" 
+          style={`px-5 ${buttonColorsScheme.red}`}
+          onClick={() => showRemoveOrder(true)}
         />
         <Button 
           type='button'
-          label="Cancelar pedido" 
-          style={`px-5 ${buttonColorsScheme.red}`}
+          label="Ver sua justificativa" 
+          style={`px-5 ${buttonColorsScheme.yellow}`}
+          onClick={() => showOrderRejectionJustify(true)}
         />
+        <Button 
+          type='button'
+          label="Aprovar pedido" 
+          style={`px-5 ${buttonColorsScheme.green}`}
+          onClick={() => showAcceptanceOrderConfirm(true)}
+        />
+        </>
+      ) : (
+        <Button 
+          type='button'
+          label="Remover do histórico" 
+          style={`px-5 ${buttonColorsScheme.red}`}
+          onClick={() => showRemoveOrder(true)}
+        />
+      )}
       </MoreActions>
 
       <Modal 
@@ -406,6 +476,145 @@ const OrderProduct = ({order}:Props) => {
             onClick={() => {
               showRejectionJustifyConfirm(false);
               setError('');
+            }}
+          />
+        </div>
+      </Modal>
+
+      <Modal 
+      isOpen={removeOrder} 
+      modalTitle={'Remover pedido do cliente'} 
+      onCloseModalActions={() => {
+        showRemoveOrder(false);
+      }}> 
+        <p className='text-secondary-middledark'>
+          Tem certeza que deseja remover esse pedido do cliente <span className='text-cyan'>{order.orderCustomerName}</span> do seu histórico de pedidos?
+        </p>
+        <p className='text-yellow-dark'>
+          (!) Essa ação é irreversível
+        </p>
+        <div className='flex gap-4'>
+          <Button 
+            style={`flex-1 ${buttonColorsScheme.green}`} 
+            type={'submit'}
+            label='Sim'
+            loading={loading.removing}
+            loadingLabel='Processando'
+            onClick={handleRemoveOrder}
+          />
+          <Button 
+            style={`flex-1 ${buttonColorsScheme.red}`}
+            type={'submit'}
+            label='Não'     
+            onClick={() => showRemoveOrder(false)}    
+          />
+        </div>
+      </Modal>
+
+      <Modal 
+      isOpen={orderRejectionJustify} 
+      modalTitle={'Sua justificativa de rejeição'} 
+      onCloseModalActions={() => {
+        showOrderRejectionJustify(false);
+        showEditOrderRejectionJustify(false);
+        setNewOrderRejectionJustify(order.orderRejectionJustify ?? '');
+        setError('');
+      }}
+      >
+      {editOrderRejectionJustify ? (
+        <>
+        <TextArea 
+          placeholder={'Justificativa'}
+          style={{input: 'mb-[-3px]'}}
+          label='Justificativa'
+          colorScheme='primary'
+          value={newOrderRejectionJustify ?? ''}
+          onChange={(e) => {
+            setNewOrderRejectionJustify(e.target.value);
+            setError('');
+          }}
+          onBlur={() => {
+            if (newOrderRejectionJustify?.trim() === '') {
+              setNewOrderRejectionJustify(order.orderRejectionJustify);
+            }
+          }}
+        />
+        {error && <Error error={error}/>}
+        </>
+      ) : (
+        <div>
+          <label className='text-secondary-dark'>Justificativa:</label>
+          <p className='text-primary-middledark bg-primary-ultralight/20 p-1 pl-2 rounded-md'>{order.orderRejectionJustify}</p>
+        </div>
+      )}
+       
+        <div className='flex gap-2 mt-2'>
+          <Button 
+            type='button'
+            style={`px-5 flex-1 text-xl ${buttonColorsScheme.yellow}`} 
+            label='Editar'
+            loading={loading.rejecting}
+            spinnerColor='text-green'
+            loadingLabel='Processando'
+            onClick={() => {
+              if (editOrderRejectionJustify) {
+                if (newOrderRejectionJustify === order.orderRejectionJustify) {
+                  setError('Nenhum caractere foi alterado para ser editado');
+                  return;
+                } else {
+                  showNewOrderRejectionJustifyCorfirm(true);
+                  showOrderRejectionJustify(false);
+                }
+              } else {
+                showEditOrderRejectionJustify(true);
+              }
+            }}
+          />
+          <Button
+            style={`px-5 ${editOrderRejectionJustify ? buttonColorsScheme.red + 'flex-1' : 'flex-3'} text-xl`}
+            onClick={() => {
+              if (editOrderRejectionJustify) {
+                showEditOrderRejectionJustify(false);
+                setNewOrderRejectionJustify(order.orderRejectionJustify ?? '');
+                setError('');
+              } else {
+                showOrderRejectionJustify(false);
+                setNewOrderRejectionJustify(order.orderRejectionJustify ?? '');
+              }
+            }}
+            label={editOrderRejectionJustify ? 'Cancelar' : 'Voltar'}
+            type='button'
+          />
+        </div>
+      </Modal>
+
+      <Modal 
+      isOpen={newOrderRejectionJustifyCorfirm} 
+      modalTitle={'Confirmar ação'} 
+      onCloseModalActions={() => {
+        showNewOrderRejectionJustifyCorfirm(false);
+        showOrderRejectionJustify(true);
+      }}>
+        <p className='text-secondary-middledark'> 
+          Tem certeza que deseja alterar sua justificativa de rejeição atual desse pedido ?
+        </p>
+        <div className='flex gap-2'>
+          <Button 
+            type='button'
+            style={`px-5 flex-1 text-xl ${buttonColorsScheme.green}`} 
+            label='Sim'
+            loading={loading.editing}
+            spinnerColor='text-green'
+            loadingLabel='Processando'
+            onClick={handleEditOrderRejectionJustify}
+          />
+          <Button 
+            type='button'
+            style={`px-5 flex-1 text-xl ${buttonColorsScheme.red}`} 
+            label='Não'
+            onClick={() => {
+              showNewOrderRejectionJustifyCorfirm(false);
+              showOrderRejectionJustify(true);
             }}
           />
         </div>

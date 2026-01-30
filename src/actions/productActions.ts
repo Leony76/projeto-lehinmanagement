@@ -3,7 +3,7 @@
 import { auth } from "@/src/lib/auth";
 import prisma from "@/src/lib/prisma";
 import { addProductSchema } from "@/src/schemas/addProductSchema";
-import { Category } from "@prisma/client";
+import { Category, OrderStatus, Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { PaymentOptionsValue } from "../constants/generalConfigs";
@@ -174,8 +174,12 @@ export async function payForPeddingOrderPayment(
 
 export async function removeOrderFromUserOrders(
   orderId: number,
+  orderStats: OrderStatus,
+  userRole: Role,
+  canceled?: boolean,
 ) {
   const session = await getRequiredSession();
+  const now = new Date();
 
   await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
@@ -185,28 +189,60 @@ export async function removeOrderFromUserOrders(
 
     if (!order) throw new Error("Pedido não encontrado");
 
+    if (canceled) {
+      await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'CANCELED',
+          orderHistory: {
+            create: {
+              status: 'CANCELED',
+              changedById: session.user.id,
+            }
+          }
+        }
+      });
+      return;
+    }
+
+    const deleteData =
+      userRole === 'CUSTOMER'
+        ? { deletedByCustomerAt: now }
+        : { deletedBySellerAt: now };
+
     await tx.order.update({
       where: { id: orderId },
       data: {
-        status: 'DELETED_BY_USER',
+        ...deleteData,
         orderHistory: {
           create: {
-            status: 'DELETED_BY_USER',
+            status: orderStats,
             changedById: session.user.id,
+            deletedById: session.user.id,
           }
         }
       }
     });
-
-    if (order.status === 'APPROVED') {
-      for (const item of order.orderItems) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { increment: item.quantity } }
-        });
-      }
-    }
   });
 
   revalidatePath("/orders/my-orders");
+}
+
+
+export async function editOrderRejectionJustify(
+  newRejection: string,
+  orderId: number,
+) {
+  const session = await getRequiredSession();
+
+  await prisma.orderHistory.create({
+    data: {
+      status: 'REJECTED',
+      changedById: session.user.id,
+      rejectionJustify: newRejection,
+      orderId
+    },
+  });
+
+  revalidatePath("/orders");  
 }

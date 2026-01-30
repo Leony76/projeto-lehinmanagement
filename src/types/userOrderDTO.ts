@@ -15,8 +15,8 @@ export type UserOrderDTO = {
   orderTotalPrice: number;
   orderDate: string | null;
   orderAmount: number;
-  orderPaymentStatus: OrderStatus;
-  orderStatus: PaymentStatus;
+  orderPaymentStatus: PaymentStatus;
+  orderStatus: OrderStatus;
   orderRejectionJustify: string | null;
   orderRejectedBy: string | null;
 };

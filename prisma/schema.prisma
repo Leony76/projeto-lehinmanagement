@@ -7,22 +7,23 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  name      String?
-  email     String    @unique
-  password  String?
-  emailVerified Boolean?  @map("email_verified")
-  image         String?
-  createdAt DateTime?  @default(now()) @map("created_at")
-  updatedAt DateTime?  @updatedAt @map("updated_at")
+  id             String     @id @default(cuid())
+  name           String?
+  email          String     @unique
+  password       String?
+  emailVerified  Boolean?   @map("email_verified")
+  image          String?
+  createdAt      DateTime?  @default(now()) @map("created_at")
+  updatedAt      DateTime?  @updatedAt @map("updated_at")
 
   role Role? @default(CUSTOMER)
 
-  accounts      Account[]
-  sessions      Session[]
-  orders        Order[]
-  products      Product[]
-  orderHistory  OrderHistory[]
+  accounts             Account[]
+  sessions             Session[]
+  orders               Order[]
+  products             Product[]
+  orderHistoryChanged  OrderHistory[]  @relation("OrderHistoryChangedBy")
+  orderHistoryDeleted  OrderHistory[]  @relation("OrderHistoryDeletedBy")
 
   @@map("users")
 }
@@ -42,33 +43,33 @@ model Session {
 }
 
 model Account {
-  id                    String    @id
-  accountId             String
-  providerId            String
-  userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  password              String?
-  type                  String?   
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  id                     String    @id
+  accountId              String
+  providerId             String
+  userId                 String
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  password               String?
+  type                   String?   
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
   
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
+  accessToken            String?
+  refreshToken           String?
+  idToken                String?
+  accessTokenExpiresAt   DateTime?
+  refreshTokenExpiresAt  DateTime?
+  scope                  String?
 
   @@map("account")
 }
 
 model Verification {
-  id         String    @id
+  id         String     @id
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime? @default(now())
-  updatedAt  DateTime? @updatedAt
+  createdAt  DateTime?  @default(now())
+  updatedAt  DateTime?  @updatedAt
 
   @@map("verification")
 }
@@ -80,6 +81,10 @@ model Order {
   total        Decimal
   createdAt    DateTime?      @default(now()) @map("created_at")
   updatedAt    DateTime?      @updatedAt @map("updated_at")
+  deletedAt    DateTime?      @map("deleted_at")
+
+  deletedByCustomerAt DateTime?
+  deletedBySellerAt   DateTime?
 
   status       OrderStatus         @default(PENDING)
 
@@ -99,6 +104,7 @@ model Product {
   description    String? 
   stock          Int
   isActive       Boolean      @map("is_active")
+  deletedBy      DeletedBy?      @map("deleted_by")
   category       Category
   imageUrl       String       @map("image_url")
   removeJustify  String?      @map("remove_justify")
@@ -106,18 +112,19 @@ model Product {
   seller         User         @relation(fields: [sellerId], references: [id])
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime?    @updatedAt @map("updated_at")
+  deletedAt      DateTime?    @map("deleted_at")
 
   @@map("products")
 }
 
 model Payment {
-  id        Int      @id @default(autoincrement())
-  orderId   Int      @map("order_id")
+  id        Int            @id @default(autoincrement())
+  orderId   Int            @map("order_id")
   amount    Decimal
   method    String
   status    PaymentStatus
-  createdAt DateTime @default(now()) @map("created_at")
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now()) @map("created_at")
+  order     Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }
@@ -129,6 +136,7 @@ model OrderItem {
   quantity  Int
   price     Decimal
   createdAt DateTime @default(now())
+
   order     Order    @relation(fields: [orderId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
 
@@ -136,14 +144,18 @@ model OrderItem {
 }
 
 model OrderHistory {
-  id          Int       @id @default(autoincrement())
-  orderId     Int       @map("order_id")
-  rejectionJustify String?    @map("rejection_justify")
-  status      OrderStatus
-  changedById String    @map("changed_by")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  changedBy   User     @relation(fields: [changedById], references: [id])
-  order       Order     @relation(fields: [orderId], references: [id])
+  id               Int          @id @default(autoincrement())
+  orderId          Int          @map("order_id")
+  rejectionJustify String?      @map("rejection_justify")
+  changedById      String       @map("changed_by")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  deletedAt        DateTime?    @map("deleted_at")
+
+  deletedById      String?      @map("deleted_by_id")
+  status           OrderStatus
+  changedBy        User         @relation("OrderHistoryChangedBy", fields: [changedById], references: [id])
+  deletedBy        User?        @relation("OrderHistoryDeletedBy", fields: [deletedById], references: [id])
+  order            Order        @relation(fields: [orderId], references: [id])
 
   @@map("order_history")
 }
@@ -178,7 +190,12 @@ enum OrderStatus {
   APPROVED
   REJECTED
   CANCELED
-  DELETED_BY_USER
+}
+
+enum DeletedBy {
+  CUSTOMER
+  SELLER
+  ADMIN
 }
 
 enum PaymentMethods {

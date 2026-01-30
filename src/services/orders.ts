@@ -205,10 +205,13 @@ export const getOverallCustomersAndSellersOrderStats = async (role: BuyerRole) =
 export const getSellerOrders = async() => {
   const session = await getRequiredSession();
 
-  const orders = await prisma.orderItem.findMany({
+  const items = await prisma.orderItem.findMany({
     where: {
       product: {
         sellerId: session.user.id
+      },
+      order: {
+        deletedBySellerAt: null
       }
     },
     orderBy: {
@@ -220,36 +223,43 @@ export const getSellerOrders = async() => {
         include: {
           user: {
             select: {
-              name: true
+              name: true,
             }
           },
           payments: {
             select: {
-              status: true
+              status: true,
             },
           },
+          orderHistory: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: { rejectionJustify: true }
+          }
         },
       },
     },
   });
 
-  return orders.map((order) => ({
-    id: order.product.id,
-    name: order.product.name,
-    category: order.product.category,
-    description: order.product.description,
-    imageUrl: order.product.imageUrl,
-    stock: order.product.stock,
-    createdAt: order.product.createdAt?.toISOString() ?? null,
-    price: order.product.price.toNumber(),
+  return items.map((item) => ({
+    id: item.product.id,
+    name: item.product.name,
+    category: item.product.category,
+    description: item.product.description,
+    imageUrl: item.product.imageUrl,
+    stock: item.product.stock,
+    createdAt: item.product.createdAt?.toISOString() ?? null,
+    price: item.product.price.toNumber(),
 
-    orderId: order.order.id,
-    orderCreatedAt: order.createdAt.toISOString() ?? null,
-    orderedAmount: order.quantity,
-    orderComission: order.order.total.toNumber(),
-    orderCustomerName: order.order.user.name,
-    orderStatus: order.order.status,
-    orderPaymentStatus: order.order.payments.at(-1)?.status ?? 'PENDING',
+    orderId: item.order.id,
+    orderCreatedAt: item.createdAt.toISOString() ?? null,
+    orderedAmount: item.quantity,
+    orderComission: item.order.total.toNumber(),
+    orderCustomerName: item.order.user.name,
+    orderStatus: item.order.status,
+    orderPaymentStatus: item.order.payments.at(-1)?.status ?? 'PENDING',
+    orderRejectionJustify: item.order.orderHistory.at(-1)?.rejectionJustify ?? null,
+    orderDeletedByCustomer: item.order.deletedByCustomerAt !== null
   }));
 }
 
@@ -260,7 +270,7 @@ export const getOrdersFromUser = async() => {
     where: {
       order: {
         userId: session.user.id,
-        status: { not: 'DELETED_BY_USER' }
+        deletedByCustomerAt: null
       }
     },
     include: {
@@ -281,6 +291,8 @@ export const getOrdersFromUser = async() => {
             },
           },
           orderHistory: {           
+            orderBy: { createdAt: 'desc' },
+            take: 1,
             select: {
               rejectionJustify: true,
               changedBy: {
