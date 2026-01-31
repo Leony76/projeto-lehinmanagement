@@ -21,7 +21,8 @@ model User {
   accounts             Account[]
   sessions             Session[]
   orders               Order[]
-  products             Product[]
+  costumerProducts     CostumerProduct[]
+  sellerProducts       Product[]
   orderHistoryChanged  OrderHistory[]  @relation("OrderHistoryChangedBy")
   orderHistoryDeleted  OrderHistory[]  @relation("OrderHistoryDeletedBy")
   productReview        ProductReview[]
@@ -93,6 +94,7 @@ model Order {
   orderItems   OrderItem[]
   user         User           @relation(fields: [userId], references: [id])
   payments     Payment[]
+  costumerProducts CostumerProduct[]
 
   @@map("orders")
 }
@@ -109,15 +111,33 @@ model Product {
   category       Category
   imageUrl       String       @map("image_url")
   removeJustify  String?      @map("remove_justify")
-  orderItems     OrderItem[]
-  seller         User         @relation(fields: [sellerId], references: [id])
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime?    @updatedAt @map("updated_at")
   deletedAt      DateTime?    @map("deleted_at")
 
+  orderItems     OrderItem[]
+  seller         User         @relation(fields: [sellerId], references: [id])
+  customer       CostumerProduct[]
   reviews        ProductReview[]
 
   @@map("products")
+}
+
+model CostumerProduct {
+  id Int @id @default(autoincrement())
+
+  costumerId String @map("costumer_id")
+  costumerProductId Int @map("costumer_product_id")
+  orderId Int @map("order_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  costumer User @relation(fields: [costumerId], references: [id])
+  costumerProduct Product @relation(fields: [costumerProductId], references: [id]) 
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("costumer_products")
 }
 
 model Payment {
@@ -149,12 +169,15 @@ model OrderItem {
 model OrderHistory {
   id               Int          @id @default(autoincrement())
   orderId          Int          @map("order_id")
+
   rejectionJustify String?      @map("rejection_justify")
+  message          String?
   changedById      String       @map("changed_by")
+  deletedById      String?      @map("deleted_by_id")
+
   createdAt        DateTime     @default(now()) @map("created_at")
   deletedAt        DateTime?    @map("deleted_at")
 
-  deletedById      String?      @map("deleted_by_id")
   status           OrderStatus
   changedBy        User         @relation("OrderHistoryChangedBy", fields: [changedById], references: [id])
   deletedBy        User?        @relation("OrderHistoryDeletedBy", fields: [deletedById], references: [id])

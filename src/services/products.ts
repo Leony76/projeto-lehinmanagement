@@ -54,28 +54,26 @@ export const getProducts = async() => {
 }
 
 export const getUserProducts = async(userId: string) => {
-  const items = await prisma.orderItem.findMany({
+  const items = await prisma.costumerProduct.findMany({
     where: {
-      order: {
-        status: 'APPROVED',
-        userId
-      }
+      costumerId: userId,
+      deletedAt: null,
     },
     select: {
-      product: true,
+      costumerProduct: true,
       order: {
-        include: {
+        select: {
+          total: true,
           orderItems: true,
           orderHistory: {
             select: {
               createdAt: true,
-            }
+            },
           },
         },
       },
     },
-    orderBy: { product: { id: 'desc' } },
-  });
+  })
 
   const reviews = await prisma.productReview.findMany({
     where: {
@@ -110,17 +108,17 @@ export const getUserProducts = async(userId: string) => {
   );
 
   return items.map(item => {
-    const review = reviewMap.get(item.product.id);
+    const review = reviewMap.get(item.costumerProduct.id);
 
     return {
-      id: item.product.id,
-      name: item.product.name,
-      category: item.product.category,
-      description: item.product.description,
-      imageUrl: item.product.imageUrl,
-      stock: item.product.stock,
-      createdAt: item.product.createdAt?.toISOString() ?? null,
-      price: item.product.price.toNumber(),
+      id: item.costumerProduct.id,
+      name: item.costumerProduct.name,
+      category: item.costumerProduct.category,
+      description: item.costumerProduct.description,
+      imageUrl: item.costumerProduct.imageUrl,
+      stock: item.costumerProduct.stock,
+      createdAt: item.costumerProduct.createdAt?.toISOString() ?? null,
+      price: item.costumerProduct.price.toNumber(),
 
       orderedAmount: item.order.orderItems.at(-1)?.quantity,
       orderTotalPrice: item.order.total.toNumber(),
@@ -129,7 +127,7 @@ export const getUserProducts = async(userId: string) => {
       productRating: review?.rating ?? 0,
       hasReview: Boolean(review?.comment?.trim()),
 
-      productAverageRating: avgRatingMap.get(item.product.id) ?? null,
+      productAverageRating: avgRatingMap.get(item.costumerProduct.id) ?? null,
     };
   });
 }

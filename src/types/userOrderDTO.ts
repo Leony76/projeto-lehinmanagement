@@ -10,6 +10,8 @@ export type UserOrderDTO = {
   stock: number;
   imageUrl: string;
   createdAt: string;
+  sellerName: string;
+  messageSentAt: string | null;
   productAverageRating: string | null;
 
   orderId: number;
@@ -20,5 +22,6 @@ export type UserOrderDTO = {
   orderStatus: OrderStatus;
   orderRejectionJustify: string | null;
   orderRejectedBy: string | null;
+  orderSituationMessage: string | null;
 };
 

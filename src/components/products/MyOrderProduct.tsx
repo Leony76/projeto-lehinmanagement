@@ -1,7 +1,7 @@
 "use client";
 
 import Image from 'next/image'
-import { IoClose, IoStar } from 'react-icons/io5';
+import { IoClose, IoStar, IoStarOutline } from 'react-icons/io5';
 import Button from '../form/Button';
 import { CATEGORY_LABEL_MAP, PaymentOptionsValue, PaymentStatus } from '@/src/constants/generalConfigs';
 import { productCardSetup } from '@/src/constants/cardConfigs';
@@ -46,12 +46,24 @@ const MyOrderProduct = ({
   const [finishOrderPayment, showFinishOrderPayment] = useState<boolean>(false);
   const [userOrderProductInfo, showUserOrderProductInfo] = useState<boolean>(false);
   const [makeAnotherOrderConfirm, showMakeAnotherOrderConfirm] = useState<boolean>(false);
+  const [messageAboutOrderSituation, showMessageAboutOrderSituation] = useState<boolean>(false);
 
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const datePutToSale = new Date(userOrder.createdAt).toLocaleDateString("pt-BR");
   const orderDate = new Date(userOrder.orderDate ?? 1).toLocaleDateString("pt-BR");
+  const orderSituationMessageSentAt = userOrder.messageSentAt
+  ? new Date(userOrder.messageSentAt).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+  : '';
+
   const category = CATEGORY_LABEL_MAP[userOrder.category];
 
   const [error, setError] = useState<string>('');
@@ -184,8 +196,11 @@ const MyOrderProduct = ({
               <span>{datePutToSale}</span>
             </div>
             <div className={productCardSetup.rating}>
-              <IoStar/>
-              {userOrder.productAverageRating}
+              {!userOrder.productAverageRating 
+              ? <IoStarOutline/>
+              : <IoStar/> 
+              }
+              {userOrder.productAverageRating ?? 'Não avaliado'}
             </div>
           </div>
           <div>
@@ -265,6 +280,14 @@ const MyOrderProduct = ({
           style={`px-5 ${buttonColorsScheme.secondary}`}
           onClick={() => showUserOrderProductInfo(true)}
         />
+      {(userOrder.orderSituationMessage) && (
+        <Button 
+          type='button' 
+          label="Última mensagem do vendedor" 
+          style={`px-5 text-sm py-1.5 !text-center ${buttonColorsScheme.yellow}`}
+          onClick={() => showMessageAboutOrderSituation(true)}
+        />
+      )}
       {(userOrder.orderStatus === 'REJECTED') ? (
         <>
         <Button 
@@ -313,6 +336,37 @@ const MyOrderProduct = ({
         )
       )}      
       </MoreActions>
+
+      <Modal 
+      isOpen={messageAboutOrderSituation} 
+      modalTitle={'Mensagem do vendedor'} 
+      onCloseModalActions={() => {
+        showMessageAboutOrderSituation(false);
+      }}
+      >
+        <div>
+          <h3 className='text-sm text-gray'>
+            Autor(a) da mensagem
+          </h3>
+          <h4 className='text-xl text-cyan italic'>
+            ~ {userOrder.sellerName} <span className='text-gray text-sm'>●</span> <span className='text-yellow-dark text-base'>{orderSituationMessageSentAt}</span>
+          </h4>
+        </div>
+        <div>
+          <label className='text-secondary-dark'>
+            Mensagem:
+          </label>
+          <p className='text-primary-middledark bg-primary-ultralight/20 p-1 pl-2 rounded-md'>
+            {userOrder.orderSituationMessage}
+          </p>
+        </div>
+
+        <Button
+          onClick={() => showMessageAboutOrderSituation(false)}
+          label='Voltar'
+          type='button'
+        />
+      </Modal>
 
 
       <Modal 

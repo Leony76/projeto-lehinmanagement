@@ -28,6 +28,7 @@ const MyOrders = ({userOrders}:Props) => {
       <ProductCardsGrid>
       {userOrders.map((userOrder) => (
         <MyOrderProduct
+          key={userOrder.orderId}
           userOrder={userOrder}
         />
       ))}

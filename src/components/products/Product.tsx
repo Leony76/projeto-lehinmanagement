@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image'
-import { IoStar } from 'react-icons/io5';
+import { IoStar, IoStarOutline } from 'react-icons/io5';
 import Button from '../form/Button';
 import { CATEGORY_LABEL_MAP } from '@/src/constants/generalConfigs';
 import { productCardSetup } from '@/src/constants/cardConfigs';
@@ -90,8 +90,11 @@ const Product = ({
             <span>{datePutToSale}</span>
           </div>
           <div className={productCardSetup.rating}>
-            <IoStar/>
-            {product.productAverageRating}
+          {!product.productAverageRating 
+            ? <IoStarOutline/>
+            : <IoStar/> 
+          }
+            {product.productAverageRating ?? 'Não avaliado'}
           </div>
         {(product.sellerRole !== 'ADMIN') ? (       
           <div className={productCardSetup.seller.container}>

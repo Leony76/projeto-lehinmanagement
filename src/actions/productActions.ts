@@ -38,6 +38,7 @@ export async function createProduct(input: unknown) {
   revalidatePath("/products")
 };
 
+
 export async function removeProduct(
   id: number, 
   removeJustify?: string
@@ -53,11 +54,16 @@ export async function removeProduct(
 
     revalidatePath('/products');
   } else {
-    await prisma.product.update({
-      where: { id },
-      data: { 
-        isActive: false,
+    const session = await getRequiredSession();
+
+    await prisma.costumerProduct.updateMany({
+      where: {
+        costumerProductId: id,
+        costumerId: session.user.id,
       },
+      data: {
+        deletedAt: new Date(),
+      }
     });
 
     revalidatePath('/products/my-products');
@@ -138,22 +144,31 @@ export async function acceptRejectProductOrder(
 
   const cleanJustify = rejectionJustify?.trim() || null;
 
-  await prisma.$transaction(async (tx) => {
-    await tx.order.update({
-      where: { id: orderId },
-      data: {
-        status: decision,
-        orderHistory: {
-          create: {
-            status: decision,
-            changedById: session.user.id,
-            rejectionJustify: decision === 'REJECTED' ? cleanJustify : null
-          },
+  if (decision === 'APPROVED') {
+    await prisma.$transaction(async(tx) => {
+      const order = await tx.order.update({
+        where: {
+          id: orderId,
         },
-      }
-    });
+        data: {
+          status: 'APPROVED',
+          orderHistory: {
+            create: {
+              status: 'APPROVED',
+              changedById: session.user.id,
+            }
+          },
+        }
+      });
+  
+      await tx.costumerProduct.create({
+        data: {
+          costumerId: order.userId,
+          costumerProductId: productId,  
+          orderId   
+        },
+      });
 
-    if (decision === 'APPROVED') {
       await tx.product.update({
         where: { id: productId },
         data: {
@@ -162,9 +177,25 @@ export async function acceptRejectProductOrder(
           },
         },
       });
-    } 
-  });
-
+    })
+  } else {  
+    await prisma.order.update({
+      where: {
+        id: orderId
+      },
+      data: {
+        status: 'REJECTED',
+        orderHistory: {
+          create: {
+            status: 'REJECTED',
+            changedById: session.user.id,
+            rejectionJustify: cleanJustify
+          }
+        }
+      }
+    })
+  }
+  
   revalidatePath("/orders");
 }
 
@@ -291,4 +322,39 @@ export async function rateCommentProduct(
   revalidatePath("/products/my-products");
 }
 
+export async function sendMessageAboutCustomerOrderSituation(
+  orderId: number,
+  orderStatus: OrderStatus,
+  message: string,
+): Promise<void> {
+  const session = await getRequiredSession();
 
+  await prisma.orderHistory.create({
+    data: {
+      orderId,
+      changedById: session.user.id,
+      status: orderStatus,
+      message,
+    }
+  });
+
+  revalidatePath("/orders");
+}
+
+export async function updatedProductStock(
+  productId: number,
+  newStock: number,
+) {
+  await prisma.product.update({
+    where: {
+      id: productId,
+    },
+    data: {
+      stock: {
+        increment: newStock,
+      },
+    },
+  });
+
+  revalidatePath('/orders');
+}

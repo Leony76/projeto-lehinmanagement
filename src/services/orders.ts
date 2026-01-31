@@ -241,6 +241,22 @@ export const getSellerOrders = async() => {
     },
   });
 
+  const avgRatings = await prisma.productReview.groupBy({
+    by: ['productId'],
+    _avg: {
+      rating: true,
+    },
+  });
+  
+  const avgRatingMap = new Map(
+    avgRatings.map(r => [
+      r.productId,
+      r._avg.rating !== null
+        ? r._avg.rating.toFixed(1).replace('.', ',')
+        : null,
+    ]),
+  );
+
   return items.map((item) => ({
     id: item.product.id,
     name: item.product.name,
@@ -250,6 +266,7 @@ export const getSellerOrders = async() => {
     stock: item.product.stock,
     createdAt: item.product.createdAt?.toISOString() ?? null,
     price: item.product.price.toNumber(),
+    productAverageRating: avgRatingMap.get(item.product.id) ?? null,
 
     orderId: item.order.id,
     orderCreatedAt: item.createdAt.toISOString() ?? null,
@@ -270,7 +287,7 @@ export const getOrdersFromUser = async() => {
     where: {
       order: {
         userId: session.user.id,
-        deletedByCustomerAt: null
+        deletedBySellerAt: null
       }
     },
     include: {
@@ -283,7 +300,16 @@ export const getOrdersFromUser = async() => {
           orderItems: {
             select: {
               quantity: true,
-            }
+              product: {
+                select: {
+                  seller: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
           },
           payments: {
             select: {
@@ -295,6 +321,8 @@ export const getOrdersFromUser = async() => {
             take: 1,
             select: {
               rejectionJustify: true,
+              message: true,
+              createdAt: true,
               changedBy: {
                 select: {
                   name: true,
@@ -332,6 +360,8 @@ export const getOrdersFromUser = async() => {
     stock: item.product.stock,
     createdAt: item.product.createdAt?.toISOString() ?? null,
     price: item.product.price.toNumber(),
+    sellerName: item.order.orderItems.at(-1)?.product.seller.name ?? '[Desconhecido]',
+    messageSentAt: item.order.orderHistory.at(-1)?.createdAt?.toISOString() ?? null,
     productAverageRating: avgRatingMap.get(item.product.id) ?? null,
 
     orderId: item.orderId,
@@ -341,6 +371,7 @@ export const getOrdersFromUser = async() => {
     orderPaymentStatus: item.order.payments.at(-1)?.status ?? 'PENDING',
     orderStatus: item.order.status,
     orderRejectionJustify: item.order.orderHistory.at(-1)?.rejectionJustify ?? null,
+    orderSituationMessage: item.order.orderHistory.at(-1)?.message ?? null,
     orderRejectedBy: item.order.orderHistory.at(-1)?.rejectionJustify 
       ? item.order.orderHistory.at(-1)?.changedBy.name 
       : null

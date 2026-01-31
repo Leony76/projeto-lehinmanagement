@@ -1,13 +1,13 @@
 "use client";
 
 import Image from 'next/image'
-import { IoClose, IoStar } from 'react-icons/io5';
+import { IoClose, IoStar, IoStarOutline } from 'react-icons/io5';
 import Button from '../form/Button';
 import { productCardSetup } from '@/src/constants/cardConfigs';
 import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
 import { FaCheck, FaChevronDown } from 'react-icons/fa';
 import MoreActions from '../modal/MoreActions';
-import { startTransition, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import { CATEGORY_LABEL_MAP } from '@/src/constants/generalConfigs';
 import { OrderProductDTO } from '@/src/types/orderProductDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
@@ -16,13 +16,14 @@ import Modal from '../modal/Modal';
 import TextArea from '../form/TextArea';
 import Error from '../ui/Error';
 import { useToast } from '@/src/contexts/ToastContext';
-import { acceptRejectProductOrder, removeOrderFromUserOrders } from '@/src/actions/productActions';
+import { acceptRejectProductOrder, removeOrderFromUserOrders, sendMessageAboutCustomerOrderSituation, updatedProductStock } from '@/src/actions/productActions';
 import { MdOutlinePending } from 'react-icons/md';
 import { motion } from 'framer-motion';
 import { useUserStore } from '@/src/store/useUserStore';
 import { useRouter } from 'next/navigation';
+import { BsDropbox } from "react-icons/bs";
 import { editOrderRejectionJustify as editRejectionJustify } from '@/src/actions/productActions';
-
+import Input from '../form/Input';
 
 type Props = {
   order: OrderProductDTO;
@@ -46,25 +47,34 @@ const OrderProduct = ({order}:Props) => {
   const [rejectionJustifyConfirm, showRejectionJustifyConfirm] = useState<boolean>(false);
   const [orderRejectionJustify, showOrderRejectionJustify] = useState<boolean>(false);
   const [editOrderRejectionJustify, showEditOrderRejectionJustify] = useState<boolean>(false);
+  const [productOuttaStockMessage, showProductOuttaStockMessage] = useState<boolean>(false);
   const [newOrderRejectionJustifyCorfirm, showNewOrderRejectionJustifyCorfirm] = useState<boolean>(false);
+  const [resetProductStock, showResetProductStock] = useState<boolean>(false);
   const [removeOrder, showRemoveOrder] = useState<boolean>(false);
 
   const [loading, setLoading] = useState<{
     rejecting: boolean;
+    sending: boolean;
     accepting: boolean;
     removing: boolean;
     editing: boolean;
+    reseting: boolean;
   }>({
     rejecting: false,
     accepting: false,
+    sending: false,
     removing: false,
     editing: false,
+    reseting: false,
   });
 
   const [error, setError] = useState<string>('');
   const [newOrderRejectionJustify, setNewOrderRejectionJustify] = useState<string | null>(order.orderRejectionJustify)
   const [rejectionJustify, setRejectionJustify] = useState<string>('');
+  const [messageAboutCustomerOrderSituation, setMessageAboutCustomerOrderSituation] = useState<string>('');
   
+  const [newProductStock, setNewProductStock] = useState<number>(0);
+
   const handleAcceptOrder = async() => {
 
     if (loading.accepting) return;
@@ -84,6 +94,7 @@ const OrderProduct = ({order}:Props) => {
       showToast('Erro inesperado:' + err, 'error');
     } finally {
       setLoading(prev => ({...prev, accepting: false}));
+      showMoreActions(false);
     }
   }
 
@@ -113,6 +124,7 @@ const OrderProduct = ({order}:Props) => {
       showToast('Houve um erro: ' + err, 'error');
     } finally {
       setLoading(prev => ({...prev, rejecting: false}));
+      showMoreActions(false);
     }
   }
 
@@ -138,6 +150,7 @@ const OrderProduct = ({order}:Props) => {
       showToast('Houve um erro: ' + err, 'error');
     } finally {
       setLoading(prev => ({...prev, removing: false}));
+      showMoreActions(false);
     }
   };
 
@@ -157,6 +170,48 @@ const OrderProduct = ({order}:Props) => {
       showToast('Houve um erro:' + err, 'error');
     } finally {
       setLoading(prev => ({...prev, editing: false}));
+      showMoreActions(false);
+    }
+  }
+
+  const handleSendMessageAboutCustomerOrderSituation = async() => {
+    if (loading.sending) return;
+    setLoading(prev => ({...prev, sending: true}));
+
+    try {
+      await sendMessageAboutCustomerOrderSituation(
+        order.orderId,
+        order.orderStatus,
+        messageAboutCustomerOrderSituation,
+      );
+
+      showToast('Mensagem mandada com sucesso', 'success');
+    } catch (err:unknown) {
+      showToast('Houve um erro: ' + err, 'error');
+    } finally {
+      showProductOuttaStockMessage(false);
+      setLoading(prev => ({...prev, sending: false}));
+      showMoreActions(false);
+    }
+  }
+
+  const handleUpdateProductStock = async() => {
+    if (loading.reseting) return;
+    setLoading(prev => ({...prev, reseting: true}));
+
+    try { 
+      await updatedProductStock(
+        order.id,
+        newProductStock,
+      );
+
+      showToast('Estoque atualizado com sucesso', 'success');
+    } catch (err:unknown) {
+      showToast('Houve um erro: ' + err, 'error');
+    } finally {
+      showResetProductStock(false);
+      setLoading(prev => ({...prev, reseting: false}));
+      showMoreActions(false);
     }
   }
 
@@ -208,8 +263,11 @@ const OrderProduct = ({order}:Props) => {
               <span>{datePutToSale}</span>
             </div>
             <div className={productCardSetup.rating}>
-              <IoStar/>
-              {4}
+              {!order.productAverageRating 
+              ? <IoStarOutline/>
+              : <IoStar/> 
+              }
+              {order.productAverageRating ?? 'Não avaliado'}
             </div>
           </div>
           <div>
@@ -234,7 +292,7 @@ const OrderProduct = ({order}:Props) => {
           {(order.orderStatus !== 'CANCELED' && order.orderStatus !== 'APPROVED' &&  order.orderStatus !== 'REJECTED') && (
             <h4 className='text-gray flex gap-1'>
               Estoque se aceito: 
-              <span className='text-ui-stock'>
+              <span className={stockIfOrderAccepted > 0 ? 'text-ui-stock' : 'text-red bg-linear-to-r from-red/50 to-transparent px-2 rounded-tl-2xl'}>
                 {stockIfOrderAccepted}
               </span>
             </h4>
@@ -316,7 +374,11 @@ const OrderProduct = ({order}:Props) => {
             Rejeitado
           </span>
           </>
-        ) : order.orderPaymentStatus === 'APPROVED' && order.orderStatus === 'PENDING' && !order.orderDeletedByCustomer ? (
+        ) :  order.orderPaymentStatus === 'APPROVED' 
+          && order.orderStatus === 'PENDING' 
+          && !order.orderDeletedByCustomer 
+          && stockIfOrderAccepted >= 0 
+          ? (
           <>
            <Button
             type='button'
@@ -330,6 +392,30 @@ const OrderProduct = ({order}:Props) => {
             label='Rejeitar'
             onClick={() => showRejectionJustifyConfirm(true)}
           />
+          </>
+        ) : order.orderPaymentStatus === 'APPROVED' 
+          && order.orderStatus === 'PENDING' 
+          && !order.orderDeletedByCustomer 
+          && stockIfOrderAccepted < 0  
+          ? (
+          <>
+          <Button
+            type='button'
+            onClick={() => showMoreActions(!moreActions)}
+            style={`px-5 flex items-center justify-center ${
+              moreActions
+                ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!'
+                : buttonColorsScheme.gray
+            }`}
+            icon={FaChevronDown}
+            iconStyle={`transition-transform duration-300 ${
+              moreActions ? 'rotate-180' : 'rotate-0'
+            }`}
+          />
+          <span className='flex items-center py-1.5 gap-2 justify-center w-full text-xl text-red'>
+            <BsDropbox size={24}/>
+            Estoque insuficiente 
+          </span>
           </>
         ) : (order.orderPaymentStatus !== 'APPROVED') && (
           <>
@@ -355,14 +441,37 @@ const OrderProduct = ({order}:Props) => {
         </div>
       </div>
       
-      <MoreActions direction='left' style={{container: 'mt-3'}} moreActions={moreActions} close={() => showMoreActions(false)}>
+      <MoreActions 
+      direction='left' 
+      style={{container: 'mt-3'}} 
+      moreActions={moreActions} 
+      close={() => showMoreActions(false)}
+      >
       {order.orderStatus !== 'CANCELED' && order.orderStatus === 'PENDING' ? (
+        <>
+      {stockIfOrderAccepted < 0 && (
+        <>
+        <Button 
+          type='button'
+          label="Repor estoque" 
+          style={`px-5 ${buttonColorsScheme.secondary}`}
+          onClick={() => showResetProductStock(true)}
+        />
+        <Button 
+          type='button'
+          label="Justificar ao cliente" 
+          style={`px-5 ${buttonColorsScheme.yellow}`}
+          onClick={() => showProductOuttaStockMessage(true)}
+        />
+        </>
+      )}
         <Button 
           type='button'
           label="Rejeitar pedido" 
           style={`px-5 ${buttonColorsScheme.red}`}
           onClick={() => showRejectionJustifyConfirm(true)}
         />
+        </>
       ) :  order.orderStatus === 'REJECTED' ? (
         <>
         <Button 
@@ -377,12 +486,14 @@ const OrderProduct = ({order}:Props) => {
           style={`px-5 ${buttonColorsScheme.yellow}`}
           onClick={() => showOrderRejectionJustify(true)}
         />
+      {order.orderPaymentStatus === 'APPROVED' && (
         <Button 
           type='button'
           label="Aprovar pedido" 
           style={`px-5 ${buttonColorsScheme.green}`}
           onClick={() => showAcceptanceOrderConfirm(true)}
         />
+      )}
         </>
       ) : (
         <Button 
@@ -587,6 +698,109 @@ const OrderProduct = ({order}:Props) => {
       </Modal>
 
       <Modal 
+      isOpen={productOuttaStockMessage} 
+      modalTitle={'Justificar ao cliente'} 
+      onCloseModalActions={() => {
+        showProductOuttaStockMessage(false);
+        setError('');
+      }}
+      >
+        <p className='text-secondary-dark'>
+          Deixe para o cliente uma justificativa a cerca da situação atual de seu pedido.
+        </p>
+        <TextArea 
+          placeholder={'Justificativa'}
+          style={{input: `mb-[-3px] ${error ? 'shadow-[0px_0px_5px_red]' : ''}`}}
+          label='Justificativa'
+          colorScheme='primary'
+          value={messageAboutCustomerOrderSituation}
+          onChange={(e) => {
+            setMessageAboutCustomerOrderSituation(e.target.value);
+            setError('');
+          }}
+        />
+        {error && <Error error={error}/>}
+   
+        <div className='flex gap-2 mt-2'>
+          <Button 
+            type='button'
+            style={`px-5 flex-1 text-xl ${buttonColorsScheme.yellow}`} 
+            label='Mandar'
+            loading={loading.sending}
+            spinnerColor='text-yellow-dark'
+            loadingLabel='Processando'
+            onClick={() => {
+              if (!messageAboutCustomerOrderSituation) {
+                setError('Não se pode mandar uma mensagem vazia');
+                return;
+              } else {
+                handleSendMessageAboutCustomerOrderSituation();
+              }
+            }}
+          />
+          <Button
+            style={`px-5 flex-1 text-xl`}
+            onClick={() => {
+              showProductOuttaStockMessage(false);
+              setError('');
+            }}
+            label={'Cancelar'}
+            type='button'
+          />
+        </div>
+      </Modal>
+
+      <Modal 
+      isOpen={resetProductStock} 
+      modalTitle={'Repor estoque'} 
+      onCloseModalActions={() => {
+        showResetProductStock(false);
+        setError('');
+      }}
+      >
+        <p className='text-secondary-dark'>
+          Selecione a quantidade a ser reposta do estoque do produto pedido.
+        </p>
+        <Input 
+          placeholder={'Quantidade'} 
+          type={'number'}
+          style={{input: `mb-[-5px] ${error ? 'shadow-[0px_0px_5px_red]' : ''}`}}
+          onChange={(e) => {
+            setNewProductStock(Number(e.target.value));
+            setError('');
+          }}
+        />
+        {error && <Error error={error}/>}
+   
+        <div className='flex gap-2 mt-2'>
+          <Button 
+            type='button'
+            style={`px-5 flex-1 text-xl`} 
+            label='Repor'
+            colorScheme='primary'
+            loading={loading.reseting}
+            loadingLabel='Processando'
+            onClick={() => {
+              if (newProductStock <= 0) {
+                setError('Não se pode repor com um valor menor ou igual a zero');
+                return;
+              } else {
+                handleUpdateProductStock();
+              }
+            }}
+          />
+          <Button
+            style={`px-5 flex-1 text-xl ${buttonColorsScheme.red}`}
+            onClick={() => {
+              showResetProductStock(false);
+            }}
+            label={'Cancelar'}
+            type='button'
+          />
+        </div>
+      </Modal>
+
+      <Modal 
       isOpen={newOrderRejectionJustifyCorfirm} 
       modalTitle={'Confirmar ação'} 
       onCloseModalActions={() => {
@@ -623,4 +837,3 @@ const OrderProduct = ({order}:Props) => {
 
 export default OrderProduct;
 
-{/* <Button style={`px-5 flex-1 text-xl ${buttonColorsScheme.red}`} label='Cancelado pelo cliente'/> */}

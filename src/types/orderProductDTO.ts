@@ -9,6 +9,7 @@ export type OrderProductDTO = {
   stock: number;
   imageUrl: string;
   createdAt: string;
+  productAverageRating: string | null;
 
   orderId: number;
   orderCreatedAt: string;

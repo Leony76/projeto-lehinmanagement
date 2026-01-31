@@ -1,7 +1,7 @@
 "use client";
 
 import Image from 'next/image'
-import { IoStar } from 'react-icons/io5';
+import { IoStar, IoStarOutline } from 'react-icons/io5';
 import Button from '../form/Button';
 import { CATEGORY_LABEL_MAP, CategoryTranslatedValue } from '@/src/constants/generalConfigs';
 import { IoIosStar, IoIosStarOutline } from 'react-icons/io';
@@ -19,6 +19,7 @@ import { useToast } from '@/src/contexts/ToastContext';
 import { rateCommentProduct, removeProduct } from '@/src/actions/productActions';
 import Error from '../ui/Error';
 import { FaRegTrashCan } from 'react-icons/fa6';
+import { motion } from 'framer-motion';
 
 type Props = {
   userProduct: userProductDTO;
@@ -49,6 +50,7 @@ const MyProduct = ({
   lockScrollY(userProductInfo || expandImage || commentModal);
 
   const handleCommentRatingProduct = async() => {
+    if (rating === 0) return;
 
     try {
       await rateCommentProduct(
@@ -71,12 +73,15 @@ const MyProduct = ({
   const handleRemoveUserProduct = async() => {
     try {
       await removeProduct(
-        userProduct.id
+        userProduct.id,
+        ''
       );
 
       showToast('Produto removido com sucesso', 'success');
     } catch (err:unknown) {
       showToast('Erro: ' + err, 'error');
+    } finally {
+      showRemoveProductConfirm(false);
     }
   }
 
@@ -85,7 +90,17 @@ const MyProduct = ({
   },[rating]);
 
   return (
-    <div className={productCardSetup.mainContainer}>
+    <motion.div
+      layout 
+      initial={{ opacity: 1, scale: 1 }}
+      className={`relative ${productCardSetup.mainContainer}`}
+      exit={{ 
+        opacity: 0, 
+        scale: 2, 
+        filter: "blur(10px)",
+        transition: { duration: 0.25 } 
+      }}
+    >
       <div className="relative aspect-square w-full">
         <Image 
           src={userProduct.imageUrl} 
@@ -103,8 +118,11 @@ const MyProduct = ({
             <span>{datePutToSale}</span>
           </div>
           <div className={productCardSetup.rating}>
-            <IoStar/>
-            {userProduct.productAverageRating}
+            {!userProduct.productAverageRating 
+            ? <IoStarOutline/>
+            : <IoStar/> 
+            }
+            {userProduct.productAverageRating ?? 'Não avaliado'}
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -340,7 +358,7 @@ const MyProduct = ({
           />
         </div>
       </Modal>
-    </div>
+    </motion.div>
   )
 }
 
