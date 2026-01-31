@@ -17,19 +17,16 @@ import { useToast } from '@/src/contexts/ToastContext';
 import EditProductForm from '../form/EditProductForm';
 import TextArea from '../form/TextArea';
 import Error from '../ui/Error';
+import OrderProduct from '../modal/OrderProduct';
+import { lockScrollY } from '@/src/utils/lockScrollY';
+import { FaInfo } from 'react-icons/fa6';
 
 type Props = {
   product: ProductDTO;
-  setProducts: React.Dispatch<React.SetStateAction<ProductDTO[]>>;
-  showOrderProductModal: React.Dispatch<React.SetStateAction<boolean>>;
-  selectedProduct: React.Dispatch<React.SetStateAction<ProductDTO | null>>;
 }
 
 const Product = ({
   product,
-  setProducts,
-  showOrderProductModal,
-  selectedProduct
 }:Props) => {
 
   const { showToast } = useToast();
@@ -39,6 +36,11 @@ const Product = ({
 
   const [confirmRemoveProduct, showConfirmRemoveProduct] = useState<boolean>(false);
   const [removeProductJustify, showRemoveProductJustify] = useState<boolean>(false);
+  const [productInfo, showProductInfo] = useState<boolean>(false);
+  const [expandImage, setExpandImage] = useState<boolean>(false);
+  const [confirmModal, showConfirmModal] = useState(false);
+
+  const [orderProductMenu, showOrderProductMenu] = useState(false);
 
   const [removeJustify, setRemoveJustify] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -60,14 +62,14 @@ const Product = ({
       
       await removeProduct(product.id, removeJustify);
 
-      setProducts((prev) => prev.filter((p) => p.id !== product.id));
-
       setRemoveJustify('');
       showToast('Produto removido com sucesso', 'success');
     } catch (err) {
       showToast('Erro ao remover produto', 'error');
     }
   };
+
+  lockScrollY(orderProductMenu || confirmModal);
 
   return (
     <div className={productCardSetup.mainContainer}>
@@ -88,8 +90,8 @@ const Product = ({
             <span>{datePutToSale}</span>
           </div>
           <div className={productCardSetup.rating}>
-            <span className='xl:block md:hidden block'>Avaliação:</span>
-            <IoStar/>{4}
+            <IoStar/>
+            {product.productAverageRating}
           </div>
         {(product.sellerRole !== 'ADMIN') ? (       
           <div className={productCardSetup.seller.container}>
@@ -124,9 +126,17 @@ const Product = ({
             Sem estoque
           </span> 
         )}
-          <span className={productCardSetup.price}>
-            {formatCurrency(product.price)}
-          </span>
+          <div className='flex justify-between items-center'>
+            <span className={productCardSetup.price}>
+              {formatCurrency(product.price)}
+            </span>
+            <Button 
+              type={'button'}
+              icon={FaInfo}
+              style='p-2 px-4'
+              onClick={() => showProductInfo(true)}
+            />
+          </div>
         </div>
       {(canOrder && product.stock > 0) ? (
         <Button
@@ -134,8 +144,7 @@ const Product = ({
           label={"Fazer pedido"}
           colorScheme={'primary'}
           onClick={() => {
-            showOrderProductModal(true)
-            selectedProduct(product)
+            showOrderProductMenu(true)
           }}
           type='button'
         />
@@ -165,7 +174,6 @@ const Product = ({
       </div>
 
       {/* ⇊ MODALS ⇊ */}
-
 
       <Modal 
       isOpen={confirmRemoveProduct} 
@@ -241,10 +249,113 @@ const Product = ({
       > 
         <EditProductForm
           productToBeEdited={product}
-          setProducts={setProducts}
           closeModal={() => showEditProduct(false)}
         />
       </Modal>
+
+      <Modal 
+      isOpen={productInfo} 
+      modalTitle={'Informações'}
+      hasXClose 
+      onCloseModalActions={() => {
+        showProductInfo(false);
+      }}
+      >
+        <div className='flex sm:flex-row h-full sm:max-h-full max-h-[70vh] overflow-y-auto h flex-col gap-5 mt-2'>
+          <div className='flex-1 relative aspect-square'>
+            <Image 
+              src={product.imageUrl} 
+              alt={product.name}            
+              fill
+              className='rounded-2xl object-cover aspect-square cursor-zoom-in'
+              onClick={() => {
+                setExpandImage(true);
+                showProductInfo(false);
+              }}
+            />
+          </div>
+          <div className='flex bg-primary-ultralight/25 p-2 rounded-2xl flex-col gap-1.5 flex-2'>
+            <div className='flex flex-col'>
+              <label className='text-primary-middledark font-bold'>
+                Nome
+              </label>
+              <span className='text-secondary-dark'>
+                {product.name}
+              </span>
+            </div>
+            <div className='flex flex-col'>
+              <label className='text-primary-middledark font-bold'>
+                Categoria
+              </label>
+              <span className='text-secondary-dark'>
+                {category}
+              </span>
+            </div>
+            <div className='flex flex-col'>
+              <label className='text-primary-middledark font-bold'>
+                Descrição
+              </label>
+              <span className='h-30 overflow-y-auto  
+              hover:scrollbar-thumb-primary-light
+              scrollbar-thumb-primary-middledark 
+                scrollbar-track-transparent
+                hover:scrollbar-track-transparent
+                scrollbar-active-track-transparent
+                scrollbar-active-thumb-primary-light
+                scrollbar-thin text-secondary-dark flex-col'>
+                {product.description}
+              </span>
+            </div>
+            <div className='flex gap-10'>
+              <div className='flex flex-col '>
+                <label className='text-primary-middledark font-bold'>
+                  Preço unitário
+                </label>
+                <span className='text-secondary-dark'>
+                  {formatCurrency(product.price)}
+                </span>
+              </div>
+              <div className='flex flex-col '>
+                <label className='text-primary-middledark font-bold'>
+                  Estoque
+                </label>
+                <span className='text-secondary-dark'>
+                  {product.stock}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal 
+      isOpen={expandImage} 
+      modalTitle={''} 
+      onCloseModalActions={() => {
+        setExpandImage(false);
+        showProductInfo(true);
+      }}>
+        <div className='relative aspect-square h-[90vh]'>
+          <Image 
+            src={product.imageUrl} 
+            alt={product.name}            
+            fill
+            className='object-contain aspect-square border-x-4 border-double cursor-zoom-out border-primary'
+            onClick={() => {
+              setExpandImage(false);
+              showProductInfo(true);
+            }}
+          />
+        </div>
+      </Modal>
+
+      <OrderProduct
+        isOpen={orderProductMenu}
+        selectedProduct={product}
+        showOrderProductMenu={showOrderProductMenu}
+        showConfirmModal={showConfirmModal}
+        confirmModal={confirmModal}
+      />
     </div>
   )
 }

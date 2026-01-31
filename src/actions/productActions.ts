@@ -38,23 +38,36 @@ export async function createProduct(input: unknown) {
   revalidatePath("/products")
 };
 
+export async function removeProduct(
+  id: number, 
+  removeJustify?: string
+) {
+  if (removeJustify?.trim() !== '') {
+    await prisma.product.update({
+      where: { id },
+      data: { 
+        isActive: false,
+        removeJustify
+      },
+    });
 
-export async function removeProduct(id: number, removeJustify: string) {
-  await prisma.product.update({
-    where: { id },
-    data: { 
-      isActive: false,
-      removeJustify
-    },
-  });
+    revalidatePath('/products');
+  } else {
+    await prisma.product.update({
+      where: { id },
+      data: { 
+        isActive: false,
+      },
+    });
 
-  revalidatePath('/products');
+    revalidatePath('/products/my-products');
+  }
 }
 
 export async function updateProduct(input: unknown) {
   const data = addProductSchema.parse(input)
 
-  const updatedProduct = await prisma.product.update({
+  await prisma.product.update({
     where: { id: data.id! },
     data: {
       name: data.name,
@@ -66,7 +79,7 @@ export async function updateProduct(input: unknown) {
     }
   });
 
-  return updatedProduct;
+  revalidatePath("/products");
 }
 
 export async function orderProduct(
@@ -246,3 +259,36 @@ export async function editOrderRejectionJustify(
 
   revalidatePath("/orders");  
 }
+
+export async function rateCommentProduct(
+  productId: number,
+  rate: number,
+  comment?: string,
+): Promise<void> {
+  const session = await getRequiredSession();
+  
+  const commentSent = comment !== undefined && comment?.trim() !== '';
+
+  await prisma.productReview.upsert({
+    where: {
+      productId_userId: {
+        productId,
+        userId: session.user.id,
+      },
+    },
+    update: {
+      rating: rate,
+      ...(commentSent && { comment })
+    },
+    create: {
+      productId,
+      ...(commentSent && { comment }),
+      userId: session.user.id,
+      rating: rate,
+    },
+  });
+
+  revalidatePath("/products/my-products");
+}
+
+

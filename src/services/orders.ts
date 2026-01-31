@@ -307,9 +307,23 @@ export const getOrdersFromUser = async() => {
     },
   });
 
-  return ordersFromUser.map((item) => ({
-    
+  const avgRatings = await prisma.productReview.groupBy({
+    by: ['productId'],
+    _avg: {
+      rating: true,
+    },
+  });
+  
+  const avgRatingMap = new Map(
+    avgRatings.map(r => [
+      r.productId,
+      r._avg.rating !== null
+        ? r._avg.rating.toFixed(1).replace('.', ',')
+        : null,
+    ]),
+  );
 
+  return ordersFromUser.map((item) => ({
     id: item.product.id,
     name: item.product.name,
     category: item.product.category,
@@ -318,6 +332,7 @@ export const getOrdersFromUser = async() => {
     stock: item.product.stock,
     createdAt: item.product.createdAt?.toISOString() ?? null,
     price: item.product.price.toNumber(),
+    productAverageRating: avgRatingMap.get(item.product.id) ?? null,
 
     orderId: item.orderId,
     orderTotalPrice: item.order.total.toNumber(),

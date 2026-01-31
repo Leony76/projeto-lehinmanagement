@@ -5,7 +5,6 @@ import Input from '@/src/components/form/Input'
 import Select from '@/src/components/form/Select'
 import TextArea from '@/src/components/form/TextArea'
 import { buttonColorsScheme } from '@/src/constants/systemColorsPallet'
-import { FaImage } from 'react-icons/fa'
 
 import { useRef, useState } from "react"
 import { AddProductFormData, addProductSchema } from '@/src/schemas/addProductSchema'
@@ -13,16 +12,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useToast } from '@/src/contexts/ToastContext'
 import Error from '../ui/Error'
-import { createProduct, updateProduct } from '@/src/actions/productActions';
+import { updateProduct } from '@/src/actions/productActions';
 import { ProductDTO } from '@/src/types/productDTO'
 
 const EditProductForm = ({
   productToBeEdited,
-  setProducts,
   closeModal
 }: {
   productToBeEdited: ProductDTO;
-  setProducts: React.Dispatch<React.SetStateAction<ProductDTO[]>>;
   closeModal: () => void;
 }) => {
 
@@ -79,14 +76,6 @@ const EditProductForm = ({
       };
 
       await updateProduct(payload)
-
-      setProducts(prev =>
-        prev.map(product =>
-          product.id === productToBeEdited.id
-            ? { ...product, ...payload }
-            : product
-        )
-      );
 
       closeModal();
    

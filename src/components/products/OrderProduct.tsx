@@ -355,8 +355,6 @@ const OrderProduct = ({order}:Props) => {
         </div>
       </div>
       
-      {/* ⇊ MODALS ⇊ */}
-{/* order.orderPaymentStatus !== 'APPROVED' && !order.orderDeletedByCustomer && order.orderPaymentStatus !== 'CANCELED' && order.orderStatus !== 'REJECTED' */}
       <MoreActions direction='left' style={{container: 'mt-3'}} moreActions={moreActions} close={() => showMoreActions(false)}>
       {order.orderStatus !== 'CANCELED' && order.orderStatus === 'PENDING' ? (
         <Button 

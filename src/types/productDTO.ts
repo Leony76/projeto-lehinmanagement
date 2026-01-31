@@ -12,6 +12,7 @@ export type ProductDTO = {
   sellerId: string;
   sellerName: string | null;
   sellerRole: string | null;
+  productAverageRating: string | null,
 };
 
 

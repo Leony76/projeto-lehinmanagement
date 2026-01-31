@@ -8,7 +8,7 @@ export const productCardSetup = {
     categoryDateRatingContainer: 'block xl:text-sm',
 
       categoryDate: 'flex items-center gap-1 text-secondary-dark',
-      rating: 'flex items-center gap-1 text-yellow-dark',
+      rating: 'flex items-center gap-1 text-lg text-yellow-dark',
     
     priceStockContainer: 'flex flex-col justify-between mb-1',
 

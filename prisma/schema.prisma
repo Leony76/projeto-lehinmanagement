@@ -24,6 +24,7 @@ model User {
   products             Product[]
   orderHistoryChanged  OrderHistory[]  @relation("OrderHistoryChangedBy")
   orderHistoryDeleted  OrderHistory[]  @relation("OrderHistoryDeletedBy")
+  productReview        ProductReview[]
 
   @@map("users")
 }
@@ -104,7 +105,7 @@ model Product {
   description    String? 
   stock          Int
   isActive       Boolean      @map("is_active")
-  deletedBy      DeletedBy?      @map("deleted_by")
+  deletedBy      DeletedBy?   @map("deleted_by")
   category       Category
   imageUrl       String       @map("image_url")
   removeJustify  String?      @map("remove_justify")
@@ -113,6 +114,8 @@ model Product {
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime?    @updatedAt @map("updated_at")
   deletedAt      DateTime?    @map("deleted_at")
+
+  reviews        ProductReview[]
 
   @@map("products")
 }
@@ -158,6 +161,21 @@ model OrderHistory {
   order            Order        @relation(fields: [orderId], references: [id])
 
   @@map("order_history")
+}
+
+model ProductReview {
+  id         Int       @id @default(autoincrement())
+  rating     Int
+  comment    String?
+  productId  Int       @map("product_id")
+  userId     String    @map("user_id")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  product    Product   @relation(fields: [productId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@unique([productId, userId], name: "productId_userId")
+  @@map("product_reviews")
 }
 
 enum Role {

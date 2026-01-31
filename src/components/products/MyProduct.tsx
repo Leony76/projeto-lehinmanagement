@@ -4,36 +4,85 @@ import Image from 'next/image'
 import { IoStar } from 'react-icons/io5';
 import Button from '../form/Button';
 import { CATEGORY_LABEL_MAP, CategoryTranslatedValue } from '@/src/constants/generalConfigs';
-import { IoIosStarOutline } from 'react-icons/io';
+import { IoIosStar, IoIosStarOutline } from 'react-icons/io';
 import { AiOutlineMessage } from 'react-icons/ai';
 import { productCardSetup } from '@/src/constants/cardConfigs';
 import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from '../modal/Modal';
 import TextArea from '../form/TextArea';
 import { userProductDTO } from '@/src/types/userProductDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 import { lockScrollY } from '@/src/utils/lockScrollY';
+import Rating from '../ui/Rating';
+import { useToast } from '@/src/contexts/ToastContext';
+import { rateCommentProduct, removeProduct } from '@/src/actions/productActions';
+import Error from '../ui/Error';
+import { FaRegTrashCan } from 'react-icons/fa6';
 
 type Props = {
   userProduct: userProductDTO;
-  onComment: () => void;
 }
 
 const MyProduct = ({
   userProduct,
-  onComment,
 }:Props) => {
+
+  const { showToast } = useToast();
 
   const [commentModal, showCommentModal] = useState<boolean>(false);
   const [userProductInfo, showUserProductInfo] = useState<boolean>(false);
+  const [expandImage, setExpandImage] = useState<boolean>(false);
+  const [removeProductConfirm, showRemoveProductConfirm] = useState<boolean>(false);
+
+  const [error, setError] = useState<string>('');
+
+  const [productComment, setProductComment] = useState<string>('');
+
+  const [rating, setRating] = useState<number>(userProduct.productRating);
 
   const datePutToSale = new Date(userProduct.createdAt).toLocaleDateString("pt-BR");
   const orderAcceptedAt = new Date(userProduct.orderAcceptedAt ?? 1).toLocaleDateString("pt-BR");
-  const [expandImage, setExpandImage] = useState<boolean>(false);
+
   const category = CATEGORY_LABEL_MAP[userProduct.category];
 
   lockScrollY(userProductInfo || expandImage || commentModal);
+
+  const handleCommentRatingProduct = async() => {
+
+    try {
+      await rateCommentProduct(
+        userProduct.id,
+        rating,
+        productComment,
+      );
+
+      if (rating !== userProduct.productRating) {
+        showToast('Produto avaliado', 'info');
+      } if (productComment) {
+        showToast('Seu comentário sobre o produto foi ao ar', 'info');
+        setProductComment('');
+      }
+    } catch (err:unknown) { 
+      showToast('Houve um erro: ' + err, 'error');
+    } 
+  }
+
+  const handleRemoveUserProduct = async() => {
+    try {
+      await removeProduct(
+        userProduct.id
+      );
+
+      showToast('Produto removido com sucesso', 'success');
+    } catch (err:unknown) {
+      showToast('Erro: ' + err, 'error');
+    }
+  }
+
+  useEffect(() => {
+    handleCommentRatingProduct();
+  },[rating]);
 
   return (
     <div className={productCardSetup.mainContainer}>
@@ -55,26 +104,41 @@ const MyProduct = ({
           </div>
           <div className={productCardSetup.rating}>
             <IoStar/>
-            {4}
+            {userProduct.productAverageRating}
           </div>
         </div>
-        <div className='flex justify-between items-center'>
-          <div className='flex xl:text-[27px] text-4xl gap-1 text-yellow'>
-            <IoIosStarOutline/>
-            <IoIosStarOutline/>
-            <IoIosStarOutline/>
-            <IoIosStarOutline/>
-            <IoIosStarOutline/>
+        <div className="flex justify-between items-center">
+          <Rating 
+            value={rating}
+            onChange={setRating}
+          />
+          <div className={`transition-all duration-300 ease-out
+            ${rating !== 0 
+              ? 'opacity-100 translate-x-0 pointer-events-auto' 
+              : 'opacity-0 translate-x-3 pointer-events-none'}
+          `}>
+            <Button
+              type="button"
+              onClick={() => showCommentModal(true)}
+              icon={AiOutlineMessage}
+              style={`px-5 text-2xl ${buttonColorsScheme.yellow}`}
+            />
           </div>
-          <Button type='button' onClick={() => showCommentModal(true)} icon={AiOutlineMessage} style={`px-5 text-2xl ${buttonColorsScheme.yellow}`}/>
         </div>
-        <Button 
-          type='button' 
-          style='mt-2 text-xl' 
-          label={"Mais Informações"} 
-          colorScheme={'primary'}
-          onClick={() => showUserProductInfo(true)}
-        />
+        <div className='flex mt-2 gap-2'>
+          <Button 
+            type='button' 
+            style='text-lg flex-5' 
+            label={"Mais Informações"} 
+            onClick={() => showUserProductInfo(true)}
+          />
+          <Button 
+            style={`flex-1 ${buttonColorsScheme.red}`}
+            type={'submit'}            
+            icon={FaRegTrashCan}
+            onClick={() => showRemoveProductConfirm(true)}
+          />
+        </div>
       </div>
 
       {/* ⇊ MODALS ⇊ */}
@@ -84,21 +148,42 @@ const MyProduct = ({
       modalTitle={"Comentar produto"} 
       onCloseModalActions={() => {
         showCommentModal(false);
+        setError('');
       }}
       hasXClose
       >
         <p className={`text-[15px] ${textColors.secondaryDark}`}>
           Deixe um comentário público acerca do que você achou do produto que pediu!
         </p>
-        <TextArea style={{input: 'h-30'}} colorScheme='primary' placeholder={'Deixe seu comentário...'}/>
+        <TextArea 
+          style={{input: `h-30 ${error ? 'shadow-[0px_0px_5px_red] mb-[-1px]' : ''}`}} 
+          colorScheme='primary' 
+          placeholder={'Deixe seu comentário...'}
+          onChange={(e) => {
+            setProductComment(e.target.value);
+            setError('');
+          }}
+        />
+        {userProduct.hasReview && !error && 
+          <p className='text-sm text-yellow-dark -mt-2'>
+            (!) Você já teçou um comentário a esse produto. O novo que você der sobrescreverá o seu atual.
+          </p>
+        }
+        {error && 
+          <Error error={error}/>
+        }
         <Button 
           type='button'
           style='mt-1 text-xl' 
           colorScheme='secondary' 
           label='Comentar'
           onClick={() => {
-            onComment();
-            showCommentModal(false);
+            if (!productComment) {
+              setError('Não se pode mandar um comentário vazio');
+            } else {
+              handleCommentRatingProduct();
+              showCommentModal(false);
+            }
           }}
         />
       </Modal>
@@ -223,6 +308,35 @@ const MyProduct = ({
               setExpandImage(false);
               showUserProductInfo(true);
             }}
+          />
+        </div>
+      </Modal>
+
+      <Modal 
+      isOpen={removeProductConfirm} 
+      modalTitle={'Excluir produto'} 
+      onCloseModalActions={() => {
+        showRemoveProductConfirm(false);
+      }}
+      >
+        <p className='text-secondary-dark'>
+          Tem certeza que deseja excluir esse produto ?
+        </p>
+        <p className='text-yellow-dark'> 
+          (!) Essa ação é inrreversível
+        </p>
+        <div className='flex gap-3 text-lg'>
+          <Button 
+            type={'submit'}
+            label='Sim'
+            style={`${buttonColorsScheme.green} flex-1`}
+            onClick={handleRemoveUserProduct}
+          />
+          <Button 
+            type={'submit'}
+            label='Não'
+            style={`${buttonColorsScheme.red} flex-1`}
+            onClick={() => showRemoveProductConfirm(false)}
           />
         </div>
       </Modal>

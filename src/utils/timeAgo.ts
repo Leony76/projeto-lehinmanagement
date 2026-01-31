@@ -1,4 +1,6 @@
-export const timeAgo = (date: Date): string => {
+export const timeAgo = (date: Date | null): string => {
+
+  if (!date) return 'Data não encontrada!';
 
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()

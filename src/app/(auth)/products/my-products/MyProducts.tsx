@@ -16,12 +16,6 @@ type Props = {
 
 const MyProducts = ({myProducts}:Props) => {
 
-  const { showToast } = useToast();
-
-  const handleShowToast = () => {
-    showToast("Comentário enviado com sucesso!", "success");
-  };
-
   const hasUserProducts = myProducts.length > 0; 
 
   return (
@@ -40,7 +34,6 @@ const MyProducts = ({myProducts}:Props) => {
         <MyProduct 
           key={userProduct.id}
           userProduct={userProduct}
-          onComment={handleShowToast}
         />
       ))}
       </ProductCardsGrid>

@@ -13,5 +13,8 @@ export type userProductDTO = {
   orderedAmount: number | null;
   orderTotalPrice: number;
   orderAcceptedAt: string | null;
+  productRating: number;
+  hasReview: boolean;
+  productAverageRating: number | null;
 };
 

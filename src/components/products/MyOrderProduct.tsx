@@ -8,7 +8,7 @@ import { productCardSetup } from '@/src/constants/cardConfigs';
 import { buttonColorsScheme, staticButtonColorScheme, textColors } from '@/src/constants/systemColorsPallet';
 import StaticButton from '../ui/StaticButton';
 import { FaChevronDown, FaRegClock } from 'react-icons/fa';
-import { useEffect, useState, useTransition } from "react";
+import { SetStateAction, useEffect, useState, useTransition } from "react";
 import MoreActions from '../modal/MoreActions';
 import { UserOrderDTO } from '@/src/types/userOrderDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
@@ -35,14 +35,17 @@ const MyOrderProduct = ({
 
   const userRole = useUserStore((stats) => stats.user?.role);
 
-  const [moreActions, showMoreActions] = useState<boolean>(false);
-  const [payOrder, showPayOrder] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const [finishOrderPayment, showFinishOrderPayment] = useState<boolean>(false);
-  const [rejectionJustify, showRejectionJustify] = useState<boolean>(false);
+  const [payOrder, showPayOrder] = useState<boolean>(false);
+  const [expandImage, setExpandImage] = useState<boolean>(false);
   const [removeOrder, showRemoveOrder] = useState<boolean>(false);
   const [cancelOrder, showCancelOrder] = useState<boolean>(false);
+  const [moreActions, showMoreActions] = useState<boolean>(false);
   const [makeAnotherOrder, showMakeAnotherOrder] = useState<boolean>(false);
+  const [rejectionJustify, showRejectionJustify] = useState<boolean>(false);
+  const [finishOrderPayment, showFinishOrderPayment] = useState<boolean>(false);
+  const [userOrderProductInfo, showUserOrderProductInfo] = useState<boolean>(false);
+  const [makeAnotherOrderConfirm, showMakeAnotherOrderConfirm] = useState<boolean>(false);
 
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -182,7 +185,7 @@ const MyOrderProduct = ({
             </div>
             <div className={productCardSetup.rating}>
               <IoStar/>
-              {4}
+              {userOrder.productAverageRating}
             </div>
           </div>
           <div>
@@ -232,7 +235,6 @@ const MyOrderProduct = ({
               onClick={() => showPayOrder(true)}
             />
           )}
-
           <Button
             type='button'
             onClick={() => showMoreActions(!moreActions)}
@@ -257,6 +259,12 @@ const MyOrderProduct = ({
       moreActions={moreActions} 
       close={() => showMoreActions(false)}
       >
+        <Button 
+          type='button' 
+          label="Ver informações" 
+          style={`px-5 ${buttonColorsScheme.secondary}`}
+          onClick={() => showUserOrderProductInfo(true)}
+        />
       {(userOrder.orderStatus === 'REJECTED') ? (
         <>
         <Button 
@@ -303,7 +311,7 @@ const MyOrderProduct = ({
           onClick={() => showCancelOrder(true)}
         />
         )
-      )}
+      )}      
       </MoreActions>
 
 
@@ -520,10 +528,115 @@ const MyOrderProduct = ({
         </div>
       </Modal>
 
+      <Modal 
+      isOpen={userOrderProductInfo} 
+      modalTitle={'Informações'}
+      hasXClose 
+      onCloseModalActions={() => {
+        showUserOrderProductInfo(false);
+      }}
+      >
+        <div className='flex sm:flex-row h-full sm:max-h-full max-h-[70vh] overflow-y-auto h flex-col gap-5 mt-2'>
+          <div className='flex-1 relative aspect-square'>
+            <Image 
+              src={userOrder.imageUrl} 
+              alt={userOrder.name}            
+              fill
+              className='rounded-2xl object-cover aspect-square cursor-zoom-in'
+              onClick={() => {
+                setExpandImage(true);
+                showUserOrderProductInfo(false);
+              }}
+            />
+          </div>
+          <div className='flex bg-primary-ultralight/25 p-2 rounded-2xl flex-col gap-1.5 flex-2'>
+            <div className='flex flex-col'>
+              <label className='text-primary-middledark font-bold'>
+                Nome
+              </label>
+              <span className='text-secondary-dark'>
+                {userOrder.name}
+              </span>
+            </div>
+            <div className='flex flex-col'>
+              <label className='text-primary-middledark font-bold'>
+                Categoria
+              </label>
+              <span className='text-secondary-dark'>
+                {category}
+              </span>
+            </div>
+            <div className='flex flex-col'>
+              <label className='text-primary-middledark font-bold'>
+                Descrição
+              </label>
+              <span className='h-30 overflow-y-auto  
+              hover:scrollbar-thumb-primary-light
+              scrollbar-thumb-primary-middledark 
+                scrollbar-track-transparent
+                hover:scrollbar-track-transparent
+                scrollbar-active-track-transparent
+                scrollbar-active-thumb-primary-light
+                scrollbar-thin text-secondary-dark flex-col'>
+                {userOrder.description}
+              </span>
+            </div>
+            <div className='flex gap-10'>
+              <div className='flex flex-col '>
+                <label className='text-primary-middledark font-bold'>
+                  Preço unitário
+                </label>
+                <span className='text-secondary-dark'>
+                  {formatCurrency(userOrder.price)}
+                </span>
+              </div>
+              <div className='flex flex-col '>
+                <label className='text-primary-middledark font-bold'>
+                  Foi pedida
+                </label>
+                <span className='text-secondary-dark'>
+                  {userOrder.orderAmount}
+                </span>
+              </div>
+              <div className='flex flex-col '>
+                <label className='text-primary-middledark font-bold'>
+                  Total
+                </label>
+                <span className='text-secondary-dark'>
+                  {formatCurrency(userOrder.orderTotalPrice)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal 
+      isOpen={expandImage} 
+      modalTitle={''} 
+      onCloseModalActions={() => {
+        setExpandImage(false);
+        showUserOrderProductInfo(true);
+      }}>
+        <div className='relative aspect-square h-[90vh]'>
+          <Image 
+            src={userOrder.imageUrl} 
+            alt={userOrder.name}            
+            fill
+            className='object-contain aspect-square border-x-4 border-double cursor-zoom-out border-primary'
+            onClick={() => {
+              setExpandImage(false);
+              showUserOrderProductInfo(true);
+            }}
+          />
+        </div>
+      </Modal>
  
       <OrderProduct 
-        isOpen={makeAnotherOrder} 
-        showOrderProductMenu={showMakeAnotherOrder} 
+        isOpen={makeAnotherOrder}
+        confirmModal={makeAnotherOrderConfirm}      
+        showOrderProductMenu={showMakeAnotherOrder}
+        showConfirmModal={showMakeAnotherOrderConfirm}
         selectedProduct={{
           id: userOrder.id,
           name: userOrder.name,
@@ -533,10 +646,11 @@ const MyOrderProduct = ({
           imageUrl: userOrder.imageUrl,
           price: userOrder.price,
           stock: userOrder.stock,
-          sellerName: '',
-          sellerRole: '',
+          sellerName: null,
+          sellerRole: null,
           sellerId: '',
-        }}
+          productAverageRating: null,
+        }} 
       />
     </motion.div>
   )

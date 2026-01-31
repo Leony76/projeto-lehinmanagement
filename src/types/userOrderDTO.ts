@@ -10,6 +10,7 @@ export type UserOrderDTO = {
   stock: number;
   imageUrl: string;
   createdAt: string;
+  productAverageRating: string | null;
 
   orderId: number;
   orderTotalPrice: number;

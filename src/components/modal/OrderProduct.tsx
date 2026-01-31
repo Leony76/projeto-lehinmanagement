@@ -2,19 +2,15 @@
 
 import Input from '../form/Input'
 import Select from '../form/Select'
-import { IoIosCheckmarkCircleOutline } from 'react-icons/io'
 import Button from '../form/Button'
-import { buttonColorsScheme, staticButtonColorScheme, textColors } from '@/src/constants/systemColorsPallet'
+import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet'
 import Modal from './Modal'
 import { useEffect, useState } from 'react';
 import { ProductDTO } from '@/src/types/productDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
-import { OrderStatus, PaymentOptionsValue, PaymentStatus } from '@/src/constants/generalConfigs';
+import { PaymentOptionsValue, PaymentStatus } from '@/src/constants/generalConfigs';
 import { FaRegCircleCheck, FaRegClock } from 'react-icons/fa6';
-import { IoCloseCircleOutline } from 'react-icons/io5';
 import { CgCloseO } from 'react-icons/cg';
-import StaticButton from '../ui/StaticButton';
-import { lockScrollY } from '@/src/utils/lockScrollY';
 import { orderProduct } from '@/src/actions/productActions';
 import Error from '../ui/Error';
 import { useToast } from '@/src/contexts/ToastContext';
@@ -22,17 +18,19 @@ import { useToast } from '@/src/contexts/ToastContext';
 type Props = {
   isOpen: boolean;
   showOrderProductMenu: React.Dispatch<React.SetStateAction<boolean>>;
+  showConfirmModal: React.Dispatch<React.SetStateAction<boolean>>;
+  confirmModal: boolean;
   selectedProduct: ProductDTO | null;
 }
 
 const OrderProduct = ({
   selectedProduct,
   showOrderProductMenu, 
-  isOpen
+  showConfirmModal,
+  confirmModal,
+  isOpen,
 }:Props) => {  
   const { showToast } = useToast();
-
-  const [confirmModal, showConfirmModal] = useState(false);
 
   const [loading, setLoading] = useState<boolean>(false);
   
