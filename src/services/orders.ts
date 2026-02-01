@@ -287,7 +287,8 @@ export const getOrdersFromUser = async() => {
     where: {
       order: {
         userId: session.user.id,
-        deletedBySellerAt: null
+        deletedBySellerAt: null,
+        deletedByCustomerAt: null,
       }
     },
     include: {

@@ -20,6 +20,7 @@ import Error from '../ui/Error';
 import OrderProduct from '../modal/OrderProduct';
 import { lockScrollY } from '@/src/utils/lockScrollY';
 import { FaInfo } from 'react-icons/fa6';
+import { motion } from 'framer-motion';
 
 type Props = {
   product: ProductDTO;
@@ -72,7 +73,17 @@ const Product = ({
   lockScrollY(orderProductMenu || confirmModal);
 
   return (
-    <div className={productCardSetup.mainContainer}>
+    <motion.div
+      layout 
+      initial={{ opacity: 1, scale: 1 }}
+      className={`relative ${productCardSetup.mainContainer}`}
+      exit={{ 
+        opacity: 0, 
+        scale: 2, 
+        filter: "blur(10px)",
+        transition: { duration: 0.25 } 
+      }}
+    >
       <div className="relative aspect-square w-full">
         <Image
           src={product.imageUrl}
@@ -359,7 +370,7 @@ const Product = ({
         showConfirmModal={showConfirmModal}
         confirmModal={confirmModal}
       />
-    </div>
+    </motion.div>
   )
 }
 

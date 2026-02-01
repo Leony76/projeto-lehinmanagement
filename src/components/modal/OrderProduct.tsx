@@ -158,7 +158,7 @@ const OrderProduct = ({
       </p>
       <div className='flex'>
         <Select 
-          style={{input:'w-[90%] text-sm py-1.5 rounded-3xl'}} 
+          style={{input:'text-sm py-1.5 rounded-3xl', container: 'w-[90%]'}} 
           selectSetup={'PAYMENT'} 
           hasTopLabel 
           label={'Pagamento'}

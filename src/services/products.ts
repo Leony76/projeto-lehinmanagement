@@ -27,6 +27,19 @@ export const getProducts = async() => {
     },
   });
 
+  const productSales = await prisma.orderItem.groupBy({
+    by: ['productId'],
+    where: {
+      order: {
+        status: 'APPROVED',
+        deletedAt: null,
+      },
+    },
+    _sum: {
+      quantity: true,
+    },
+  });
+  
   const avgRatingMap = new Map(
     avgRatings.map(r => [
       r.productId,
@@ -34,6 +47,13 @@ export const getProducts = async() => {
         ? r._avg.rating.toFixed(1).replace('.', ',')
         : null,
     ]),
+  );
+
+  const salesMap = new Map(
+    productSales.map(sale => [
+      sale.productId,
+      sale._sum.quantity ?? 0,
+    ])
   );
 
   return products.map(product => ({
@@ -49,6 +69,7 @@ export const getProducts = async() => {
     sellerId: product.seller.id,
     sellerName: product.seller.name,
     sellerRole: product.seller.role,
+    productSalesCount: salesMap.get(product.id) ?? null,
     productAverageRating: avgRatingMap.get(product.id) ?? null,
   }));
 }

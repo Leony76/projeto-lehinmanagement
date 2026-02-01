@@ -1,6 +1,6 @@
 import { Category } from "@prisma/client";
 
-export type userProductDTO = {
+export type UserProductDTO = {
   id: number;
   name: string;
   category: Category;

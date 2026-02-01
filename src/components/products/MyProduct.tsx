@@ -11,7 +11,7 @@ import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPall
 import { useEffect, useState } from 'react';
 import Modal from '../modal/Modal';
 import TextArea from '../form/TextArea';
-import { userProductDTO } from '@/src/types/userProductDTO';
+import { UserProductDTO } from '@/src/types/UserProductDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 import { lockScrollY } from '@/src/utils/lockScrollY';
 import Rating from '../ui/Rating';
@@ -22,7 +22,7 @@ import { FaRegTrashCan } from 'react-icons/fa6';
 import { motion } from 'framer-motion';
 
 type Props = {
-  userProduct: userProductDTO;
+  userProduct: UserProductDTO;
 }
 
 const MyProduct = ({
