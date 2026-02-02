@@ -1,29 +1,34 @@
 "use client";
 
 import Image from 'next/image'
-import { IoClose, IoStar, IoStarOutline } from 'react-icons/io5';
+import { IoStar, IoStarOutline } from 'react-icons/io5';
 import Button from '../form/Button';
 import { productCardSetup } from '@/src/constants/cardConfigs';
 import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
-import { FaCheck, FaChevronDown } from 'react-icons/fa';
 import MoreActions from '../modal/MoreActions';
-import { startTransition, useEffect, useState } from 'react';
+import { startTransition, useState } from 'react';
 import { CATEGORY_LABEL_MAP } from '@/src/constants/generalConfigs';
 import { OrderProductDTO } from '@/src/types/orderProductDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
-import { getNameAndSurname } from '@/src/utils/getNameAndSurname';
 import Modal from '../modal/Modal';
 import TextArea from '../form/TextArea';
 import Error from '../ui/Error';
 import { useToast } from '@/src/contexts/ToastContext';
 import { acceptRejectProductOrder, removeOrderFromUserOrders, sendMessageAboutCustomerOrderSituation, updatedProductStock } from '@/src/actions/productActions';
-import { MdOutlinePending } from 'react-icons/md';
 import { motion } from 'framer-motion';
 import { useUserStore } from '@/src/store/useUserStore';
 import { useRouter } from 'next/navigation';
-import { BsDropbox } from "react-icons/bs";
 import { editOrderRejectionJustify as editRejectionJustify } from '@/src/actions/productActions';
 import Input from '../form/Input';
+import OrderSituationTopTag from '../ui/OrderSituationTopTag';
+import OrderRequestDate from '../ui/OrderRequestDate';
+import OrderRequestBy from '../ui/OrderRequestBy';
+import OrderRequestQuantity from '../ui/OrderRequestQuantity';
+import StockIfAccpeted from '../ui/StockIfAccpeted';
+import OrderCommission from '../ui/OrderCommission';
+import PaidTag from '../ui/PaidTag';
+import MoreActionsChevronButton from '../ui/MoreActionsChevronButton';
+import OrderSituationBottomTag from '../ui/OrderSituationBottomTag';
 
 type Props = {
   order: OrderProductDTO;
@@ -237,21 +242,13 @@ const OrderProduct = ({order}:Props) => {
         />
       </div>
     {order.orderPaymentStatus === 'PENDING' && order.orderStatus !== 'CANCELED' ? (
-      <div className='absolute top-3 left-3 text-red-dark bg-red-100 w-fit py-1 px-3 rounded-2xl border border-red'>
-        Pagamento pendente
-      </div>
+      <OrderSituationTopTag situation='Pagamento pendente'/>
     ) : order.orderStatus === 'CANCELED' ? (
-      <div className='absolute top-3 left-3 text-red-dark bg-red-100 w-fit py-1 px-3 rounded-2xl border border-red'>
-        Cancelado pelo cliente
-      </div>
+      <OrderSituationTopTag situation='Cancelado pelo cliente'/>
     ) : order.orderStatus !== 'PENDING' ? (
-      <div className='absolute top-3 left-3 text-green bg-green-100 w-fit py-1 px-3 rounded-2xl border border-green'>
-        Analisado
-      </div>
+      <OrderSituationTopTag situation='Analisado'/>
     ) : (
-      <div className='absolute top-3 left-3 text-yellow-dark bg-yellow-100 w-fit py-1 px-3 rounded-2xl border border-yellow'>
-        Não analisado
-      </div>
+      <OrderSituationTopTag situation='Não analisado'/>
     )}
       <div className={productCardSetup.infosContainer}>
         <div onClick={() => showMoreActions(false)}>
@@ -271,108 +268,69 @@ const OrderProduct = ({order}:Props) => {
             </div>
           </div>
           <div>
-            <h4 className='text-yellow-dark flex gap-1'>
-              Data do pedido: 
-              <span className='text-gray'>
-                {orderDate}
-              </span></h4>
-            <h4 className='text-yellow-dark xl:text-[14px] flex gap-1 line-clamp-1 truncate'>
-              Pedido por: 
-              <span className='text-cyan '>
-                {getNameAndSurname(order.orderCustomerName)}
-              </span></h4>
+            <OrderRequestDate 
+              orderDate={orderDate}
+            />
+            <OrderRequestBy 
+              customerName={order.orderCustomerName ?? '[desconhecido]'}
+            />
           </div>
           <div>
-            <h4 className='text-gray flex gap-1'>
-              Quantidade pedida: 
-              <span className='text-ui-stock'>
-                {order.orderedAmount}
-              </span>
-            </h4>
-          {(order.orderStatus !== 'CANCELED' && order.orderStatus !== 'APPROVED' &&  order.orderStatus !== 'REJECTED') && (
-            <h4 className='text-gray flex gap-1'>
-              Estoque se aceito: 
-              <span className={stockIfOrderAccepted > 0 ? 'text-ui-stock' : 'text-red bg-linear-to-r from-red/50 to-transparent px-2 rounded-tl-2xl'}>
-                {stockIfOrderAccepted}
-              </span>
-            </h4>
+            <OrderRequestQuantity 
+              orderQuantity={order.orderedAmount}
+            />
+          {(order.orderStatus !== 'CANCELED' 
+            && order.orderStatus !== 'APPROVED' 
+            && order.orderStatus !== 'REJECTED') 
+            && (
+            <StockIfAccpeted
+              stockIfOrderAccepted={stockIfOrderAccepted}
+            />
           )}
           </div>
-          <h3 className='text-gray text-xl w-full lg:text-lg md:text-xl sm:text-2xl sm:max-w-87.5 max-w-68.5 flex gap-1'>
-            Comissão: 
-            <span className='text-ui-money truncate '>
-              {formatCurrency(order.orderComission)}
-            </span>
-          </h3>
-
-        {(order.orderPaymentStatus === 'APPROVED' && order.orderStatus !== 'APPROVED' && order.orderStatus !== 'REJECTED' && !order.orderDeletedByCustomer && order.orderStatus !== 'CANCELED') && (
-          <span className='flex py-1.5 items-center gap-1 bg-linear-to-r from-transparent via-green/10 to-transparent justify-center w-full text-xl text-green'>
-            <FaCheck size={24}/>
-            Pago
-          </span>
+          <OrderCommission
+            orderCommission={order.orderComission}
+          />
+        {(order.orderPaymentStatus === 'APPROVED' 
+          && order.orderStatus !== 'APPROVED' 
+          && order.orderStatus !== 'REJECTED' 
+          && order.orderStatus !== 'CANCELED') 
+          && !order.orderDeletedByCustomer 
+          && (
+          <PaidTag/>
         )}
         
         </div>
         <div className='flex gap-2 mt-1'>
         {order.orderStatus === 'APPROVED' ? (
           <>
-          <Button
-            type='button'
+          <MoreActionsChevronButton
             onClick={() => showMoreActions(!moreActions)}
-            style={`px-5 flex items-center justify-center ${
-              moreActions
-                ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!'
-                : buttonColorsScheme.gray
-            }`}
-            icon={FaChevronDown}
-            iconStyle={`transition-transform duration-300 ${
-              moreActions ? 'rotate-180' : 'rotate-0'
-            }`}
+            moreActions={moreActions}
           />
-          <span className='flex py-1.5 items-center gap-1 justify-center w-full text-xl text-green'>
-            <FaCheck size={24}/>
-            Aprovado
-          </span>
+          <OrderSituationBottomTag
+            situation={'Aprovado'}
+          />
           </>
         ) : (order.orderStatus === 'CANCELED') ? (
           <>
-          <Button
-            type='button'
+          <MoreActionsChevronButton
             onClick={() => showMoreActions(!moreActions)}
-            style={`px-5 flex items-center justify-center ${
-              moreActions
-                ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!'
-                : buttonColorsScheme.gray
-            }`}
-            icon={FaChevronDown}
-            iconStyle={`transition-transform duration-300 ${
-              moreActions ? 'rotate-180' : 'rotate-0'
-            }`}
+            moreActions={moreActions}
           />
-          <span className='flex items-center py-1.5 gap-1 justify-center w-full text-xl text-red-dark'>
-            <IoClose size={30}/>
-            Cancelado
-          </span>
+          <OrderSituationBottomTag
+            situation={'Cancelado'}
+          />
           </>
         ) : order.orderStatus === 'REJECTED' ? ( 
           <>
-          <Button
-            type='button'
+          <MoreActionsChevronButton
             onClick={() => showMoreActions(!moreActions)}
-            style={`px-5 flex items-center justify-center ${
-              moreActions
-                ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!'
-                : buttonColorsScheme.gray
-            }`}
-            icon={FaChevronDown}
-            iconStyle={`transition-transform duration-300 ${
-              moreActions ? 'rotate-180' : 'rotate-0'
-            }`}
+            moreActions={moreActions}
           />
-          <span className='flex items-center py-1.5 gap-1 justify-center w-full text-xl text-red-dark'>
-            <IoClose size={30}/>
-            Rejeitado
-          </span>
+          <OrderSituationBottomTag
+            situation={'Rejeitado'}
+          />
           </>
         ) :  order.orderPaymentStatus === 'APPROVED' 
           && order.orderStatus === 'PENDING' 
@@ -399,43 +357,23 @@ const OrderProduct = ({order}:Props) => {
           && stockIfOrderAccepted < 0  
           ? (
           <>
-          <Button
-            type='button'
+          <MoreActionsChevronButton
             onClick={() => showMoreActions(!moreActions)}
-            style={`px-5 flex items-center justify-center ${
-              moreActions
-                ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!'
-                : buttonColorsScheme.gray
-            }`}
-            icon={FaChevronDown}
-            iconStyle={`transition-transform duration-300 ${
-              moreActions ? 'rotate-180' : 'rotate-0'
-            }`}
+            moreActions={moreActions}
           />
-          <span className='flex items-center py-1.5 gap-2 justify-center w-full text-xl text-red'>
-            <BsDropbox size={24}/>
-            Estoque insuficiente 
-          </span>
+          <OrderSituationBottomTag
+            situation={'Estoque insuficiente'}
+          />
           </>
         ) : (order.orderPaymentStatus !== 'APPROVED') && (
           <>
-          <Button
-            type='button'
+          <MoreActionsChevronButton
             onClick={() => showMoreActions(!moreActions)}
-            style={`px-5 flex items-center justify-center ${
-              moreActions
-                ? '!bg-gray border-gray! text-white hover:bg-gray/15! hover:text-gray!'
-                : buttonColorsScheme.gray
-            }`}
-            icon={FaChevronDown}
-            iconStyle={`transition-transform duration-300 ${
-              moreActions ? 'rotate-180' : 'rotate-0'
-            }`}
+            moreActions={moreActions}
           />
-          <span className='flex items-center py-1.5 gap-1 justify-center w-full text-xl text-yellow-dark'>
-            <MdOutlinePending size={24}/>
-            Pendente
-          </span>
+          <OrderSituationBottomTag
+            situation={'Pendente'}
+          />
           </>
         )}
         </div>
@@ -449,22 +387,22 @@ const OrderProduct = ({order}:Props) => {
       >
       {order.orderStatus !== 'CANCELED' && order.orderStatus === 'PENDING' ? (
         <>
-      {stockIfOrderAccepted < 0 && (
-        <>
-        <Button 
-          type='button'
-          label="Repor estoque" 
-          style={`px-5 ${buttonColorsScheme.secondary}`}
-          onClick={() => showResetProductStock(true)}
-        />
-        <Button 
-          type='button'
-          label="Justificar ao cliente" 
-          style={`px-5 ${buttonColorsScheme.yellow}`}
-          onClick={() => showProductOuttaStockMessage(true)}
-        />
-        </>
-      )}
+        {stockIfOrderAccepted < 0 && (
+          <>
+          <Button 
+            type='button'
+            label="Repor estoque" 
+            style={`px-5 ${buttonColorsScheme.secondary}`}
+            onClick={() => showResetProductStock(true)}
+          />
+          <Button 
+            type='button'
+            label="Justificar ao cliente" 
+            style={`px-5 ${buttonColorsScheme.yellow}`}
+            onClick={() => showProductOuttaStockMessage(true)}
+          />
+          </>
+        )}
         <Button 
           type='button'
           label="Rejeitar pedido" 
@@ -472,7 +410,7 @@ const OrderProduct = ({order}:Props) => {
           onClick={() => showRejectionJustifyConfirm(true)}
         />
         </>
-      ) :  order.orderStatus === 'REJECTED' ? (
+      ) : ( order.orderStatus === 'REJECTED') ? (
         <>
         <Button 
           type='button'
@@ -486,14 +424,14 @@ const OrderProduct = ({order}:Props) => {
           style={`px-5 ${buttonColorsScheme.yellow}`}
           onClick={() => showOrderRejectionJustify(true)}
         />
-      {order.orderPaymentStatus === 'APPROVED' && (
-        <Button 
-          type='button'
-          label="Aprovar pedido" 
-          style={`px-5 ${buttonColorsScheme.green}`}
-          onClick={() => showAcceptanceOrderConfirm(true)}
-        />
-      )}
+        {order.orderPaymentStatus === 'APPROVED' && (
+          <Button 
+            type='button'
+            label="Aprovar pedido" 
+            style={`px-5 ${buttonColorsScheme.green}`}
+            onClick={() => showAcceptanceOrderConfirm(true)}
+          />
+        )}
         </>
       ) : (
         <Button 
