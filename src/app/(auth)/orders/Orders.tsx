@@ -5,30 +5,30 @@ import Select from "@/src/components/form/Select";
 import Search from "@/src/components/form/Search";
 import OrderProduct from "@/src/components/products/OrderProduct";
 import ProductCardsGrid from "@/src/components/ui/ProductCardsGrid";
-import { OrderProductDTO } from "@/src/types/orderProductDTO";
+import { ProductWithOrdersDTO } from "@/src/types/ProductWithOrdersDTO";
 import NoContentFoundMessage from "@/src/components/ui/NoContentFoundMessage";
 import { useState } from "react";
-import { CATEGORY_LABEL_MAP, ORDER_FILTER_LABEL_MAP, OrderFilterValue } from "@/src/constants/generalConfigs";
+import { CATEGORY_LABEL_MAP } from "@/src/constants/generalConfigs";
 import { Category } from "@prisma/client";
 import { filteredSearchForOrders } from "@/src/utils/filters/filteredSearchForOrders";
+import { productOrdersGeneralStats } from "@/src/utils/filters/productOrdersGeneralStats";
 
 type Props = {
-  orders: OrderProductDTO[];
+  productsWithOrders: ProductWithOrdersDTO[];
 }
 
-const Orders = ({orders}:Props) => {
+const Orders = ({productsWithOrders}:Props) => {
 
   const [search, setSearch] = useState<string>('');
-  const [advancedFilter, setAdvancedFilter] = useState<OrderFilterValue | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<Category | null>(null);
   
-  const translatedAdvandedFilter = advancedFilter ? ORDER_FILTER_LABEL_MAP[advancedFilter] : '';
   const translatedCategoryFilter = categoryFilter ? CATEGORY_LABEL_MAP[categoryFilter] : '';
 
+  const ordersStats = productOrdersGeneralStats(productsWithOrders);
+
   const filteredOrders = filteredSearchForOrders(
-    orders,
+    productsWithOrders,
     search,
-    advancedFilter,
     categoryFilter,
   );
 
@@ -36,59 +36,68 @@ const Orders = ({orders}:Props) => {
   
   return (
     <div>
-      <PageTitle style="my-2" title="Pedidos"/>
-      <div>
+      <PageTitle style="my-2 mb-4" title="Pedidos"/>
+      <div className="grid grid-cols-6 gap-5">
+        <div className="flex flex-col p-3 text-xl rounded-xl border text-green border-secondary-middledark bg-secondary-light/35">
+          <span className="text-base text-gray">Aprovados</span> 
+          {ordersStats?.approved}
+        </div>
+        <div className="flex flex-col p-3 text-xl rounded-xl border text-yellow-dark border-secondary-middledark bg-secondary-light/35">
+          <span className="text-base text-gray">Pendentes</span> 
+          {ordersStats?.pending}
+        </div>
+        <div className="flex flex-col p-3 text-xl rounded-xl border text-red border-secondary-middledark bg-secondary-light/35">
+          <span className="text-base text-gray">Cancelados</span> 
+          {ordersStats?.canceled}
+        </div>
+        <div className="flex flex-col p-3 text-xl rounded-xl border text-red border-secondary-middledark bg-secondary-light/35">
+          <span className="text-base text-gray">Rejeitados</span> 
+          {ordersStats?.rejected}
+        </div>
+        <div className="flex flex-col p-3 text-xl rounded-xl border text-red border-secondary-middledark bg-secondary-light/35">
+          <span className="text-base text-gray">Não pagos</span> 
+          {ordersStats?.notPaid}
+        </div>
+        <div className="flex flex-col p-3 text-xl rounded-xl border text-ui-stock border-secondary-middledark bg-secondary-light/35">
+          <span className="text-base text-gray">Total</span> 
+          {ordersStats?.total}
+        </div>
+      </div>
+      <div className="flex flex-col gap-3">
         <Search 
-          style={{input: 'mt-5'}} 
+          style={{input: 'mt-5 py-1'}} 
           colorScheme="primary"
           value={search}
           onClearSearch={() => setSearch('')}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex gap-3 mt-3">
-          <Select 
-            style={{input: 'flex-1 w-full'}} 
-            selectSetup={"ORDER_FILTER"} 
-            colorScheme={"primary"} 
-            label={"Filtro"}
-            onChange={(e) => setAdvancedFilter(e.target.value as OrderFilterValue)}
-          />
-          <Select 
-            style={{input: 'flex-1 w-full'}} 
-            selectSetup={"CATEGORY"} 
-            colorScheme={"primary"} 
-            label={"Categoria"}
-            onChange={(e) => setCategoryFilter(e.target.value as Category)}
-          />
-        </div>
+        <Select 
+          style={{input: 'flex-1 w-full'}} 
+          selectSetup={"CATEGORY"} 
+          colorScheme={"primary"} 
+          label={"Categoria"}
+          onChange={(e) => setCategoryFilter(e.target.value as Category)}
+        />     
       </div>
     {(hasOrders) ? (
       <ProductCardsGrid>
-      {filteredOrders.map((order) => (
+      {filteredOrders.map((productWithOrder) => (
         <OrderProduct 
-          key={order.orderId}
-          order={order}
+          key={productWithOrder.id}
+          product={productWithOrder}
         /> 
       ))}
       </ProductCardsGrid>
     ) : (
       <NoContentFoundMessage 
         text={
-          search && categoryFilter && advancedFilter
-            ? `Nenhum resultado para "${search}", categoria "${translatedCategoryFilter}" e filtro avançado "${translatedAdvandedFilter}"`
-          : search && categoryFilter
+          search && categoryFilter
             ? `Nenhum resultado para "${search}" e para a categoria "${translatedCategoryFilter}"`
-          : search && advancedFilter
-            ? `Nenhum resultado para "${search}" e para o filtro avançado "${translatedAdvandedFilter}"`
-          : categoryFilter && advancedFilter
-            ? `Nenhum resultado para a categoria "${translatedCategoryFilter}" e para o filtro avançado "${translatedAdvandedFilter}"`
           : search
             ? `Nenhum resultado para "${search}"`
           : categoryFilter
             ? `Nenhum resultado para a categoria "${translatedCategoryFilter}"`
-          : advancedFilter
-            ? `Nenhum resultado para o filtro avançado "${translatedAdvandedFilter}"`
-          : `Nenhum produto no estoque no momento`
+          : `Nenhum pedido no momento`
         }
       />
     )}
@@ -97,3 +106,4 @@ const Orders = ({orders}:Props) => {
 }
 
 export default Orders
+

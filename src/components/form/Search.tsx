@@ -9,9 +9,9 @@ type Props = {
   style?: {
     input?: string;
   };
-  onChange: (e:React.ChangeEvent<HTMLInputElement>) => void;
-  onClearSearch: () => void;
-  value: string;
+  onChange?: (e:React.ChangeEvent<HTMLInputElement>) => void;
+  onClearSearch?: () => void;
+  value?: string;
 }
 
 const Search = ({

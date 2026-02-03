@@ -12,7 +12,7 @@ type Props = {
 
 const OrderSituationTopTag = ({situation}:Props) => {
   return (
-    <div className={`absolute top-3 left-3 w-fit py-1 px-3 rounded-2xl border ${
+    <div className={`absolute top-0 right-0 w-fit py-1 px-3 rounded-2xl border ${
       situation === 'Não analisado'
         ? 'text-yellow-dark bg-yellow-100 border-yellow'
       : situation === 'Pagamento pendente' 

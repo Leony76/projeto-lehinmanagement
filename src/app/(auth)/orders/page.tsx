@@ -2,11 +2,11 @@ import Orders from './Orders'
 import { getSellerOrders } from '@/src/services/orders'
 
 export default async function OrdersPage() {
-  const orders = await getSellerOrders();
+  const productsWithOrders = await getSellerOrders();
 
   return (
     <Orders
-      orders={orders}
+      productsWithOrders={productsWithOrders}
     />
   )
 }

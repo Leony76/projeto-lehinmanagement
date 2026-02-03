@@ -6,9 +6,9 @@ import Button from '../form/Button';
 import { productCardSetup } from '@/src/constants/cardConfigs';
 import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
 import MoreActions from '../modal/MoreActions';
-import { startTransition, useState } from 'react';
-import { CATEGORY_LABEL_MAP } from '@/src/constants/generalConfigs';
-import { OrderProductDTO } from '@/src/types/orderProductDTO';
+import { startTransition, useMemo, useState } from 'react';
+import { CATEGORY_LABEL_MAP, OrderFilterValue } from '@/src/constants/generalConfigs';
+import { ProductWithOrdersDTO } from '@/src/types/ProductWithOrdersDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 import Modal from '../modal/Modal';
 import TextArea from '../form/TextArea';
@@ -26,25 +26,37 @@ import OrderRequestBy from '../ui/OrderRequestBy';
 import OrderRequestQuantity from '../ui/OrderRequestQuantity';
 import StockIfAccpeted from '../ui/StockIfAccpeted';
 import OrderCommission from '../ui/OrderCommission';
-import PaidTag from '../ui/PaidTag';
 import MoreActionsChevronButton from '../ui/MoreActionsChevronButton';
 import OrderSituationBottomTag from '../ui/OrderSituationBottomTag';
+import { getProductOrdersStats } from '@/src/utils/filters/productOrdersStats';
+import Select from '../form/Select';
+import Search from '../form/Search';
+import { filterOrders } from '@/src/utils/filters/filteredOrdersFromEachProduct';
 
 type Props = {
-  order: OrderProductDTO;
+  product: ProductWithOrdersDTO;
 }
 
-const OrderProduct = ({order}:Props) => {
+const OrderProduct = ({product}:Props) => {
 
-  const { showToast } = useToast();
+  const { showToast } = useToast()
 
   const userRole = useUserStore((stats) => stats.user?.role);
 
-  const [moreActions, showMoreActions] = useState(false);  
-  const datePutToSale = new Date(order.createdAt).toLocaleDateString("pt-BR");
-  const orderDate = new Date(order.orderCreatedAt).toLocaleDateString("pt-BR");
-  const stockIfOrderAccepted = (order.stock - order.orderedAmount); 
-  const category = CATEGORY_LABEL_MAP[order.category];
+  const ordersStats = useMemo(
+    () => getProductOrdersStats(product),
+    [product.orders]
+  );
+
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const selectedOrder = product.orders.find(
+    o => o.orderId === selectedOrderId
+  );
+
+  const [moreActionsOrderId, setMoreActionsOrderId] = useState<number | null>(null);
+  const datePutToSale = new Date(product.createdAt).toLocaleDateString("pt-BR");
+  const stockIfOrderAccepted = (product.stock - (selectedOrder?.orderedAmount ?? 0)); 
+  const category = CATEGORY_LABEL_MAP[product.category];
 
   const router = useRouter();
 
@@ -55,7 +67,10 @@ const OrderProduct = ({order}:Props) => {
   const [productOuttaStockMessage, showProductOuttaStockMessage] = useState<boolean>(false);
   const [newOrderRejectionJustifyCorfirm, showNewOrderRejectionJustifyCorfirm] = useState<boolean>(false);
   const [resetProductStock, showResetProductStock] = useState<boolean>(false);
+  const [ordersFromProduct, showOrdersFromProduct] = useState<boolean>(false);
+  const [expandImage, setExpandImage] = useState<boolean>(false);
   const [removeOrder, showRemoveOrder] = useState<boolean>(false);
+
 
   const [loading, setLoading] = useState<{
     rejecting: boolean;
@@ -74,13 +89,33 @@ const OrderProduct = ({order}:Props) => {
   });
 
   const [error, setError] = useState<string>('');
-  const [newOrderRejectionJustify, setNewOrderRejectionJustify] = useState<string | null>(order.orderRejectionJustify)
+  const [newOrderRejectionJustify, setNewOrderRejectionJustify] = useState<string | null>(selectedOrder?.orderRejectionJustify ?? '')
   const [rejectionJustify, setRejectionJustify] = useState<string>('');
   const [messageAboutCustomerOrderSituation, setMessageAboutCustomerOrderSituation] = useState<string>('');
-  
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderFilter, setOrderFilter] = useState<OrderFilterValue | null>(null);
   const [newProductStock, setNewProductStock] = useState<number>(0);
 
+  const filteredOrders = useMemo(() => 
+    filterOrders(
+      product.orders,
+      orderSearch,
+      orderFilter
+    ),[product.orders, orderSearch, orderFilter]
+  );
+
+  const selectOrder = (orderId: number) => {
+    setSelectedOrderId(orderId);
+    setMoreActionsOrderId(prev =>
+      prev === orderId ? null : orderId
+    );
+  };
+
   const handleAcceptOrder = async() => {
+    if (!selectedOrder) {
+      showToast('Pedido inválido ou não selecionado', 'error');
+      return;
+    }
 
     if (loading.accepting) return;
     setLoading(prev => ({...prev, accepting: true}));
@@ -88,9 +123,9 @@ const OrderProduct = ({order}:Props) => {
     try {
       await acceptRejectProductOrder(
         'APPROVED',
-        order.orderId,
-        order.id,
-        order.orderedAmount,
+        selectedOrder.orderId,
+        product.id,
+        selectedOrder.orderedAmount,
       );
 
       showToast('Pedido aprovado com sucesso');
@@ -99,11 +134,16 @@ const OrderProduct = ({order}:Props) => {
       showToast('Erro inesperado:' + err, 'error');
     } finally {
       setLoading(prev => ({...prev, accepting: false}));
-      showMoreActions(false);
+      setMoreActionsOrderId(null);
+      showOrdersFromProduct(true);
     }
   }
 
   const handleRejectOrder = async() => {
+    if (!selectedOrder) {
+      showToast('Pedido inválido ou não selecionado', 'error');
+      return;
+    }
 
     if (!rejectionJustify) {
       setError('A justificativa de rejeição é obrigatória');
@@ -117,9 +157,9 @@ const OrderProduct = ({order}:Props) => {
     try {
       await acceptRejectProductOrder(
         'REJECTED',
-        order.orderId,
-        order.id,
-        order.orderedAmount,
+        selectedOrder.orderId,
+        product.id,
+        selectedOrder.orderedAmount,
         rejectionJustify
       );
 
@@ -129,18 +169,24 @@ const OrderProduct = ({order}:Props) => {
       showToast('Houve um erro: ' + err, 'error');
     } finally {
       setLoading(prev => ({...prev, rejecting: false}));
-      showMoreActions(false);
+      setMoreActionsOrderId(null);
+      showOrdersFromProduct(true);
     }
   }
 
   const handleRemoveOrder = async() => {
+    if (!selectedOrder) {
+      showToast('Pedido inválido ou não selecionado', 'error');
+      return;
+    }
+
     if (loading.removing || !userRole) return;
     setLoading(prev => ({...prev, removing: true}));
 
     try {
       await removeOrderFromUserOrders(
-        order.orderId,
-        order.orderStatus,
+        selectedOrder.orderId,
+        selectedOrder.orderStatus,
         userRole,
       );
 
@@ -155,18 +201,24 @@ const OrderProduct = ({order}:Props) => {
       showToast('Houve um erro: ' + err, 'error');
     } finally {
       setLoading(prev => ({...prev, removing: false}));
-      showMoreActions(false);
+      setMoreActionsOrderId(null);
+      showOrdersFromProduct(true);
     }
   };
 
   const handleEditOrderRejectionJustify = async() => {
+    if (!selectedOrder) {
+      showToast('Pedido inválido ou não selecionado', 'error');
+      return;
+    }
+
     if (loading.editing) return;
     setLoading(prev => ({...prev, editing: true}));
 
     try {
       await editRejectionJustify(
         newOrderRejectionJustify ?? '',
-        order.orderId,
+        selectedOrder.orderId,
       );
 
       showToast('Justificativa de rejeição do pedido editada com sucesso', 'success');
@@ -175,18 +227,24 @@ const OrderProduct = ({order}:Props) => {
       showToast('Houve um erro:' + err, 'error');
     } finally {
       setLoading(prev => ({...prev, editing: false}));
-      showMoreActions(false);
+      setMoreActionsOrderId(null);
+      showOrdersFromProduct(true);
     }
   }
 
   const handleSendMessageAboutCustomerOrderSituation = async() => {
+    if (!selectedOrder) {
+      showToast('Pedido inválido ou não selecionado', 'error');
+      return;
+    }
+
     if (loading.sending) return;
     setLoading(prev => ({...prev, sending: true}));
 
     try {
       await sendMessageAboutCustomerOrderSituation(
-        order.orderId,
-        order.orderStatus,
+        selectedOrder.orderId,
+        selectedOrder.orderStatus,
         messageAboutCustomerOrderSituation,
       );
 
@@ -196,7 +254,8 @@ const OrderProduct = ({order}:Props) => {
     } finally {
       showProductOuttaStockMessage(false);
       setLoading(prev => ({...prev, sending: false}));
-      showMoreActions(false);
+      setMoreActionsOrderId(null);
+      showOrdersFromProduct(true);
     }
   }
 
@@ -206,7 +265,7 @@ const OrderProduct = ({order}:Props) => {
 
     try { 
       await updatedProductStock(
-        order.id,
+        product.id,
         newProductStock,
       );
 
@@ -216,7 +275,8 @@ const OrderProduct = ({order}:Props) => {
     } finally {
       showResetProductStock(false);
       setLoading(prev => ({...prev, reseting: false}));
-      showMoreActions(false);
+      setMoreActionsOrderId(null);
+      showOrdersFromProduct(true);
     }
   }
 
@@ -234,25 +294,16 @@ const OrderProduct = ({order}:Props) => {
     >
       <div className="relative aspect-square w-full">
         <Image 
-          src={order.imageUrl} 
-          alt={order.name}
+          src={product.imageUrl} 
+          alt={product.name}
           fill
           className={productCardSetup.image}
-          onClick={() => showMoreActions(false)}
+          onClick={() => setMoreActionsOrderId(null)}
         />
       </div>
-    {order.orderPaymentStatus === 'PENDING' && order.orderStatus !== 'CANCELED' ? (
-      <OrderSituationTopTag situation='Pagamento pendente'/>
-    ) : order.orderStatus === 'CANCELED' ? (
-      <OrderSituationTopTag situation='Cancelado pelo cliente'/>
-    ) : order.orderStatus !== 'PENDING' ? (
-      <OrderSituationTopTag situation='Analisado'/>
-    ) : (
-      <OrderSituationTopTag situation='Não analisado'/>
-    )}
       <div className={productCardSetup.infosContainer}>
-        <div onClick={() => showMoreActions(false)}>
-          <h3 className={productCardSetup.name}>{order.name}</h3>
+        <div onClick={() => setMoreActionsOrderId(null)}>
+          <h3 className={productCardSetup.name}>{product.name}</h3>
           <div className={productCardSetup.categoryDateRatingContainer}>
             <div className={productCardSetup.categoryDate}>
               <span>{category}</span>
@@ -260,188 +311,52 @@ const OrderProduct = ({order}:Props) => {
               <span>{datePutToSale}</span>
             </div>
             <div className={productCardSetup.rating}>
-              {!order.productAverageRating 
+              {!product.productAverageRating 
               ? <IoStarOutline/>
               : <IoStar/> 
               }
-              {order.productAverageRating ?? 'Não avaliado'}
+              {product.productAverageRating ?? 'Não avaliado'}
             </div>
-          </div>
-          <div>
-            <OrderRequestDate 
-              orderDate={orderDate}
-            />
-            <OrderRequestBy 
-              customerName={order.orderCustomerName ?? '[desconhecido]'}
-            />
-          </div>
-          <div>
-            <OrderRequestQuantity 
-              orderQuantity={order.orderedAmount}
-            />
-          {(order.orderStatus !== 'CANCELED' 
-            && order.orderStatus !== 'APPROVED' 
-            && order.orderStatus !== 'REJECTED') 
-            && (
-            <StockIfAccpeted
-              stockIfOrderAccepted={stockIfOrderAccepted}
-            />
-          )}
-          </div>
-          <OrderCommission
-            orderCommission={order.orderComission}
-          />
-        {(order.orderPaymentStatus === 'APPROVED' 
-          && order.orderStatus !== 'APPROVED' 
-          && order.orderStatus !== 'REJECTED' 
-          && order.orderStatus !== 'CANCELED') 
-          && !order.orderDeletedByCustomer 
-          && (
-          <PaidTag/>
-        )}
-        
-        </div>
-        <div className='flex gap-2 mt-1'>
-        {order.orderStatus === 'APPROVED' ? (
-          <>
-          <MoreActionsChevronButton
-            onClick={() => showMoreActions(!moreActions)}
-            moreActions={moreActions}
-          />
-          <OrderSituationBottomTag
-            situation={'Aprovado'}
-          />
-          </>
-        ) : (order.orderStatus === 'CANCELED') ? (
-          <>
-          <MoreActionsChevronButton
-            onClick={() => showMoreActions(!moreActions)}
-            moreActions={moreActions}
-          />
-          <OrderSituationBottomTag
-            situation={'Cancelado'}
-          />
-          </>
-        ) : order.orderStatus === 'REJECTED' ? ( 
-          <>
-          <MoreActionsChevronButton
-            onClick={() => showMoreActions(!moreActions)}
-            moreActions={moreActions}
-          />
-          <OrderSituationBottomTag
-            situation={'Rejeitado'}
-          />
-          </>
-        ) :  order.orderPaymentStatus === 'APPROVED' 
-          && order.orderStatus === 'PENDING' 
-          && !order.orderDeletedByCustomer 
-          && stockIfOrderAccepted >= 0 
-          ? (
-          <>
-           <Button
-            type='button'
-            style={`px-5 flex-1 text-xl ${buttonColorsScheme.green}`}
-            label='Aceitar'
-            onClick={() => showAcceptanceOrderConfirm(true)}
-          />
+            <div className='flex flex-col'>
+              <span className='text-gray flex gap-1'>
+                <span className='text-green'>Aprovados:</span> 
+                {ordersStats.approved}
+              </span>
+              <span className='text-gray flex gap-1'>
+                <span className='text-yellow-dark'>Pendentes:</span> 
+                {ordersStats.pending}
+              </span>
+              <span className='text-gray flex gap-1'>
+                <span className='text-red'>Cancelados:</span> 
+                {ordersStats.canceled}
+              </span>
+              <span className='text-gray flex gap-1'>
+                <span className='text-red'>Rejeitados:</span> 
+                {ordersStats.rejected}
+              </span>
+              <span className='text-gray flex gap-1'>
+                <span  className='text-red'>Não pagos:</span> 
+                {ordersStats.notPaid}
+              </span>
+              <span className='text-gray text-xl flex gap-1 w-fit mt-1 border-gray'>
+                <span className='text-ui-stock'>Total:</span> 
+                {ordersStats.total}
+              </span>
+            </div>
+          </div>        
           <Button
             type='button'
-            style={`px-5 flex-1 text-xl ${buttonColorsScheme.red}`}
-            label='Rejeitar'
-            onClick={() => showRejectionJustifyConfirm(true)}
-          />
-          </>
-        ) : order.orderPaymentStatus === 'APPROVED' 
-          && order.orderStatus === 'PENDING' 
-          && !order.orderDeletedByCustomer 
-          && stockIfOrderAccepted < 0  
-          ? (
-          <>
-          <MoreActionsChevronButton
-            onClick={() => showMoreActions(!moreActions)}
-            moreActions={moreActions}
-          />
-          <OrderSituationBottomTag
-            situation={'Estoque insuficiente'}
-          />
-          </>
-        ) : (order.orderPaymentStatus !== 'APPROVED') && (
-          <>
-          <MoreActionsChevronButton
-            onClick={() => showMoreActions(!moreActions)}
-            moreActions={moreActions}
-          />
-          <OrderSituationBottomTag
-            situation={'Pendente'}
-          />
-          </>
-        )}
-        </div>
+            label='Ver pedidos'
+            colorScheme='primary'
+            style='w-full text-xl mt-2'
+            onClick={() => showOrdersFromProduct(true)}
+          />        
+        </div>       
       </div>
       
-      <MoreActions 
-      direction='left' 
-      style={{container: 'mt-3'}} 
-      moreActions={moreActions} 
-      close={() => showMoreActions(false)}
-      >
-      {order.orderStatus !== 'CANCELED' && order.orderStatus === 'PENDING' ? (
-        <>
-        {stockIfOrderAccepted < 0 && (
-          <>
-          <Button 
-            type='button'
-            label="Repor estoque" 
-            style={`px-5 ${buttonColorsScheme.secondary}`}
-            onClick={() => showResetProductStock(true)}
-          />
-          <Button 
-            type='button'
-            label="Justificar ao cliente" 
-            style={`px-5 ${buttonColorsScheme.yellow}`}
-            onClick={() => showProductOuttaStockMessage(true)}
-          />
-          </>
-        )}
-        <Button 
-          type='button'
-          label="Rejeitar pedido" 
-          style={`px-5 ${buttonColorsScheme.red}`}
-          onClick={() => showRejectionJustifyConfirm(true)}
-        />
-        </>
-      ) : ( order.orderStatus === 'REJECTED') ? (
-        <>
-        <Button 
-          type='button'
-          label="Remover do histórico" 
-          style={`px-5 ${buttonColorsScheme.red}`}
-          onClick={() => showRemoveOrder(true)}
-        />
-        <Button 
-          type='button'
-          label="Ver sua justificativa" 
-          style={`px-5 ${buttonColorsScheme.yellow}`}
-          onClick={() => showOrderRejectionJustify(true)}
-        />
-        {order.orderPaymentStatus === 'APPROVED' && (
-          <Button 
-            type='button'
-            label="Aprovar pedido" 
-            style={`px-5 ${buttonColorsScheme.green}`}
-            onClick={() => showAcceptanceOrderConfirm(true)}
-          />
-        )}
-        </>
-      ) : (
-        <Button 
-          type='button'
-          label="Remover do histórico" 
-          style={`px-5 ${buttonColorsScheme.red}`}
-          onClick={() => showRemoveOrder(true)}
-        />
-      )}
-      </MoreActions>
+      {/* ================================================== */}
+      {/* ================== ⇊ MODALS ⇊ =================== */}
+      {/* ================================================== */}
 
       <Modal 
       isOpen={acceptanceOrderConfirm} 
@@ -451,10 +366,10 @@ const OrderProduct = ({order}:Props) => {
       }}
       >
         <p className={`${textColors.secondaryMiddleDark}`}>
-          Tem certeza que aprova o pedido do cliente <span className='text-cyan'>{order.orderCustomerName}</span> de <span className='text-ui-stock'>{order.orderedAmount}</span> {order.orderedAmount > 1 
+          Tem certeza que aprova o pedido do cliente <span className='text-cyan'>{selectedOrder?.orderCustomerName}</span> de <span className='text-ui-stock'>{selectedOrder?.orderedAmount}</span> {selectedOrder?.orderedAmount ?? 1 > 1 
             ? 'unidades' 
             : 'unidade'
-          } desse produto pela comissão de <span className='text-ui-money'>{formatCurrency(order.orderComission)}</span> ?
+          } desse produto pela comissão de <span className='text-ui-money'>{formatCurrency(selectedOrder?.orderComission ?? 0)}</span> ?
         </p>
         <span className='text-yellow-dark'>
           (!) Essa ação é irreversível
@@ -473,7 +388,11 @@ const OrderProduct = ({order}:Props) => {
             type='button'
             style={`px-5 flex-1 text-xl ${buttonColorsScheme.red}`} 
             label='Não'
-            onClick={() => showAcceptanceOrderConfirm(loading.accepting ? true : false)}
+            onClick={() => {
+              showAcceptanceOrderConfirm(loading.accepting ? true : false);
+              showOrdersFromProduct(true);
+              setMoreActionsOrderId(null);
+            }}
           />
         </div>
       </Modal>
@@ -487,10 +406,10 @@ const OrderProduct = ({order}:Props) => {
       }}
       >
         <p className={`${textColors.secondaryMiddleDark}`}>
-          Tem certeza que rejeita o pedido do cliente <span className='text-cyan'>{order.orderCustomerName}</span> de <span className='text-ui-stock'>{order.orderedAmount}</span> {order.orderedAmount > 1 
+          Tem certeza que rejeita o pedido do cliente <span className='text-cyan'>{selectedOrder?.orderCustomerName}</span> de <span className='text-ui-stock'>{selectedOrder?.orderedAmount}</span> {selectedOrder?.orderedAmount ?? 1 > 1 
             ? 'unidades' 
             : 'unidade'
-          } desse produto pela comissão de <span className='text-ui-money'>{formatCurrency(order.orderComission)}</span> ?
+          } desse produto pela comissão de <span className='text-ui-money'>{formatCurrency(selectedOrder?.orderComission ?? 0)}</span> ?
         </p>
         <TextArea 
           style={{input: `mb-[-2px] h-30 ${error ? 'shadow-[0px_0px_5px_red]' : ''}`}}
@@ -522,6 +441,8 @@ const OrderProduct = ({order}:Props) => {
             label='Não'
             onClick={() => {
               showRejectionJustifyConfirm(false);
+              showOrdersFromProduct(true);
+              setMoreActionsOrderId(null);
               setError('');
             }}
           />
@@ -533,9 +454,10 @@ const OrderProduct = ({order}:Props) => {
       modalTitle={'Remover pedido do cliente'} 
       onCloseModalActions={() => {
         showRemoveOrder(false);
+        showOrdersFromProduct(true);
       }}> 
         <p className='text-secondary-middledark'>
-          Tem certeza que deseja remover esse pedido do cliente <span className='text-cyan'>{order.orderCustomerName}</span> do seu histórico de pedidos?
+          Tem certeza que deseja remover esse pedido do cliente <span className='text-cyan'>{selectedOrder?.orderCustomerName}</span> do seu histórico de pedidos?
         </p>
         <p className='text-yellow-dark'>
           (!) Essa ação é irreversível
@@ -546,6 +468,7 @@ const OrderProduct = ({order}:Props) => {
             type={'submit'}
             label='Sim'
             loading={loading.removing}
+            spinnerColor='text-green'
             loadingLabel='Processando'
             onClick={handleRemoveOrder}
           />
@@ -553,7 +476,11 @@ const OrderProduct = ({order}:Props) => {
             style={`flex-1 ${buttonColorsScheme.red}`}
             type={'submit'}
             label='Não'     
-            onClick={() => showRemoveOrder(false)}    
+            onClick={() => {
+              showRemoveOrder(false);
+              setMoreActionsOrderId(null);
+              showOrdersFromProduct(true);
+            }}    
           />
         </div>
       </Modal>
@@ -564,7 +491,7 @@ const OrderProduct = ({order}:Props) => {
       onCloseModalActions={() => {
         showOrderRejectionJustify(false);
         showEditOrderRejectionJustify(false);
-        setNewOrderRejectionJustify(order.orderRejectionJustify ?? '');
+        setNewOrderRejectionJustify(selectedOrder?.orderRejectionJustify ?? '');
         setError('');
       }}
       >
@@ -582,7 +509,7 @@ const OrderProduct = ({order}:Props) => {
           }}
           onBlur={() => {
             if (newOrderRejectionJustify?.trim() === '') {
-              setNewOrderRejectionJustify(order.orderRejectionJustify);
+              setNewOrderRejectionJustify(selectedOrder?.orderRejectionJustify ?? '');
             }
           }}
         />
@@ -591,7 +518,7 @@ const OrderProduct = ({order}:Props) => {
       ) : (
         <div>
           <label className='text-secondary-dark'>Justificativa:</label>
-          <p className='text-primary-middledark bg-primary-ultralight/20 p-1 pl-2 rounded-md'>{order.orderRejectionJustify}</p>
+          <p className='text-primary-middledark bg-primary-ultralight/20 p-1 pl-2 rounded-md'>{selectedOrder?.orderRejectionJustify}</p>
         </div>
       )}
        
@@ -605,7 +532,7 @@ const OrderProduct = ({order}:Props) => {
             loadingLabel='Processando'
             onClick={() => {
               if (editOrderRejectionJustify) {
-                if (newOrderRejectionJustify === order.orderRejectionJustify) {
+                if (newOrderRejectionJustify === selectedOrder?.orderRejectionJustify) {
                   setError('Nenhum caractere foi alterado para ser editado');
                   return;
                 } else {
@@ -613,7 +540,7 @@ const OrderProduct = ({order}:Props) => {
                   showOrderRejectionJustify(false);
                 }
               } else {
-                showEditOrderRejectionJustify(true);
+                showEditOrderRejectionJustify(true);              
               }
             }}
           />
@@ -622,11 +549,12 @@ const OrderProduct = ({order}:Props) => {
             onClick={() => {
               if (editOrderRejectionJustify) {
                 showEditOrderRejectionJustify(false);
-                setNewOrderRejectionJustify(order.orderRejectionJustify ?? '');
+                setNewOrderRejectionJustify(selectedOrder?.orderRejectionJustify ?? '');
                 setError('');
               } else {
                 showOrderRejectionJustify(false);
-                setNewOrderRejectionJustify(order.orderRejectionJustify ?? '');
+                setNewOrderRejectionJustify(selectedOrder?.orderRejectionJustify ?? '');
+                showOrdersFromProduct(true);
               }
             }}
             label={editOrderRejectionJustify ? 'Cancelar' : 'Voltar'}
@@ -680,6 +608,7 @@ const OrderProduct = ({order}:Props) => {
             style={`px-5 flex-1 text-xl`}
             onClick={() => {
               showProductOuttaStockMessage(false);
+              showOrdersFromProduct(true);
               setError('');
             }}
             label={'Cancelar'}
@@ -764,7 +693,346 @@ const OrderProduct = ({order}:Props) => {
             label='Não'
             onClick={() => {
               showNewOrderRejectionJustifyCorfirm(false);
+              setMoreActionsOrderId(null);
+              showOrdersFromProduct(true);
               showOrderRejectionJustify(true);
+            }}
+          />
+        </div>
+      </Modal>
+
+      <Modal 
+      isOpen={ordersFromProduct} 
+      modalTitle={'Pedidos do produto'} 
+      hasXClose
+      onCloseModalActions={() => {
+        showOrdersFromProduct(false);
+      }}
+      >
+        <div className='flex h-full max-h-[80vh]'>
+          <div className='flex flex-col rounded-b-2xl gap-3 pr-2 flex-1 overflow-y-auto w-full
+          hover:scrollbar-thumb-secondary-light
+          scrollbar-thumb-secondary-middledark 
+            scrollbar-track-transparent
+            hover:scrollbar-track-transparent
+            scrollbar-active-track-transparent
+            scrollbar-active-thumb-primary-light
+            scrollbar-thin
+          '>
+            <div className='relative aspect-square'>
+              <Image
+                src={product.imageUrl}
+                fill
+                alt={product.name}
+                className='rounded-xl border border-primary-middledark object-cover cursor-zoom-in hover:opacity-80 transition duration-200'
+                onClick={() => {
+                  setExpandImage(true);
+                  showOrdersFromProduct(false);
+              }}
+              />
+            </div>
+            <div className='flex bg-primary-ultralight/25 p-2 border border-primary-middledark rounded-2xl flex-col gap-1.5 flex-2'>
+              <div className='flex flex-col'>
+                <label className='text-primary-middledark font-bold'>
+                  Nome
+                </label>
+                <span className='text-secondary-dark'>
+                  {product.name}
+                </span>
+              </div>
+              <div className='flex flex-col'>
+                <label className='text-primary-middledark font-bold'>
+                  Categoria
+                </label>
+                <span className='text-secondary-dark'>
+                  {category}
+                </span>
+              </div>
+              <div className='flex flex-col'>
+                <label className='text-primary-middledark font-bold'>
+                  Descrição
+                </label>
+                <span className='h-30 overflow-y-auto text-secondary-dark flex-col  
+                hover:scrollbar-thumb-primary-light
+                scrollbar-thumb-primary-middledark 
+                  scrollbar-track-transparent
+                  hover:scrollbar-track-transparent
+                  scrollbar-active-track-transparent
+                  scrollbar-active-thumb-primary-light
+                  scrollbar-thin
+                  '>
+                  {product.description}
+                </span>
+              </div>
+              <div className='flex gap-10'>
+                <div className='flex flex-col '>
+                  <label className='text-primary-middledark font-bold'>
+                    Preço unitário
+                  </label>
+                  <span className='text-secondary-dark'>
+                    {formatCurrency(product.price)}
+                  </span>
+                </div>
+                <div className='flex flex-col '>
+                  <label className='text-primary-middledark font-bold'>
+                    Estoque
+                  </label>
+                  <span className='text-secondary-dark'>
+                    {product.stock}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className='flex flex-col gap-1 overflow-y-auto flex-2 pr-2
+          hover:scrollbar-thumb-primary-light
+          scrollbar-thumb-primary-middledark 
+            scrollbar-track-transparent
+            hover:scrollbar-track-transparent
+            scrollbar-active-track-transparent
+            scrollbar-active-thumb-primary-light
+            scrollbar-thin
+          '>
+          <div className="flex items-center gap-3 pl-2 mb-2 mt-3">
+            <Search
+              style={{ input: 'py-1 w-full flex-1' }}
+              colorScheme="primary"
+              value={orderSearch}
+              onChange={(e) => setOrderSearch(e.target.value)}
+              onClearSearch={() => setOrderSearch('')}
+            />
+            <Select
+              style={{ input: 'flex-1 w-full', container: 'flex-1' }}
+              selectSetup="ORDER_FILTER"
+              colorScheme="primary"
+              label="Filtro"
+              value={orderFilter ?? ''}
+              onChange={(e) => setOrderFilter(e.target.value as OrderFilterValue)}
+            />
+          </div>
+          {filteredOrders.map((order) => (
+            <>
+            <div className='flex bg-secondary-light/25 p-2 ml-2 rounded-2xl border border-secondary-middledark'>
+              <div>
+                <h3 className='text-primary-middledark italic'>
+                  Pedido #{order.orderId}
+                </h3>
+                <OrderRequestDate
+                  orderDate={new Date(order.orderCreatedAt).toLocaleDateString("pt-BR")}
+                />
+                <OrderRequestBy
+                  customerName={order.orderCustomerName ?? '[desconhecido]'}
+                />
+                <div>
+                  <OrderRequestQuantity
+                    orderQuantity={order.orderedAmount}
+                  />
+                  {(order.orderStatus !== 'CANCELED'
+                    && order.orderStatus !== 'APPROVED'
+                    && order.orderStatus !== 'REJECTED')
+                    && (
+                    <StockIfAccpeted
+                      stockIfOrderAccepted={stockIfOrderAccepted}
+                    />
+                  )}
+                </div>
+                <OrderCommission
+                  orderCommission={order.orderComission}
+                />
+              </div>
+              <div className='flex-1 relative'>
+                {order.orderPaymentStatus === 'PENDING' && order.orderStatus !== 'CANCELED' ? (
+                  <OrderSituationTopTag situation='Pagamento pendente'/>
+                ) : order.orderStatus === 'CANCELED' ? (
+                  <OrderSituationTopTag situation='Cancelado pelo cliente'/>
+                ) : order.orderStatus !== 'PENDING' ? (
+                  <OrderSituationTopTag situation='Analisado'/>
+                ) : (
+                  <OrderSituationTopTag situation='Não analisado'/>
+                )}
+                <div className='flex absolute bottom-0 right-0 gap-2'>
+                  {order.orderStatus === 'APPROVED' ? (
+                    <div className='flex gap-5'>
+                      <OrderSituationBottomTag
+                        situation={'Aprovado'}
+                      />
+                      <MoreActionsChevronButton
+                        onClick={() => selectOrder(order.orderId)}
+                        moreActions={moreActionsOrderId === order.orderId}
+                      />
+                    </div>
+                  ) : (order.orderStatus === 'CANCELED') ? (
+                    <>
+                    <OrderSituationBottomTag
+                      situation={'Cancelado'}
+                    />
+                    <MoreActionsChevronButton
+                      onClick={() => selectOrder(order.orderId)}
+                      moreActions={moreActionsOrderId === order.orderId}
+                    />
+                    </>
+                  ) : (order.orderStatus === 'REJECTED') ? ( 
+                    <>
+                    <OrderSituationBottomTag
+                      situation={'Rejeitado'}
+                    />
+                    <MoreActionsChevronButton
+                      onClick={() => selectOrder(order.orderId)}
+                      moreActions={moreActionsOrderId === order.orderId}
+                    />
+                    </>
+                  ) :  order.orderPaymentStatus === 'APPROVED' 
+                    && order.orderStatus === 'PENDING' 
+                    && !order.orderDeletedByCustomer 
+                    && stockIfOrderAccepted >= 0 
+                    ? (
+                    <>
+                    <Button
+                      type='button'
+                      style={`px-5 flex-1 text-xl ${buttonColorsScheme.green}`}
+                      label='Aceitar'
+                      onClick={() => {
+                        showAcceptanceOrderConfirm(true);
+                        showOrdersFromProduct(false);
+                        selectOrder(order.orderId);
+                      }}
+                    />
+                    <Button
+                      type='button'
+                      style={`px-5 flex-1 text-xl ${buttonColorsScheme.red}`}
+                      label='Rejeitar'
+                      onClick={() => {
+                        showRejectionJustifyConfirm(true);
+                        showOrdersFromProduct(false);
+                        selectOrder(order.orderId);
+                      }}
+                    />
+                    </>
+                  ) : order.orderPaymentStatus === 'APPROVED' 
+                    && order.orderStatus === 'PENDING' 
+                    && !order.orderDeletedByCustomer 
+                    && stockIfOrderAccepted < 0  
+                    ? (
+                    <>
+                    <OrderSituationBottomTag
+                      situation={'Estoque insuficiente'}
+                    />
+                    <MoreActionsChevronButton
+                      onClick={() => selectOrder(order.orderId)}
+                      moreActions={moreActionsOrderId === order.orderId}
+                    />
+                    </>
+                  ) : (order.orderPaymentStatus !== 'APPROVED') && (
+                    <>
+                    <OrderSituationBottomTag
+                      situation={'Pendente'}
+                    />
+                    <MoreActionsChevronButton
+                      onClick={() => selectOrder(order.orderId)}
+                      moreActions={moreActionsOrderId === order.orderId}
+                    />
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+            <MoreActions
+            direction="right"
+            style={{ container: 'mt-[-5px]' }}
+            moreActions={moreActionsOrderId === order.orderId}
+            close={() => setMoreActionsOrderId(null)}
+            >
+            {order.orderStatus !== 'CANCELED' && order.orderStatus === 'PENDING' ? (
+              <>
+              {stockIfOrderAccepted < 0 && (
+                <>
+                <Button 
+                  type='button'
+                  label="Repor estoque" 
+                  style={`px-5 ${buttonColorsScheme.secondary}`}
+                  onClick={() => showResetProductStock(true)}
+                />
+                <Button 
+                  type='button'
+                  label="Justificar ao cliente" 
+                  style={`px-5 ${buttonColorsScheme.yellow}`}
+                  onClick={() => showProductOuttaStockMessage(true)}
+                />
+                </>
+              )}
+              <Button 
+                type='button'
+                label="Rejeitar pedido" 
+                style={`px-5 ${buttonColorsScheme.red}`}
+                onClick={() => {
+                  showRejectionJustifyConfirm(true);
+                  showOrdersFromProduct(false);
+                }}
+              />
+              </>
+            ) : ( order.orderStatus === 'REJECTED') ? (
+              <>
+              <Button 
+                type='button'
+                label="Remover do histórico" 
+                style={`px-5 ${buttonColorsScheme.red}`}
+                onClick={() => {
+                  showRemoveOrder(true);
+                  showOrdersFromProduct(false);
+                }}
+              />
+              <Button 
+                type='button'
+                label="Ver sua justificativa" 
+                style={`px-5 ${buttonColorsScheme.yellow}`}
+                onClick={() => {
+                  showOrderRejectionJustify(true);
+                  showOrdersFromProduct(false);
+                }}
+              />
+              {order.orderPaymentStatus === 'APPROVED' && (
+                <Button 
+                  type='button'
+                  label="Aprovar pedido" 
+                  style={`px-5 ${buttonColorsScheme.green}`}
+                  onClick={() => showAcceptanceOrderConfirm(true)}
+                />
+              )}
+              </>
+            ) : (
+              <Button 
+                type='button'
+                label="Remover do histórico" 
+                style={`px-5 ${buttonColorsScheme.red}`}
+                onClick={() => {
+                  showRemoveOrder(true);
+                  showOrdersFromProduct(false);
+                }}
+              />
+            )}
+            </MoreActions>
+            </>
+          ))}
+          </div>
+        </div>
+      </Modal>
+
+      <Modal 
+      isOpen={expandImage} 
+      modalTitle={''} 
+      onCloseModalActions={() => {
+        setExpandImage(false);
+        showOrdersFromProduct(true);
+      }}>
+        <div className='relative aspect-square h-[90vh]'>
+          <Image 
+            src={product.imageUrl} 
+            alt={product.name}            
+            fill
+            className='object-contain aspect-square border-x-4 border-double cursor-zoom-out border-primary'
+            onClick={() => {
+              setExpandImage(false);
+              showOrdersFromProduct(true);
             }}
           />
         </div>

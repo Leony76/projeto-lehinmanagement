@@ -205,40 +205,40 @@ export const getOverallCustomersAndSellersOrderStats = async (role: BuyerRole) =
 export const getSellerOrders = async() => {
   const session = await getRequiredSession();
 
-  const items = await prisma.orderItem.findMany({
+  const products = await prisma.product.findMany({
     where: {
-      product: {
-        sellerId: session.user.id
-      },
-      order: {
-        deletedBySellerAt: null
+      sellerId: session.user.id,
+      orderItems: {
+        some: {
+          order: {
+            deletedBySellerAt: null
+          }
+        }
       }
     },
-    orderBy: {
-      createdAt: 'desc'
-    },
     include: {
-      product: true,
-      order: {
-        include: {
-          user: {
-            select: {
-              name: true,
-            }
-          },
-          payments: {
-            select: {
-              status: true,
-            },
-          },
-          orderHistory: {
-            orderBy: { createdAt: 'desc' },
-            take: 1,
-            select: { rejectionJustify: true }
+      orderItems: {
+        where: {
+          order: {
+            deletedBySellerAt: null
           }
         },
-      },
-    },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          order: {
+            include: {
+              user: { select: { name: true } },
+              payments: { select: { status: true } },
+              orderHistory: {
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+                select: { rejectionJustify: true }
+              }
+            }
+          }
+        }
+      }
+    }
   });
 
   const avgRatings = await prisma.productReview.groupBy({
@@ -257,26 +257,30 @@ export const getSellerOrders = async() => {
     ]),
   );
 
-  return items.map((item) => ({
-    id: item.product.id,
-    name: item.product.name,
-    category: item.product.category,
-    description: item.product.description,
-    imageUrl: item.product.imageUrl,
-    stock: item.product.stock,
-    createdAt: item.product.createdAt?.toISOString() ?? null,
-    price: item.product.price.toNumber(),
-    productAverageRating: avgRatingMap.get(item.product.id) ?? null,
+  return products.map(product => ({
+    id: product.id,
+    name: product.name,
+    category: product.category,
+    description: product.description,
+    imageUrl: product.imageUrl,
+    stock: product.stock,
+    price: product.price.toNumber(),
+    createdAt: product.createdAt.toISOString(),
+    productAverageRating: avgRatingMap.get(product.id) ?? null,
 
-    orderId: item.order.id,
-    orderCreatedAt: item.createdAt.toISOString() ?? null,
-    orderedAmount: item.quantity,
-    orderComission: item.order.total.toNumber(),
-    orderCustomerName: item.order.user.name,
-    orderStatus: item.order.status,
-    orderPaymentStatus: item.order.payments.at(-1)?.status ?? 'PENDING',
-    orderRejectionJustify: item.order.orderHistory.at(-1)?.rejectionJustify ?? null,
-    orderDeletedByCustomer: item.order.deletedByCustomerAt !== null
+    orders: product.orderItems.map(item => ({
+      orderId: item.order.id,
+      orderCreatedAt: item.createdAt.toISOString(),
+      orderedAmount: item.quantity,
+      orderComission: item.order.total.toNumber(),
+      orderCustomerName: item.order.user.name,
+      orderStatus: item.order.status,
+      orderPaymentStatus: item.order.payments.at(-1)?.status ?? 'PENDING',
+      orderRejectionJustify:
+        item.order.orderHistory.at(-1)?.rejectionJustify ?? null,
+      orderDeletedByCustomer:
+        item.order.deletedByCustomerAt !== null
+    }))
   }));
 }
 
