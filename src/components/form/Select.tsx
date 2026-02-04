@@ -19,6 +19,7 @@ interface SelectProps
     label?: string
     input?: string
     container?: string
+    grid?: string;
   }
 }
 
@@ -151,7 +152,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 absolute z-10 w-full
                 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3
                 p-4 rounded-b-3xl border-b-10 border-double gap-2
-                ${
+                ${style?.grid ?? ''} ${
                   colorScheme === 'primary'
                     ? 'bg-linear-to-b from-primary-dark to-primary border-primary-ultralight'
                     : 'bg-linear-to-b from-secondary-dark to-secondary-middledark border-secondary-light'
