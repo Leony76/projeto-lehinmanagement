@@ -37,7 +37,7 @@ const Orders = ({productsWithOrders}:Props) => {
   return (
     <div>
       <PageTitle style="my-2 mb-4" title="Pedidos"/>
-      <div className="grid grid-cols-6 gap-5">
+      <div className="grid sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 grid-cols-2 gap-2">
         <div className="flex flex-col p-3 text-xl rounded-xl border text-green border-secondary-middledark bg-secondary-light/35">
           <span className="text-base text-gray">Aprovados</span> 
           {ordersStats?.approved}

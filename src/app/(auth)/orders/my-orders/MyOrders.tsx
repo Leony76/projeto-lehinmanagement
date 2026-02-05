@@ -4,7 +4,7 @@ import PageTitle from "@/src/components/ui/PageTitle";
 import Select from "@/src/components/form/Select";
 import Search from "@/src/components/form/Search";
 import MyOrderProduct from "@/src/components/products/MyOrderProduct";
-import { UserOrderDTO } from "@/src/types/userOrderDTO";
+import { UserProductsWithOrdersDTO } from "@/src/types/UserProductsWithOrdersDTO";
 import ProductCardsGrid from "@/src/components/ui/ProductCardsGrid";
 import NoContentFoundMessage from "@/src/components/ui/NoContentFoundMessage";
 import { useState } from "react";
@@ -13,7 +13,7 @@ import { Category } from "@prisma/client";
 import { filteredSearchForUserOrders } from "@/src/utils/filters/filteredSearchForUserOrders";
 
 type Props = {
-  userOrders: UserOrderDTO[];
+  userOrders: UserProductsWithOrdersDTO[];
 }
 
 const MyOrders = ({userOrders}:Props) => {
@@ -64,10 +64,10 @@ const MyOrders = ({userOrders}:Props) => {
       </div>
     {(hasUserOrders) ? (
       <ProductCardsGrid>
-      {filteredOrders.map((userOrder) => (
+      {filteredOrders.map((product) => (
         <MyOrderProduct
-          key={userOrder.orderId}
-          userOrder={userOrder}
+          key={product.id}
+          product={product}
         />
       ))}
       </ProductCardsGrid>

@@ -1,14 +1,13 @@
 import { OrderFilterValue } from "@/src/constants/generalConfigs";
-import { ProductWithOrdersDTO } from "@/src/types/ProductWithOrdersDTO";
+import { UserProductsWithOrdersDTO } from "@/src/types/UserProductsWithOrdersDTO";
 
 export const filterOrders = (
-  orders: ProductWithOrdersDTO['orders'],
+  orders: UserProductsWithOrdersDTO['orders'],
   search: string,
   filter: OrderFilterValue | null
 ) => {
   let filtered = [...orders];
 
-  // 🔍 Busca por ID do pedido
   if (search.trim()) {
     filtered = filtered.filter(order =>
       String(order.orderId).includes(search.trim())
@@ -18,14 +17,6 @@ export const filterOrders = (
   if (!filter) return filtered;
 
   switch (filter) {
-    case 'value_desc':
-      filtered.sort((a, b) => b.orderComission - a.orderComission);
-      break;
-
-    case 'value_asc':
-      filtered.sort((a, b) => a.orderComission - b.orderComission);
-      break;
-
     case 'most_sold':
       filtered.sort((a, b) => b.orderedAmount - a.orderedAmount);
       break;

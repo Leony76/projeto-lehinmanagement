@@ -5,7 +5,7 @@ import { IoClose } from 'react-icons/io5';
 
 type Props = {
   isOpen: boolean;
-  modalTitle: string;
+  modalTitle: React.ReactNode;
   style?:{
     modalTitle?:string;
     xClose?: string;

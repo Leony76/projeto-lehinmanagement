@@ -15,7 +15,6 @@ import { useUserStore } from '@/src/store/useUserStore';
 import { useRouter } from 'next/navigation';
 import { editOrderRejectionJustify as editRejectionJustify } from '@/src/actions/productActions';
 import { getProductOrdersStats } from '@/src/utils/filters/productOrdersStats';
-import { filterOrders } from '@/src/utils/filters/filteredOrdersFromEachProduct';
 import OrderStatusLabel from '../ui/OrderStatusLabel';
 import ConfirmAction from '../modal/Orders/ConfirmAction';
 import RejectionJustify from '../modal/Orders/RejectionJustify';
@@ -23,6 +22,7 @@ import JustifyAboutOrderSituation from '../modal/Orders/JustifyAboutOrderSituati
 import ResetProductStock from '../modal/Orders/ResetProductStock';
 import OrdersFromProductsMenu from '../modal/Orders/OrdersFromProductsMenu';
 import ImageExpand from '../modal/Orders/ImageExpand';
+import { filterOrders } from '@/src/utils/filters/sellerFilteredOrdersFromEachProduct';
 
 type Props = {
   product: ProductWithOrdersDTO;
@@ -435,6 +435,7 @@ const OrderProduct = ({product}:Props) => {
       {/* SELLER REJECTION JUSTIFY ABOUT A CUSTOMER ORDER */}
      
       <RejectionJustify
+        userRole='SELLER'
         error={error}
         isOpen={orderRejectionJustify}
         editRejection={editOrderRejectionJustify}
@@ -506,12 +507,15 @@ const OrderProduct = ({product}:Props) => {
         }}
       />
 
+      {/* RESET PRODUCT STOCK */}
+        
       <ResetProductStock
         isOpen={resetProductStock}
         error={error}
         loading={loading.reseting}
         onCloseActions={() => {
           showResetProductStock(false);
+          showOrdersFromProduct(true);
           setError('');
         }}
         onChange={(e) => {
@@ -561,42 +565,22 @@ const OrderProduct = ({product}:Props) => {
           description: product.description ?? '',
           price: product.price,
           stock: product.stock,
-          onResetStock: () => {
-            showResetProductStock(true);
-            showOrdersFromProduct(false);
-          }
+          onResetStock: () => showResetProductStock(true)      
         }}
         productOrders={{
-          orders: filteredOrders,
+          fromSeller: filteredOrders,
           actions: {
             selectOrder,
+            showOrdersFromProduct,
             moreActionsOrderId: moreActionsOrderId ?? 1,
             onMoreActionsOpenClick: handleMoreActionsOpen,
+            onAccept: () => showAcceptanceOrderConfirm(true),
+            onReject: () => showRejectionJustifyConfirm(true),
+            onRemove: () => showRemoveOrder(true),
+            onApprove: () => showAcceptanceOrderConfirm(true),
+            onViewJustify: () => showOrderRejectionJustify(true),
+            onJustifyCustomer: () => showProductOuttaStockMessage(true),
             onMoreActionsCloseClick: () => setMoreActionsOrderId(null),
-            onAccept: () => {
-              showAcceptanceOrderConfirm(true);
-              showOrdersFromProduct(false);
-            },
-            onReject: () => {
-              showRejectionJustifyConfirm(true);
-              showOrdersFromProduct(false);
-            },
-            onRemove: () => {
-              showRemoveOrder(true);
-              showOrdersFromProduct(false);
-            },
-            onApprove: () => {
-              showAcceptanceOrderConfirm(true);
-              showOrdersFromProduct(false);
-            },
-            onViewJustify: () => {
-               showOrderRejectionJustify(true);
-               showOrdersFromProduct(false);
-            },
-            onJustifyCustomer: () => {
-              showProductOuttaStockMessage(true);
-              showOrdersFromProduct(false);
-            },
           }
         }}
         search={{

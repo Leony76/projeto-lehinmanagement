@@ -284,53 +284,52 @@ export const getSellerOrders = async() => {
   }));
 }
 
-export const getOrdersFromUser = async() => {
+export const getOrdersFromUser = async () => {
   const session = await getRequiredSession();
 
-  const ordersFromUser = await prisma.orderItem.findMany({
+  const products = await prisma.product.findMany({
     where: {
-      order: {
-        userId: session.user.id,
-        deletedBySellerAt: null,
-        deletedByCustomerAt: null,
-      }
+      orderItems: {
+        some: {
+          order: {
+            userId: session.user.id,
+            deletedBySellerAt: null,
+            deletedByCustomerAt: null,
+          },
+        },
+      },
     },
     include: {
-      product: true,
-      order: {
-        select: {
-          total: true,
-          createdAt: true,
-          status: true,
-          orderItems: {
-            select: {
-              quantity: true,
-              product: {
+      orderItems: {
+        where: {
+          order: {
+            userId: session.user.id,
+            deletedBySellerAt: null,
+            deletedByCustomerAt: null,
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          order: {
+            include: {
+              payments: { select: { status: true } },
+              orderHistory: {
+                orderBy: { createdAt: 'desc' },
+                take: 1,
                 select: {
-                  seller: {
-                    select: {
-                      name: true,
-                    },
-                  },
+                  rejectionJustify: true,
+                  message: true,
+                  createdAt: true,
+                  changedBy: { select: { name: true } },
                 },
               },
-            },
-          },
-          payments: {
-            select: {
-              status: true,
-            },
-          },
-          orderHistory: {           
-            orderBy: { createdAt: 'desc' },
-            take: 1,
-            select: {
-              rejectionJustify: true,
-              message: true,
-              createdAt: true,
-              changedBy: {
-                select: {
-                  name: true,
+              orderItems: {
+                include: {
+                  product: {
+                    include: {
+                      seller: { select: { name: true } },
+                    },
+                  },
                 },
               },
             },
@@ -342,11 +341,9 @@ export const getOrdersFromUser = async() => {
 
   const avgRatings = await prisma.productReview.groupBy({
     by: ['productId'],
-    _avg: {
-      rating: true,
-    },
+    _avg: { rating: true },
   });
-  
+
   const avgRatingMap = new Map(
     avgRatings.map(r => [
       r.productId,
@@ -356,31 +353,133 @@ export const getOrdersFromUser = async() => {
     ]),
   );
 
-  return ordersFromUser.map((item) => ({
-    id: item.product.id,
-    name: item.product.name,
-    category: item.product.category,
-    description: item.product.description,
-    imageUrl: item.product.imageUrl,
-    stock: item.product.stock,
-    createdAt: item.product.createdAt?.toISOString() ?? null,
-    price: item.product.price.toNumber(),
-    sellerName: item.order.orderItems.at(-1)?.product.seller.name ?? '[Desconhecido]',
-    messageSentAt: item.order.orderHistory.at(-1)?.createdAt?.toISOString() ?? null,
-    productAverageRating: avgRatingMap.get(item.product.id) ?? null,
+  return products.map(product => ({
+    id: product.id,
+    name: product.name,
+    category: product.category,
+    description: product.description,
+    imageUrl: product.imageUrl,
+    stock: product.stock,
+    price: product.price.toNumber(),
+    createdAt: product.createdAt.toISOString(),
+    productAverageRating: avgRatingMap.get(product.id) ?? null,
 
-    orderId: item.orderId,
-    orderTotalPrice: item.order.total.toNumber(),
-    orderDate: item.order.createdAt?.toISOString() ?? null,
-    orderAmount: item.quantity,
-    orderPaymentStatus: item.order.payments.at(-1)?.status ?? 'PENDING',
-    orderStatus: item.order.status,
-    orderRejectionJustify: item.order.orderHistory.at(-1)?.rejectionJustify ?? null,
-    orderSituationMessage: item.order.orderHistory.at(-1)?.message ?? null,
-    orderRejectedBy: item.order.orderHistory.at(-1)?.rejectionJustify 
-      ? item.order.orderHistory.at(-1)?.changedBy.name 
-      : null
+    orders: product.orderItems.map(item => ({
+      orderId: item.order.id,
+      orderDate: item.order.createdAt?.toISOString() ?? '??/??/??',
+      orderedAmount: item.quantity,
+      orderTotalPrice: item.order.total.toNumber(),
+      orderStatus: item.order.status,
+      orderPaymentStatus: item.order.payments.at(-1)?.status ?? 'PENDING',
+      sellerName: item.order.orderItems.at(-1)?.product.seller.name ?? '[Desconhecido]',
+      messageSentAt: item.order.orderHistory.at(-1)?.createdAt?.toISOString() ?? null,
+      orderRejectionJustify: item.order.orderHistory.at(-1)?.rejectionJustify ?? null,
+      orderSituationMessage: item.order.orderHistory.at(-1)?.message ?? null,
+      orderRejectedBy: item.order.orderHistory.at(-1)?.rejectionJustify
+        ? item.order.orderHistory.at(-1)?.changedBy.name
+        : null,
+    })),
   }));
-}
+};
+
+
+// export const getOrdersFromUser = async() => {
+//   const session = await getRequiredSession();
+
+//   const ordersFromUser = await prisma.orderItem.findMany({
+//     where: {
+//       order: {
+//         userId: session.user.id,
+//         deletedBySellerAt: null,
+//         deletedByCustomerAt: null,
+//       }
+//     },
+//     include: {
+//       product: true,
+//       order: {
+//         select: {
+//           total: true,
+//           createdAt: true,
+//           status: true,
+//           orderItems: {
+//             select: {
+//               quantity: true,
+//               product: {
+//                 select: {
+//                   seller: {
+//                     select: {
+//                       name: true,
+//                     },
+//                   },
+//                 },
+//               },
+//             },
+//           },
+//           payments: {
+//             select: {
+//               status: true,
+//             },
+//           },
+//           orderHistory: {           
+//             orderBy: { createdAt: 'desc' },
+//             take: 1,
+//             select: {
+//               rejectionJustify: true,
+//               message: true,
+//               createdAt: true,
+//               changedBy: {
+//                 select: {
+//                   name: true,
+//                 },
+//               },
+//             },
+//           },
+//         },
+//       },
+//     },
+//   });
+
+//   const avgRatings = await prisma.productReview.groupBy({
+//     by: ['productId'],
+//     _avg: {
+//       rating: true,
+//     },
+//   });
+  
+//   const avgRatingMap = new Map(
+//     avgRatings.map(r => [
+//       r.productId,
+//       r._avg.rating !== null
+//         ? r._avg.rating.toFixed(1).replace('.', ',')
+//         : null,
+//     ]),
+//   );
+
+//   return ordersFromUser.map((item) => ({
+//     id: item.product.id,
+//     name: item.product.name,
+//     category: item.product.category,
+//     description: item.product.description,
+//     imageUrl: item.product.imageUrl,
+//     stock: item.product.stock,
+//     createdAt: item.product.createdAt?.toISOString() ?? null,
+//     price: item.product.price.toNumber(),
+//     sellerName: item.order.orderItems.at(-1)?.product.seller.name ?? '[Desconhecido]',
+//     messageSentAt: item.order.orderHistory.at(-1)?.createdAt?.toISOString() ?? null,
+//     productAverageRating: avgRatingMap.get(item.product.id) ?? null,
+
+//     orderId: item.orderId,
+//     orderTotalPrice: item.order.total.toNumber(),
+//     orderDate: item.order.createdAt?.toISOString() ?? null,
+//     orderAmount: item.quantity,
+//     orderPaymentStatus: item.order.payments.at(-1)?.status ?? 'PENDING',
+//     orderStatus: item.order.status,
+//     orderRejectionJustify: item.order.orderHistory.at(-1)?.rejectionJustify ?? null,
+//     orderSituationMessage: item.order.orderHistory.at(-1)?.message ?? null,
+//     orderRejectedBy: item.order.orderHistory.at(-1)?.rejectionJustify 
+//       ? item.order.orderHistory.at(-1)?.changedBy.name 
+//       : null
+//   }));
+// }
 
 

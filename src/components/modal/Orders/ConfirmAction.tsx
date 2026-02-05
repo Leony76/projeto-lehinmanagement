@@ -24,7 +24,7 @@ type BaseProps = {
 };
 
 type AcceptProps = BaseProps & {
-  decision: 'ACCEPT';
+  decision?: 'ACCEPT';
   onAccept: {
     handleSubmit: () => Promise<void>;
   };
@@ -32,10 +32,10 @@ type AcceptProps = BaseProps & {
 };
 
 type RejectProps = BaseProps & {
-  decision: 'REJECT';
+  decision?: 'REJECT' | 'REMOVE' | 'CANCEL';
   onReject: {
-    error: string;
-    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    error?: string;
+    onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
     handleSubmit: () => Promise<void>;
   };
   onAccept?: never;
@@ -79,7 +79,7 @@ const ConfirmAction = ({
           } desse produto pela comissão de <span className='text-ui-money'>{formatCurrency(order?.commission ?? 0)}</span> ?
         </p>
       )}
-      {decision === 'REJECT' ? (
+      {(decision === 'REJECT') ? (
         <>
         <TextArea 
           style={{input: `mb-[-2px] h-30 ${
@@ -99,15 +99,24 @@ const ConfirmAction = ({
           </span>
         )}
         </>
+      ) : (decision === 'CANCEL') ? (
+        <>
+        <span className='text-secondary-middledark text-sm'>
+          Caso tenha já tenha efetuado o pagamento, será notificado ao vendedor que você cancelou o pedido e será estornado seu dinheiro.
+        </span>
+        <span className='text-yellow-dark'>
+          {hasWarning && isActionIrreversible 
+            ? '(!) Essa ação é irreversível'
+            : '(!) Essa ação pode ser revertida depois'        
+          }
+        </span>
+        </>
       ) : (  
         <span className='text-yellow-dark'>
-          {hasWarning && (
-            isActionIrreversible ? (
-              '(!) Essa ação é irreversível'
-            ) : (
-              '(!) Essa ação pode ser revertida depois'
-            )
-          )}
+          {hasWarning && isActionIrreversible 
+            ? '(!) Essa ação é irreversível'
+            : '(!) Essa ação pode ser revertida depois'        
+          }
         </span>
       )}
       <div className='flex gap-2'>

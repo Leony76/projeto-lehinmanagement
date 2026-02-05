@@ -1,6 +1,7 @@
 import { ProductWithOrdersDTO } from "@/src/types/ProductWithOrdersDTO";
+import { UserProductsWithOrdersDTO } from "@/src/types/UserProductsWithOrdersDTO";
 
-export const getProductOrdersStats = (product: ProductWithOrdersDTO) => {
+export const getProductOrdersStats = (product: UserProductsWithOrdersDTO | ProductWithOrdersDTO) => {
   return product.orders.reduce(
     (acc, order) => {
       acc.total++;

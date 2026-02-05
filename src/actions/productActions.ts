@@ -97,25 +97,56 @@ export async function orderProduct(
   const session = await getRequiredSession();
 
   await prisma.$transaction(async (tx) => {
+    const product = await tx.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new Error("Produto não encontrado");
+    }
+
+    const available = product.stock - product.reservedStock;
+
+    if (available < amountTobeOrdered) {
+      throw new Error("Estoque indisponível");
+    }
+
+    const updated = await tx.product.updateMany({
+      where: {
+        id: productId,
+        reservedStock: product.reservedStock,
+      },
+      data: {
+        reservedStock: {
+          increment: amountTobeOrdered,
+        },
+      },
+    });
+
+    if (updated.count === 0) {
+      throw new Error("Estoque acabou, tente novamente");
+    }
+
     const order = await tx.order.create({
       data: {
         userId: session.user.id,
         total: totalOrderPrice,
-        status: 'PENDING',
+        status: "PENDING",
+        reservedUntil: new Date(Date.now() + 30 * 60 * 1000), // opcional
         orderItems: {
           create: {
             price: totalOrderPrice,
             quantity: amountTobeOrdered,
-            productId
-          }
+            productId,
+          },
         },
         orderHistory: {
           create: {
-            status: 'PENDING',
-            changedById: session.user.id
-          }
-        }
-      }
+            status: "PENDING",
+            changedById: session.user.id,
+          },
+        },
+      },
     });
 
     if (paymentMethod) {
@@ -124,12 +155,12 @@ export async function orderProduct(
           amount: totalOrderPrice,
           method: paymentMethod,
           orderId: order.id,
-          status: 'APPROVED'
+          status: "APPROVED",
         },
       });
     }
   });
-  
+
   revalidatePath("/products");
 }
 
@@ -141,31 +172,41 @@ export async function acceptRejectProductOrder(
   rejectionJustify?: string,
 ) { 
   const session = await getRequiredSession();
-
   const cleanJustify = rejectionJustify?.trim() || null;
 
-  if (decision === 'APPROVED') {
-    await prisma.$transaction(async(tx) => {
-      const order = await tx.order.update({
-        where: {
-          id: orderId,
-        },
+  await prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      throw new Error('Pedido não encontrado');
+    }
+
+    if (order.status !== 'PENDING') {
+      throw new Error('Pedido já processado');
+    }
+
+    if (decision === 'APPROVED') {
+      await tx.order.update({
+        where: { id: orderId },
         data: {
           status: 'APPROVED',
+          reservedUntil: null,
           orderHistory: {
             create: {
               status: 'APPROVED',
               changedById: session.user.id,
-            }
+            },
           },
-        }
+        },
       });
-  
+
       await tx.costumerProduct.create({
         data: {
           costumerId: order.userId,
           costumerProductId: productId,  
-          orderId   
+          orderId,
         },
       });
 
@@ -173,31 +214,43 @@ export async function acceptRejectProductOrder(
         where: { id: productId },
         data: {
           stock: {
-            decrement: orderedAmount
+            decrement: orderedAmount,
+          },
+          reservedStock: {
+            decrement: orderedAmount,
           },
         },
       });
-    })
-  } else {  
-    await prisma.order.update({
-      where: {
-        id: orderId
-      },
-      data: {
-        status: 'REJECTED',
-        orderHistory: {
-          create: {
-            status: 'REJECTED',
-            changedById: session.user.id,
-            rejectionJustify: cleanJustify
-          }
-        }
-      }
-    })
-  }
-  
+    } else {
+      await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'REJECTED',
+          reservedUntil: null,
+          orderHistory: {
+            create: {
+              status: 'REJECTED',
+              changedById: session.user.id,
+              rejectionJustify: cleanJustify,
+            },
+          },
+        },
+      });
+
+      await tx.product.update({
+        where: { id: productId },
+        data: {
+          reservedStock: {
+            decrement: orderedAmount,
+          },
+        },
+      });
+    }
+  });
+
   revalidatePath("/orders");
 }
+
 
 export async function payForPeddingOrderPayment(
   paymentMethod: PaymentOptionsValue,

@@ -1,71 +1,87 @@
 import { Category, OrderStatus, PaymentStatus } from "@prisma/client";
-import { UserOrderDTO } from "@/src/types/userOrderDTO";
+import { UserProductsWithOrdersDTO } from "@/src/types/UserProductsWithOrdersDTO";
 import { UserOrderFilterValue } from "@/src/constants/generalConfigs";
 
 export const filteredSearchForUserOrders = (
-  items: UserOrderDTO[],
+  items: UserProductsWithOrdersDTO[],
   search: string,
   advancedFilter: UserOrderFilterValue | null,
   categoryFilter: Category | null,
-): UserOrderDTO[] => {
+): UserProductsWithOrdersDTO[] => {
 
-  const filteredItems = items.filter(item => {
-    const matchesSearch = search
-      ? item.name.toLowerCase().includes(search.toLowerCase())
-      : true;
-
-    const matchesCategory = categoryFilter
-      ? item.category === categoryFilter
-      : true;
-
-    const matchesAdvancedFilter = (() => {
+  const filteredItems = items.map(product => {
+    const filteredOrders = product.orders.filter(order => {
       if (!advancedFilter) return true;
 
       switch (advancedFilter) {
         case 'pending':
-          return item.orderStatus === OrderStatus.PENDING;
+          return order.orderStatus === OrderStatus.PENDING;
 
         case 'canceled_by_customer':
-          return item.orderStatus === OrderStatus.CANCELED;
+          return order.orderStatus === OrderStatus.CANCELED;
 
         case 'pending_payment':
-          return item.orderPaymentStatus !== PaymentStatus.APPROVED;
+          return order.orderPaymentStatus !== PaymentStatus.APPROVED;
 
         case 'rejected':
-          return item.orderStatus === OrderStatus.REJECTED;
+          return order.orderStatus === OrderStatus.REJECTED;
 
         case 'approved':
-          return item.orderStatus === OrderStatus.APPROVED;
+          return order.orderStatus === OrderStatus.APPROVED;
 
         case 'paid':
-          return item.orderPaymentStatus === PaymentStatus.APPROVED;
+          return order.orderPaymentStatus === PaymentStatus.APPROVED;
 
         default:
           return true;
       }
-    })();
+    });
 
-    return matchesSearch && matchesCategory && matchesAdvancedFilter;
+    return {
+      ...product,
+      orders: filteredOrders,
+    };
+  })
+  
+  .filter(product => product.orders.length > 0)
+
+  .filter(product => {
+    const matchesSearch = search
+      ? product.name.toLowerCase().includes(search.toLowerCase())
+      : true;
+
+    const matchesCategory = categoryFilter
+      ? product.category === categoryFilter
+      : true;
+
+    return matchesSearch && matchesCategory;
   });
 
-  return [...filteredItems].sort((a, b) => {
+  return filteredItems.sort((a, b) => {
     if (!advancedFilter) return 0;
+
+    const sum = (orders: typeof a.orders) =>
+      orders.reduce((acc, o) => acc + o.orderTotalPrice, 0);
+
+    const qty = (orders: typeof a.orders) =>
+      orders.reduce((acc, o) => acc + o.orderedAmount, 0);
 
     switch (advancedFilter) {
       case 'value_asc':
-        return a.orderTotalPrice - b.orderTotalPrice;
+        return sum(a.orders) - sum(b.orders);
 
       case 'value_desc':
-        return b.orderTotalPrice - a.orderTotalPrice;
+        return sum(b.orders) - sum(a.orders);
 
       case 'most_sold':
-        return b.orderAmount - a.orderAmount;
+        return qty(b.orders) - qty(a.orders);
 
       case 'least_sold':
-        return a.orderAmount - b.orderAmount;
+        return qty(a.orders) - qty(b.orders);
 
       default:
         return 0;
     }
   });
 };
+

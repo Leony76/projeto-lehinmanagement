@@ -1,4 +1,4 @@
-import { CategoryTranslatedValue, CategoryValue, OrderFilterValue } from "@/src/constants/generalConfigs";
+import { CATEGORY_LABEL_MAP, CategoryValue, OrderFilterValue } from "@/src/constants/generalConfigs";
 import { buttonColorsScheme } from "@/src/constants/systemColorsPallet";
 import { formatCurrency } from "@/src/utils/formatCurrency";
 import Button from "../../form/Button";
@@ -15,9 +15,10 @@ import StockIfAccpeted from "../../ui/StockIfAccpeted";
 import Modal from "../Modal";
 import Image from "next/image";
 import MoreActions from "../MoreActions";
-import { OrderStatus, PaymentStatus } from "@prisma/client";
+import { OrderStatus, PaymentStatus, Role } from "@prisma/client";
 import { motion } from "framer-motion";
-import { productCardSetup } from "@/src/constants/cardConfigs";
+import NoContentFoundMessage from "../../ui/NoContentFoundMessage";
+import PaidTag from "../../ui/PaidTag";
 
 type Props = {
   isOpen: boolean;
@@ -30,10 +31,21 @@ type Props = {
     description: string;
     price: number;
     stock: number;
-    onResetStock: () => void;
+    onResetStock?: () => void;
   }
   productOrders: {
-    orders: {
+    fromCustomer?: {      
+      // orderDeletedByCustomer: boolean;
+      orderId: number;
+      orderedAmount: number;
+      orderDate: string;
+      sellerName: string;
+      orderStatus: OrderStatus;
+      orderTotalPrice: number;
+      orderPaymentStatus: PaymentStatus | "PENDING";
+      orderRejectionJustify: string | null;
+    }[];
+    fromSeller?: {
       orderId: number;
       orderCreatedAt: string;
       orderedAmount: number;
@@ -46,13 +58,15 @@ type Props = {
     }[];
     actions: {
       moreActionsOrderId: number;
+      showOrdersFromProduct: (value: React.SetStateAction<boolean>) => void;
       selectOrder: (orderId: number) => void;
-      onAccept: () => void;
-      onReject: () => void;
-      onRemove: () => void;
-      onApprove: () => void;
-      onViewJustify: () => void;
-      onJustifyCustomer: () => void;
+      onAccept?: () => void;
+      onReject?: () => void;
+      onRemove?: () => void;
+      onCancel?: () => void;
+      onApprove?: () => void;
+      onViewJustify?: () => void;
+      onJustifyCustomer?: () => void;
       onMoreActionsOpenClick: (orderId: number) => void;
       onMoreActionsCloseClick: () => void;
     }
@@ -74,10 +88,19 @@ const OrdersFromProductsMenu = ({
   productOrders,
   search,
 }:Props) => {
+
+  const category = CATEGORY_LABEL_MAP[product.category];
+  
+
   return (
     <Modal 
     isOpen={isOpen} 
-    modalTitle={'Pedidos do produto'} 
+    modalTitle={ 
+      <>
+        <span className="hidden md:inline">Pedidos do produto</span>
+        <span className="md:hidden">Pedidos</span>
+      </>
+    } 
     hasXClose
     onCloseModalActions={onCloseActions}
     >
@@ -114,14 +137,14 @@ const OrdersFromProductsMenu = ({
                 Categoria
               </label>
               <span className='text-secondary-dark'>
-                {product.category}
+                {category}
               </span>
             </div>
             <div className='flex flex-col'>
               <label className='text-primary-middledark font-bold'>
                 Descrição
               </label>
-              <span className='h-30 overflow-y-auto text-secondary-dark flex-col  
+              <span className='h-full max-h-30 overflow-y-auto text-secondary-dark flex-col  
               hover:scrollbar-thumb-primary-light
               scrollbar-thumb-primary-middledark 
                 scrollbar-track-transparent
@@ -188,230 +211,432 @@ const OrdersFromProductsMenu = ({
             onChange={search.onFilter}
           />
         </div>
-        {productOrders.orders.map((order) => {
-          
-          const stockIfOrderAccepted = product.stock - order.orderedAmount;
+        {productOrders.fromSeller ? (  
+          productOrders.fromSeller.length > 0 ? (
+            productOrders.fromSeller.map((order) => {
+              
+              const stockIfOrderAccepted = product.stock - order.orderedAmount;
+    
+              return (
+              <motion.div
+              key={order.orderId}
+              layout
+              initial={{
+                opacity: 0,
+                y: 2,
+                scale: 0.5
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1
+              }}
+              exit={{
+                opacity: 0,
+                y: -5,
+                scale: 0.5
+              }}
+              transition={{
+                duration: .25,
+                ease: "easeOut"
+              }}
+              className="flex flex-col gap-2"
+              >
+              <div className='flex lg:flex-row flex-col bg-secondary-light/25 p-2 ml-2 rounded-2xl border border-secondary-middledark'>
+                <div className="sm:text-base text-sm sm:space-y-0 space-y-1">
+                  <h3 className='text-primary-middledark text-lg italic'>
+                    Pedido #{order.orderId}
+                  </h3>
+                  <OrderRequestDate
+                    orderDate={new Date(order.orderCreatedAt).toLocaleDateString("pt-BR")}
+                  />
+                  <OrderRequestBy
+                    customerName={order.orderCustomerName ?? '[desconhecido]'}
+                  />
+                  <div>
+                    <OrderRequestQuantity
+                      orderQuantity={order.orderedAmount}
+                    />
+                    {(order.orderStatus !== 'CANCELED'
+                      && order.orderStatus !== 'APPROVED'
+                      && order.orderStatus !== 'REJECTED')
+                      && (
+                      <StockIfAccpeted
+                        stockIfOrderAccepted={stockIfOrderAccepted}
+                      />
+                    )}
+                  </div>
+                  <OrderCommission
+                    orderCommission={order.orderComission}
+                  />
+                </div>
+                <div className='flex flex-col lg:flex-col sm:flex-row justify-between gap-3 flex-1'>
+                  <div className="flex sm:justify-end">
+                    {order.orderPaymentStatus === 'PENDING' && order.orderStatus !== 'CANCELED' ? (
+                      <OrderSituationTopTag situation='Pagamento pendente'/>
+                    ) : order.orderStatus === 'CANCELED' ? (
+                      <OrderSituationTopTag situation='Cancelado pelo cliente'/>
+                    ) : order.orderStatus !== 'PENDING' ? (
+                      <OrderSituationTopTag situation='Analisado'/>
+                    ) : (
+                      <OrderSituationTopTag situation='Não analisado'/>
+                    )}
+                  </div>
+                  <div className='flex gap-2 justify-end'>
+                    {order.orderStatus === 'APPROVED' ? (
+                      <div className='flex gap-5'>
+                        <OrderSituationBottomTag
+                          situation={'Aprovado'}
+                        />
+                        <MoreActionsChevronButton
+                          onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
+                          moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
+                        />
+                      </div>
+                    ) : (order.orderStatus === 'CANCELED') ? (
+                      <div className='flex gap-5'>
+                        <OrderSituationBottomTag
+                          situation={'Cancelado'}
+                        />
+                        <MoreActionsChevronButton
+                          onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
+                          moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
+                        />
+                      </div>
+                    ) : (order.orderStatus === 'REJECTED') ? ( 
+                      <div className='flex gap-5'>
+                        <OrderSituationBottomTag
+                          situation={'Rejeitado'}
+                        />
+                        <MoreActionsChevronButton
+                          onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
+                          moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
+                        />
+                      </div>
+                    ) : order.orderPaymentStatus === 'APPROVED' 
+                      && order.orderStatus === 'PENDING' 
+                      && !order.orderDeletedByCustomer 
+                      && stockIfOrderAccepted >= 0 
+                      ? (
+                      <div className='flex gap-2 sm:w-fit w-full'>
+                        <Button
+                          type='button'
+                          style={`px-5 flex-1 ${buttonColorsScheme.green}`}
+                          label='Aceitar'
+                          onClick={() => {
+                            productOrders.actions.onAccept && productOrders.actions.onAccept();
+                            productOrders.actions.selectOrder(order.orderId);
+                          }}
+                        />
+                        <Button
+                          type='button'
+                          style={`px-5 flex-1 ${buttonColorsScheme.red}`}
+                          label='Rejeitar'
+                          onClick={() => {
+                            productOrders.actions.onReject && productOrders.actions.onReject();
+                            productOrders.actions.selectOrder(order.orderId);
+                          }}
+                        />
+                      </div>
+                    ) : order.orderStatus === 'PENDING' 
+                      && !order.orderDeletedByCustomer 
+                      && stockIfOrderAccepted < 0  
+                      ? (
+                      <div className='flex gap-5'>
+                        <OrderSituationBottomTag
+                          situation={'Estoque insuficiente'}
+                        />
+                        <MoreActionsChevronButton
+                          onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
+                          moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
+                        />
+                      </div>
+                    ) : (order.orderStatus === 'PENDING' 
+                      && order.orderPaymentStatus !== 'APPROVED' 
+                      && !order.orderDeletedByCustomer 
+                      && stockIfOrderAccepted >= 0 ) && (
+                      <div className='flex gap-5'>
+                        <OrderSituationBottomTag
+                          situation={'Pendente'}
+                        />
+                        <MoreActionsChevronButton
+                          onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
+                          moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-          return (
-          <motion.div
-          key={order.orderId}
-          layout
-          initial={{
-            opacity: 0,
-            y: 2,
-            scale: 0.5
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-            scale: 1
-          }}
-          exit={{
-            opacity: 0,
-            y: -5,
-            scale: 0.5
-          }}
-          transition={{
-            duration: .25,
-            ease: "easeOut"
-          }}
-          className="flex flex-col gap-2"
-          >
-          <div className='flex md:flex-row flex-col bg-secondary-light/25 p-2 ml-2 rounded-2xl border border-secondary-middledark'>
-            <div>
-              <h3 className='text-primary-middledark italic'>
-                Pedido #{order.orderId}
-              </h3>
-              <OrderRequestDate
-                orderDate={new Date(order.orderCreatedAt).toLocaleDateString("pt-BR")}
-              />
-              <OrderRequestBy
-                customerName={order.orderCustomerName ?? '[desconhecido]'}
-              />
-              <div>
-                <OrderRequestQuantity
-                  orderQuantity={order.orderedAmount}
+              {/* MORE ACTIONS MODAL */}
+
+              <MoreActions
+              direction="right"
+              style={{ container: 'mt-[-5px]' }}
+              moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
+              close={productOrders.actions.onMoreActionsCloseClick}
+              >
+              {(order.orderStatus !== 'CANCELED' 
+              && order.orderStatus === 'PENDING') 
+              ? (
+                <>
+                {(stockIfOrderAccepted < 0) && (
+                  <>
+                  <Button 
+                    type='button'
+                    label="Repor estoque" 
+                    style={`px-5 ${buttonColorsScheme.secondary}`}
+                    onClick={() => {
+                      product.onResetStock && product.onResetStock();
+                      productOrders.actions.showOrdersFromProduct(false);
+                    } }
+                  />
+                  <Button 
+                    type='button'
+                    label="Justificar ao cliente" 
+                    style={`px-5 ${buttonColorsScheme.yellow}`}
+                    onClick={() => {
+                      productOrders.actions.onJustifyCustomer && productOrders.actions.onJustifyCustomer();
+                      productOrders.actions.showOrdersFromProduct(false);
+                    }}
+                  />
+                  </>
+                )}
+                <Button 
+                  type='button'
+                  label="Rejeitar pedido" 
+                  style={`px-5 ${buttonColorsScheme.red}`}
+                  onClick={() => {
+                    productOrders.actions.onReject && productOrders.actions.onReject();
+                    productOrders.actions.showOrdersFromProduct(false);
+                  }}
                 />
-                {(order.orderStatus !== 'CANCELED'
-                  && order.orderStatus !== 'APPROVED'
-                  && order.orderStatus !== 'REJECTED')
-                  && (
-                  <StockIfAccpeted
-                    stockIfOrderAccepted={stockIfOrderAccepted}
+                </>
+              ) : ( order.orderStatus === 'REJECTED') ? (
+                <>
+                <Button 
+                  type='button'
+                  label="Remover do histórico" 
+                  style={`px-5 ${buttonColorsScheme.red}`}
+                  onClick={() =>  {
+                    productOrders.actions.onRemove && productOrders.actions.onRemove();
+                    productOrders.actions.showOrdersFromProduct(false);
+                  }}
+                />
+                <Button 
+                  type='button'
+                  label="Ver sua justificativa" 
+                  style={`px-5 ${buttonColorsScheme.yellow}`}
+                  onClick={() => {
+                    productOrders.actions.onViewJustify && productOrders.actions.onViewJustify()
+                    productOrders.actions.showOrdersFromProduct(false);
+                  }}
+                />
+                {order.orderPaymentStatus === 'APPROVED' && (
+                  <Button 
+                    type='button'
+                    label="Aprovar pedido" 
+                    style={`px-5 ${buttonColorsScheme.green}`}
+                    onClick={() => {
+                      productOrders.actions.onAccept && productOrders.actions.onAccept()
+                      productOrders.actions.showOrdersFromProduct(false);
+                    }}
                   />
                 )}
-              </div>
-              <OrderCommission
-                orderCommission={order.orderComission}
-              />
-            </div>
-            <div className='flex sm:flex-row md:flex-col flex-col mt-2 justify-between gap-3 flex-1'>
-              <div className="flex sm:justify-end">
-                {order.orderPaymentStatus === 'PENDING' && order.orderStatus !== 'CANCELED' ? (
-                  <OrderSituationTopTag situation='Pagamento pendente'/>
-                ) : order.orderStatus === 'CANCELED' ? (
-                  <OrderSituationTopTag situation='Cancelado pelo cliente'/>
-                ) : order.orderStatus !== 'PENDING' ? (
-                  <OrderSituationTopTag situation='Analisado'/>
-                ) : (
-                  <OrderSituationTopTag situation='Não analisado'/>
-                )}
-              </div>
-              <div className='flex gap-2 justify-end'>
-                {order.orderStatus === 'APPROVED' ? (
-                  <div className='flex gap-5'>
-                    <OrderSituationBottomTag
-                      situation={'Aprovado'}
-                    />
-                    <MoreActionsChevronButton
-                      onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
-                      moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
-                    />
-                  </div>
-                ) : (order.orderStatus === 'CANCELED') ? (
-                  <div className='flex gap-5'>
-                    <OrderSituationBottomTag
-                      situation={'Cancelado'}
-                    />
-                    <MoreActionsChevronButton
-                      onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
-                      moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
-                    />
-                  </div>
-                ) : (order.orderStatus === 'REJECTED') ? ( 
-                  <div className='flex gap-5'>
-                    <OrderSituationBottomTag
-                      situation={'Rejeitado'}
-                    />
-                    <MoreActionsChevronButton
-                      onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
-                      moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
-                    />
-                  </div>
-                ) :  order.orderPaymentStatus === 'APPROVED' 
-                  && order.orderStatus === 'PENDING' 
-                  && !order.orderDeletedByCustomer 
-                  && stockIfOrderAccepted >= 0 
-                  ? (
-                  <div className='flex gap-2 sm:w-fit w-full'>
-                    <Button
-                      type='button'
-                      style={`px-5 flex-1 ${buttonColorsScheme.green}`}
-                      label='Aceitar'
-                      onClick={() => {
-                        productOrders.actions.onAccept();
-                        productOrders.actions.selectOrder(order.orderId);
-                      }}
-                    />
-                    <Button
-                      type='button'
-                      style={`px-5 flex-1 ${buttonColorsScheme.red}`}
-                      label='Rejeitar'
-                      onClick={() => {
-                        productOrders.actions.onReject();
-                        productOrders.actions.selectOrder(order.orderId);
-                      }}
-                    />
-                  </div>
-                ) : order.orderStatus === 'PENDING' 
-                  && !order.orderDeletedByCustomer 
-                  && stockIfOrderAccepted < 0  
-                  ? (
-                  <div className='flex gap-5'>
-                    <OrderSituationBottomTag
-                      situation={'Estoque insuficiente'}
-                    />
-                    <MoreActionsChevronButton
-                      onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
-                      moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
-                    />
-                  </div>
-                ) : (order.orderStatus === 'PENDING' 
-                  && order.orderPaymentStatus !== 'APPROVED' 
-                  && !order.orderDeletedByCustomer 
-                  && stockIfOrderAccepted >= 0 ) && (
-                  <div className='flex gap-5'>
-                    <OrderSituationBottomTag
-                      situation={'Pendente'}
-                    />
-                    <MoreActionsChevronButton
-                      onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
-                      moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          <MoreActions
-          direction="right"
-          style={{ container: 'mt-[-5px]' }}
-          moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
-          close={productOrders.actions.onMoreActionsCloseClick}
-          >
-          {order.orderStatus !== 'CANCELED' && order.orderStatus === 'PENDING' ? (
-            <>
-            {stockIfOrderAccepted < 0 && (
-              <>
-              <Button 
-                type='button'
-                label="Repor estoque" 
-                style={`px-5 ${buttonColorsScheme.secondary}`}
-                onClick={product.onResetStock}
-              />
-              <Button 
-                type='button'
-                label="Justificar ao cliente" 
-                style={`px-5 ${buttonColorsScheme.yellow}`}
-                onClick={productOrders.actions.onJustifyCustomer}
-              />
-              </>
-            )}
-            <Button 
-              type='button'
-              label="Rejeitar pedido" 
-              style={`px-5 ${buttonColorsScheme.red}`}
-              onClick={productOrders.actions.onReject}
-            />
-            </>
-          ) : ( order.orderStatus === 'REJECTED') ? (
-            <>
-            <Button 
-              type='button'
-              label="Remover do histórico" 
-              style={`px-5 ${buttonColorsScheme.red}`}
-              onClick={() => productOrders.actions.onRemove()}
-            />
-            <Button 
-              type='button'
-              label="Ver sua justificativa" 
-              style={`px-5 ${buttonColorsScheme.yellow}`}
-              onClick={() => productOrders.actions.onViewJustify()}
-            />
-            {order.orderPaymentStatus === 'APPROVED' && (
-              <Button 
-                type='button'
-                label="Aprovar pedido" 
-                style={`px-5 ${buttonColorsScheme.green}`}
-                onClick={() => productOrders.actions.onAccept()}
-              />
-            )}
-            </>
+                </>
+              ) : (
+                <Button 
+                  type='button'
+                  label="Remover do histórico" 
+                  style={`px-5 ${buttonColorsScheme.red}`}
+                  onClick={() => {
+                    productOrders.actions.onRemove && productOrders.actions.onRemove()
+                    productOrders.actions.showOrdersFromProduct(false);
+                  }}
+                />
+              )}
+                </MoreActions>
+              </motion.div>
+            )})
           ) : (
-            <Button 
-              type='button'
-              label="Remover do histórico" 
-              style={`px-5 ${buttonColorsScheme.red}`}
-              onClick={() => productOrders.actions.onRemove()}
+            <NoContentFoundMessage
+              text={'Nenhum resultado encontrado!'}
             />
-          )}
-          </MoreActions>
-          </motion.div>
-        )})}
+          )
+        ) : productOrders.fromCustomer && (
+          productOrders.fromCustomer.length > 0 ? (
+            productOrders.fromCustomer.map((order) => {   
+              return (
+              <motion.div
+              key={order.orderId}
+              layout
+              initial={{
+                opacity: 0,
+                y: 2,
+                scale: 0.5
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1
+              }}
+              exit={{
+                opacity: 0,
+                y: -5,
+                scale: 0.5
+              }}
+              transition={{
+                duration: .25,
+                ease: "easeOut"
+              }}
+              className="flex flex-col gap-2"
+              >
+              <div className='flex lg:flex-row flex-col bg-secondary-light/25 p-2 ml-2 rounded-2xl border border-secondary-middledark'>
+                <div className="flex flex-col m-1 justify-between sm:text-base text-sm sm:space-y-0 space-y-1">
+                  <OrderRequestDate
+                    orderDate={order.orderDate}
+                  />
+                  <div>
+                    <OrderRequestQuantity
+                      orderQuantity={order.orderedAmount}
+                    />
+                  </div>
+                  <OrderCommission
+                    customLabel="Valor:"
+                    orderCommission={order.orderTotalPrice}
+                  />
+                  {(order.orderPaymentStatus === 'APPROVED' 
+                  && order.orderStatus !== 'REJECTED'
+                  ) &&
+                    <PaidTag/>
+                  }
+                </div>
+                <div className='flex flex-col lg:flex-col sm:flex-row justify-between gap-3 flex-1'>
+                  <div className="flex sm:justify-end">
+                    {(order.orderPaymentStatus !== 'APPROVED' 
+                    && order.orderStatus !== 'CANCELED') 
+                    ? (
+                      <OrderSituationTopTag situation='Pagamento pendente'/>
+                    ) : (order.orderStatus === 'CANCELED') ? (
+                      <OrderSituationTopTag situation='Cancelado por você'/>
+                    ) : (order.orderStatus !== 'PENDING') ? (
+                      <OrderSituationTopTag situation='Analisado'/>
+                    ) : (
+                      <OrderSituationTopTag situation='Em analise'/>
+                    )}
+                  </div>
+                  <div className='flex gap-2 justify-end'>
+                    {order.orderStatus === 'APPROVED' ? (
+                      <div className='flex gap-5'>
+                        <OrderSituationBottomTag
+                          situation={'Aprovado'}
+                        />
+                        <MoreActionsChevronButton
+                          onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
+                          moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
+                        />
+                      </div>
+                    ) : (order.orderStatus === 'CANCELED') ? (
+                      <div className='flex gap-5'>
+                        <OrderSituationBottomTag
+                          situation={'Cancelado'}
+                        />
+                        <MoreActionsChevronButton
+                          onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
+                          moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
+                        />
+                      </div>
+                    ) : (order.orderStatus === 'REJECTED') ? ( 
+                      <div className='flex gap-5'>
+                        <OrderSituationBottomTag
+                          situation={'Rejeitado'}
+                        />
+                        <MoreActionsChevronButton
+                          onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
+                          moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
+                        />
+                      </div>
+                    ) : (order.orderStatus === 'PENDING') && (
+                      <div className='flex gap-5'>
+                        <OrderSituationBottomTag
+                          situation={'Pendente'}
+                        />
+                        <MoreActionsChevronButton
+                          onClick={() => productOrders.actions.onMoreActionsOpenClick(order.orderId)}
+                          moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* MORE ACTIONS MODAL */}
+                    
+              <MoreActions
+              direction="right"
+              style={{ container: 'mt-[-5px]' }}
+              moreActions={productOrders.actions.moreActionsOrderId === order.orderId}
+              close={productOrders.actions.onMoreActionsCloseClick}
+              >
+              {(order.orderStatus !== 'CANCELED' 
+              && order.orderStatus === 'PENDING') 
+              ? (        
+                <Button 
+                  type='button'
+                  label="Cancelar pedido" 
+                  style={`px-5 ${buttonColorsScheme.red}`}
+                  onClick={() => {
+                    productOrders.actions.onCancel && productOrders.actions.onCancel();
+                    productOrders.actions.showOrdersFromProduct(false);
+                  }}
+                />
+              ) : (order.orderStatus === 'REJECTED') ? (
+                <>
+                <Button 
+                  type='button'
+                  label="Remover do histórico" 
+                  style={`px-5 ${buttonColorsScheme.red}`}
+                  onClick={() => {
+                    productOrders.actions.onRemove && productOrders.actions.onRemove();
+                    productOrders.actions.showOrdersFromProduct(false);
+                  }}
+                />
+                <Button 
+                  type='button'
+                  label="Ver justificativa" 
+                  style={`px-5 ${buttonColorsScheme.yellow}`}
+                  onClick={() => {
+                    productOrders.actions.onViewJustify && productOrders.actions.onViewJustify();
+                    productOrders.actions.showOrdersFromProduct(false);
+                  }}
+                />           
+                </>
+              ) : (
+                <Button 
+                  type='button'
+                  label="Remover do histórico" 
+                  style={`px-5 ${buttonColorsScheme.red}`}
+                  onClick={() => {
+                    productOrders.actions.onRemove && productOrders.actions.onRemove();
+                    productOrders.actions.showOrdersFromProduct(false);
+                  }}
+                />
+              )}
+                </MoreActions>
+              </motion.div>
+            )})
+          ) : (
+            <NoContentFoundMessage
+              text={'Nenhum resultado encontrado!'}
+            />
+          )
+        )}
         </div>
       </div>
     </Modal>
   )
 }
 
-export default OrdersFromProductsMenu
+export default OrdersFromProductsMenu;

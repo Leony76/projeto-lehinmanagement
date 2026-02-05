@@ -6,17 +6,19 @@ type Props = {
   | 'Cancelado por você'
   | 'Analisado'
   | 'Não analisado'
+  | 'Em analise'
   ;
 }
 
 const OrderSituationTopTag = ({situation}:Props) => {
   return (
-    <div className={`w-fit text-center py-1 px-3 rounded-2xl border ${
+    <div className={`flex items-center w-fit text-center py-1 px-3 rounded-2xl border ${
       situation === 'Não analisado'
+      || situation === 'Em analise'
         ? 'text-yellow-dark bg-yellow-100 border-yellow'
       : situation === 'Pagamento pendente' 
-        || situation === 'Cancelado pelo cliente'
-        || situation === 'Cancelado por você'
+      || situation === 'Cancelado pelo cliente'
+      || situation === 'Cancelado por você'
         ? 'text-red-dark bg-red-100 border-red'
       : situation === 'Analisado'
         && 'text-green bg-green-100 border-green' 

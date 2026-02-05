@@ -78,12 +78,13 @@ model Verification {
 
 
 model Order {
-  id           Int            @id @default(autoincrement())
-  userId       String         @map("user_id")
-  total        Decimal
-  createdAt    DateTime?      @default(now()) @map("created_at")
-  updatedAt    DateTime?      @updatedAt @map("updated_at")
-  deletedAt    DateTime?      @map("deleted_at")
+  id             Int            @id @default(autoincrement())
+  userId         String         @map("user_id")
+  total          Decimal
+  createdAt      DateTime?      @default(now()) @map("created_at")
+  updatedAt      DateTime?      @updatedAt @map("updated_at")
+  reservedUntil  DateTime?
+  deletedAt      DateTime?      @map("deleted_at")
 
   deletedByCustomerAt DateTime?
   deletedBySellerAt   DateTime?
@@ -106,6 +107,7 @@ model Product {
   price          Decimal
   description    String? 
   stock          Int
+  reservedStock  Int          @default(0)
   isActive       Boolean      @map("is_active")
   deletedBy      DeletedBy?   @map("deleted_by")
   category       Category

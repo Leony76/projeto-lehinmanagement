@@ -50,6 +50,7 @@ const Product = ({
 
   const user = useUserStore((stats) => stats.user);
 
+  const available = product.stock - product.reservedStock;
   const canOrder = (product.sellerId !== user?.id) && (user?.role !== 'ADMIN');
 
   const handleRemoveProduct = async() => {
@@ -152,34 +153,33 @@ const Product = ({
             />
           </div>
         </div>
-      {(canOrder && product.stock > 0) ? (
-        <Button
-          style='text-xl' 
-          label={"Fazer pedido"}
-          colorScheme={'primary'}
-          onClick={() => {
-            showOrderProductMenu(true)
-          }}
-          type='button'
-        />
-      ) : (canOrder && product.stock === 0) ? (
-        <Button
-          style={`text-xl pointer-events-none ${buttonColorsScheme.red}`} 
-          label={"Fora do estoque"}
-          colorScheme={'primary'}
-          type='button'
-        />
+      {canOrder ? (
+        available > 0 ? (
+          <Button
+            label="Fazer pedido"
+            colorScheme="primary"
+            onClick={() => showOrderProductMenu(true)}
+            type="button"
+          />
+        ) : (
+          <Button
+            style={`pointer-events-none ${buttonColorsScheme.red}`}
+            label="Produto indisponível"
+            colorScheme="primary"
+            type="button"
+          />
+        )
       ) : (
-        <div className='flex gap-2'>
-          <Button 
-            type={'button'}
-            label='Editar'
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            label="Editar"
             style={`flex-1 ${buttonColorsScheme.yellow}`}
             onClick={() => showEditProduct(true)}
           />
-          <Button 
-            type={'button'}
-            label='Remover'
+          <Button
+            type="button"
+            label="Remover"
             style={`flex-1 ${buttonColorsScheme.red}`}
             onClick={() => showConfirmRemoveProduct(true)}
           />

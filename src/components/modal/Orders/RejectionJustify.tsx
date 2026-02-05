@@ -6,23 +6,25 @@ import { buttonColorsScheme } from '@/src/constants/systemColorsPallet';
 import Button from '../../form/Button';
 
 type Props = {
+  userRole: 'CUSTOMER' | 'SELLER';
   isOpen: boolean;
   onCloseActions: () => void;
-  editRejection: boolean;
-  newRejectionJustify: string;
+  editRejection?: boolean;
+  newRejectionJustify?: string;
   sellerRejectionJustify: string;
-  onChange: (e:React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onBlur: () => void;
-  editOrderRejectionJustify: boolean;
-  loading: boolean;
-  error: string;
-  onEdit: {
+  onChange?: (e:React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onBlur?: () => void;
+  editOrderRejectionJustify?: boolean;
+  loading?: boolean;
+  error?: string;
+  onEdit?: {
     onClick: () => void;
   }
 }
 
 const RejectionJustify = ({
   error,
+  userRole,
   isOpen,
   editRejection,
   newRejectionJustify,
@@ -37,7 +39,10 @@ const RejectionJustify = ({
   return (
     <Modal 
     isOpen={isOpen} 
-    modalTitle={'Sua justificativa de rejeição'} 
+    modalTitle={userRole === 'SELLER' 
+      ? 'Sua justificativa de rejeição'
+      : 'Justificativa de rejeição'
+    } 
     onCloseModalActions={onCloseActions}
     >
     {editRejection ? (
@@ -61,24 +66,33 @@ const RejectionJustify = ({
         </p>
       </div>
     )}
-      
-      <div className='flex gap-2 mt-2'>
-        <Button 
-          type='button'
-          style={`px-5 flex-1 text-xl ${buttonColorsScheme.yellow}`} 
-          label='Editar'
-          loading={loading}
-          spinnerColor='text-green'
-          loadingLabel='Processando'
-          onClick={onEdit.onClick}
-        />
+      {userRole === 'SELLER' ? (
+
+        <div className='flex gap-2 mt-2'>
+          <Button 
+            type='button'
+            style={`px-5 flex-1 text-xl ${buttonColorsScheme.yellow}`} 
+            label='Editar'
+            loading={loading}
+            spinnerColor='text-green'
+            loadingLabel='Processando'
+            onClick={onEdit?.onClick}
+          />
+          <Button
+            style={`px-5 ${editOrderRejectionJustify ? buttonColorsScheme.red + 'flex-1' : 'flex-3'} text-xl`}
+            onClick={onCloseActions}
+            label={editOrderRejectionJustify ? 'Cancelar' : 'Voltar'}
+            type='button'
+          />
+        </div>
+      ) : (
         <Button
-          style={`px-5 ${editOrderRejectionJustify ? buttonColorsScheme.red + 'flex-1' : 'flex-3'} text-xl`}
+          style={`px-5 flex-1 text-xl`}
           onClick={onCloseActions}
-          label={editOrderRejectionJustify ? 'Cancelar' : 'Voltar'}
+          label={'Voltar'}
           type='button'
         />
-      </div>
+      )}
     </Modal>
   )
 }

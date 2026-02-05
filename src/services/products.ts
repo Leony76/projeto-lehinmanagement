@@ -63,6 +63,7 @@ export const getProducts = async() => {
     description: product.description,
     imageUrl: product.imageUrl,
     stock: product.stock,
+    reservedStock: product.reservedStock,
     createdAt: product.createdAt?.toISOString() ?? null,
     price: product.price.toNumber(),
 

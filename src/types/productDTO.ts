@@ -7,6 +7,7 @@ export type ProductDTO = {
   description: string | null;
   price: number;
   stock: number;
+  reservedStock: number;
   imageUrl: string;
   createdAt: string;
   sellerId: string;
