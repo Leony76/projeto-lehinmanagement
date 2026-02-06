@@ -11,7 +11,7 @@ import { useUserStore } from '@/src/store/useUserStore';
 import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
 import { getNameAndSurname } from '@/src/utils/getNameAndSurname';
 import { removeProduct } from '@/src/actions/productActions';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from '../modal/Modal';
 import { useToast } from '@/src/contexts/ToastContext';
 import EditProductForm from '../form/EditProductForm';
@@ -21,6 +21,7 @@ import OrderProduct from '../modal/OrderProduct';
 import { lockScrollY } from '@/src/utils/lockScrollY';
 import { FaInfo } from 'react-icons/fa6';
 import { motion } from 'framer-motion';
+import { setTimeout } from 'timers/promises';
 
 type Props = {
   product: ProductDTO;
@@ -71,7 +72,7 @@ const Product = ({
     }
   };
 
-  lockScrollY(orderProductMenu || confirmModal);
+  lockScrollY(orderProductMenu || confirmModal);  
 
   return (
     <motion.div

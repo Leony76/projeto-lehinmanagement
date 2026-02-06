@@ -35,7 +35,6 @@ type Props = {
   }
   productOrders: {
     fromCustomer?: {      
-      // orderDeletedByCustomer: boolean;
       orderId: number;
       orderedAmount: number;
       orderDate: string;
@@ -60,6 +59,7 @@ type Props = {
       moreActionsOrderId: number;
       showOrdersFromProduct: (value: React.SetStateAction<boolean>) => void;
       selectOrder: (orderId: number) => void;
+      onPay?: () => void;
       onAccept?: () => void;
       onReject?: () => void;
       onRemove?: () => void;
@@ -90,7 +90,6 @@ const OrdersFromProductsMenu = ({
 }:Props) => {
 
   const category = CATEGORY_LABEL_MAP[product.category];
-  
 
   return (
     <Modal 
@@ -248,7 +247,7 @@ const OrdersFromProductsMenu = ({
                     Pedido #{order.orderId}
                   </h3>
                   <OrderRequestDate
-                    orderDate={new Date(order.orderCreatedAt).toLocaleDateString("pt-BR")}
+                    orderDate={order.orderCreatedAt}
                   />
                   <OrderRequestBy
                     customerName={order.orderCustomerName ?? '[desconhecido]'}
@@ -325,6 +324,7 @@ const OrdersFromProductsMenu = ({
                           label='Aceitar'
                           onClick={() => {
                             productOrders.actions.onAccept && productOrders.actions.onAccept();
+                            productOrders.actions.showOrdersFromProduct(false);
                             productOrders.actions.selectOrder(order.orderId);
                           }}
                         />
@@ -334,6 +334,7 @@ const OrdersFromProductsMenu = ({
                           label='Rejeitar'
                           onClick={() => {
                             productOrders.actions.onReject && productOrders.actions.onReject();
+                            productOrders.actions.showOrdersFromProduct(false);
                             productOrders.actions.selectOrder(order.orderId);
                           }}
                         />
@@ -390,7 +391,7 @@ const OrdersFromProductsMenu = ({
                     onClick={() => {
                       product.onResetStock && product.onResetStock();
                       productOrders.actions.showOrdersFromProduct(false);
-                    } }
+                    }}
                   />
                   <Button 
                     type='button'
@@ -507,7 +508,7 @@ const OrdersFromProductsMenu = ({
                     orderCommission={order.orderTotalPrice}
                   />
                   {(order.orderPaymentStatus === 'APPROVED' 
-                  && order.orderStatus !== 'REJECTED'
+                  && order.orderStatus === 'PENDING'
                   ) &&
                     <PaidTag/>
                   }
@@ -582,7 +583,19 @@ const OrdersFromProductsMenu = ({
               >
               {(order.orderStatus !== 'CANCELED' 
               && order.orderStatus === 'PENDING') 
-              ? (        
+              ? (      
+                <>
+              {order.orderPaymentStatus !== 'APPROVED' && (
+                <Button 
+                  type='button'
+                  label="Pagar" 
+                  style={`px-5 ${buttonColorsScheme.green}`}
+                  onClick={() => {
+                    productOrders.actions.onPay && productOrders.actions.onPay();
+                    productOrders.actions.showOrdersFromProduct(false);
+                  }}
+                />
+              )}
                 <Button 
                   type='button'
                   label="Cancelar pedido" 
@@ -592,6 +605,7 @@ const OrdersFromProductsMenu = ({
                     productOrders.actions.showOrdersFromProduct(false);
                   }}
                 />
+                </>  
               ) : (order.orderStatus === 'REJECTED') ? (
                 <>
                 <Button 
@@ -613,7 +627,7 @@ const OrdersFromProductsMenu = ({
                   }}
                 />           
                 </>
-              ) : (
+              ) : (           
                 <Button 
                   type='button'
                   label="Remover do histórico" 

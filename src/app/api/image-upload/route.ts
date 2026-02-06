@@ -27,11 +27,11 @@ export async function POST(request: Request) {
     ).end(buffer);
   })
 
-  console.log("Cloudinary OK?", {
-    cloud: process.env.CLOUDINARY_CLOUD_NAME,
-    key: !!process.env.CLOUDINARY_API_KEY,
-    secret: !!process.env.CLOUDINARY_API_SECRET,
-  })
+  // console.log("Cloudinary OK?", {
+  //   cloud: process.env.CLOUDINARY_CLOUD_NAME,
+  //   key: !!process.env.CLOUDINARY_API_KEY,
+  //   secret: !!process.env.CLOUDINARY_API_SECRET,
+  // })
 
   return NextResponse.json({ url: result.secure_url });
 }

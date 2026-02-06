@@ -11,6 +11,7 @@ export type PaymentStatus = 'PENDING' | 'PROCESSING' | 'APPROVED' | 'DENIED';
 export type SelectFilterOptions =   
 | "PRODUCT_FILTER" 
 | "USER_PRODUCT_FILTER" 
+| "USER_PRODUCT_ORDERS_FILTER"
 | "ORDER_FILTER" 
 | "USER_ORDER_FILTER" 
 | "CATEGORY" 
@@ -68,6 +69,15 @@ export const USER_ORDER_FILTER_OPTIONS = [
   { value: 'rejected', label: 'Rejeitados' },
   { value: 'approved', label: 'Aprovados' },
   { value: 'paid', label: 'Pagos' },
+] as const;
+
+export const USER_PRODUCT_ORDERS_FILTER_OPTIONS = [
+  { value: 'most_recent', label: 'Mais recente'},
+  { value: 'least_recent', label: 'Menos antigo'},
+  { value: 'most_valuable', label: 'Maior valor'},
+  { value: 'least_valuable', label: 'Menor valor'},
+  { value: 'most_units_ordered', label: 'Mais unidades pedidas'},
+  { value: 'least_units_ordered', label: 'Menos unidades pedidas'},
 ] as const;
 
 export const PAYMENT_OPTIONS = [
@@ -189,4 +199,5 @@ export type CategoryTranslatedValue = typeof CATEGORY_OPTIONS[number]['label'];
 export type ProductFilterValue = typeof PRODUCT_FILTER_OPTIONS[number]['value'];
 export type UserProductFilterValue = typeof USER_PRODUCT_FILTER_OPTIONS[number]['value'];
 export type OrderFilterValue = typeof ORDER_FILTER_OPTIONS[number]['value'];
+export type UserProductOrdersFilterValue = typeof USER_PRODUCT_ORDERS_FILTER_OPTIONS[number]['value']
 export type UserOrderFilterValue = typeof USER_ORDER_FILTER_OPTIONS[number]['value'];

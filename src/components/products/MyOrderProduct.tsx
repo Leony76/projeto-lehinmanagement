@@ -1,14 +1,14 @@
 "use client";
 
 import { productCardSetup } from '@/src/constants/cardConfigs';
-import { CATEGORY_LABEL_MAP, OrderFilterValue } from '@/src/constants/generalConfigs';
+import { CATEGORY_LABEL_MAP, OrderFilterValue, PaymentOptionsValue, PaymentStatus } from '@/src/constants/generalConfigs';
 import { useToast } from '@/src/contexts/ToastContext';
 import { useUserStore } from '@/src/store/useUserStore';
 import { UserProductsWithOrdersDTO } from '@/src/types/UserProductsWithOrdersDTO';
 import { filterOrders } from '@/src/utils/filters/customerFilteredOrdersFromEachProduct';
 import { getProductOrdersStats } from '@/src/utils/filters/productOrdersStats';
 import { motion } from 'framer-motion';
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { IoStarOutline, IoStar } from 'react-icons/io5';
 import Button from '../form/Button';
 import ConfirmAction from '../modal/Orders/ConfirmAction';
@@ -16,8 +16,12 @@ import ImageExpand from '../modal/Orders/ImageExpand';
 import OrdersFromProductsMenu from '../modal/Orders/OrdersFromProductsMenu';
 import OrderStatusLabel from '../ui/OrderStatusLabel';
 import Image from 'next/image';
-import { removeOrderFromUserOrders } from '@/src/actions/productActions';
+import { payForPeddingOrderPayment, removeOrderFromUserOrders } from '@/src/actions/productActions';
 import RejectionJustify from '../modal/Orders/RejectionJustify';
+import Modal from '../modal/Modal';
+import Select from '../form/Select';
+import { CgCloseO } from 'react-icons/cg';
+import { FaRegClock, FaRegCircleCheck } from 'react-icons/fa6';
 
 type Props = {
   product: UserProductsWithOrdersDTO;
@@ -27,8 +31,7 @@ const MyOrderProduct = ({
   product,
 }:Props) => {
   const { showToast } = useToast()
-  
-  const userRole = useUserStore((stats) => stats.user?.role);
+
 
   const ordersStats = useMemo(
     () => getProductOrdersStats(product),
@@ -45,6 +48,10 @@ const MyOrderProduct = ({
   const category = CATEGORY_LABEL_MAP[product.category];
 
   const [ordersFromProduct, showOrdersFromProduct] = useState<boolean>(false);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PENDING');
+  const [payOrderConfirm, showPayOrderConfirm] = useState<boolean>(false); 
+  const [paymentMethod, setPaymentMethod] = useState<PaymentOptionsValue | null>(null); 
+  const [payOrder, showPayOrder] = useState<boolean>(false);
   const [expandImage, setExpandImage] = useState<boolean>(false);
   const [removeOrder, showRemoveOrder] = useState<boolean>(false);
   const [orderRejectionJustify, showOrderRejectionJustify] = useState<boolean>(false);
@@ -52,7 +59,6 @@ const MyOrderProduct = ({
 
   const [loading, setLoading] = useState<boolean>(false);
     
-
   const [orderSearch, setOrderSearch] = useState('');
   const [orderFilter, setOrderFilter] = useState<OrderFilterValue | null>(null);
 
@@ -78,19 +84,18 @@ const MyOrderProduct = ({
     [selectOrder]
   );
 
-  const handleRemoveOrder = async():Promise<void> => {
+  const handleRemoveOrder = async() => {
     if (loading) return;
     setLoading(true);
     
     try {
       if (!selectedOrder) throw new Error('Pedido não encontrado');
-      if (!userRole) throw new Error('Houve um erro com as permisões do usuário');
 
       await removeOrderFromUserOrders(
         selectedOrder?.orderId,
         selectedOrder?.orderStatus,
-        userRole,
-        true,      
+        'CUSTOMER',
+        false,      
       );
 
       showToast('Pedido removido com sucesso', 'success');
@@ -100,6 +105,7 @@ const MyOrderProduct = ({
       setLoading(false);
       showRemoveOrder(false);
       showOrdersFromProduct(true);
+      setMoreActionsOrderId(null);
     }
   }
 
@@ -109,12 +115,11 @@ const MyOrderProduct = ({
     
     try {
       if (!selectedOrder) throw new Error('Pedido não encontrado');
-      if (!userRole) throw new Error('Houve um erro com as permisões do usuário');
 
       await removeOrderFromUserOrders(
         selectedOrder?.orderId,
         selectedOrder?.orderStatus,
-        userRole,
+        'CUSTOMER',
         true,      
       );
 
@@ -125,8 +130,52 @@ const MyOrderProduct = ({
       setLoading(false);
       showCancelOrder(false);
       showOrdersFromProduct(true);
+      setMoreActionsOrderId(null);
     }
   }
+
+  const handlePayOrder = async() => {
+    if (loading) return;
+    setLoading(true);
+    
+    try {
+      if (!selectedOrder) throw new Error('Pedido não encontrado');
+      if (!paymentMethod) throw new Error('Método de pagamento não selecionado');
+
+      await payForPeddingOrderPayment(
+        paymentMethod,
+        selectedOrder.orderTotalPrice,
+        selectedOrder.orderId,
+      );
+
+      showToast('Pedido pago com sucesso', 'success');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally {
+      setLoading(false);
+      showPayOrderConfirm(false);
+      showOrdersFromProduct(true);
+      setMoreActionsOrderId(null);
+    }
+  }
+
+  useEffect(() => {
+    if (paymentMethod) {
+      setPaymentStatus('PROCESSING');
+
+      const timerFinalResult = setTimeout(() => {
+
+        const isApproved = Math.random() < 0.75;
+        
+        setPaymentStatus(isApproved ? 'APPROVED' : 'DENIED');
+      }, 3000);
+
+      return () => {
+        clearTimeout(timerFinalResult);
+      };
+    } 
+  }, [paymentMethod]);
+  
 
   return (
     <motion.div
@@ -204,7 +253,10 @@ const MyOrderProduct = ({
 
       <OrdersFromProductsMenu
         isOpen={ordersFromProduct}
-        onCloseActions={() => showOrdersFromProduct(false)}
+        onCloseActions={() => {
+          showOrdersFromProduct(false);
+          setOrderSearch('');
+        }}
         onImageClick={() => {
           setExpandImage(true);
           showOrdersFromProduct(false);
@@ -224,16 +276,11 @@ const MyOrderProduct = ({
             showOrdersFromProduct,
             moreActionsOrderId: moreActionsOrderId ?? 1,
             onMoreActionsOpenClick: handleMoreActionsOpen,
-            onMoreActionsCloseClick: () => setMoreActionsOrderId(null),    
-            onRemove: () => {
-              showRemoveOrder(true);
-            },
-            onViewJustify: () => {
-              showOrderRejectionJustify(true);
-            },
-            onCancel: () => {
-              showCancelOrder(true);
-            },
+            onMoreActionsCloseClick: () => setMoreActionsOrderId(null), 
+            onPay: () => showPayOrder(true),  
+            onRemove: () => showRemoveOrder(true),
+            onViewJustify: () => showOrderRejectionJustify(true),
+            onCancel: () => showCancelOrder(true),
           }
         }}
         search={{
@@ -293,6 +340,103 @@ const MyOrderProduct = ({
         sellerRejectionJustify={selectedOrder?.orderRejectionJustify ?? '[Sem justificativa]'}
         onCloseActions={() => {
           showOrderRejectionJustify(false);
+          showOrdersFromProduct(true);
+        }}
+      />
+
+      <Modal 
+      isOpen={payOrder} 
+      hasXClose
+      modalTitle={'Pagar pedido'} 
+      onCloseModalActions={() => {
+        showPayOrder(false);
+        showOrdersFromProduct(true);
+      }}
+      >
+        <p className='text-secondary-middledark'>
+          Selecione um método de pagamento disponível.
+        </p>
+        <div className='flex'>
+          <Select 
+            selectSetup={'PAYMENT'}
+            colorScheme='primary'
+            onChange={(e) => setPaymentMethod(e.target.value as PaymentOptionsValue)}
+          />
+          <div className="flex mx-5 flex-1 items-center gap-1 mb-1 text-lg font-bold self-end">
+            {paymentStatus === 'PENDING' && (
+              <span className="flex items-center tracking-wider gap-1 text-yellow-dark">
+                <FaRegClock size={20} /> PENDENTE
+              </span>
+            )}
+  
+            {paymentStatus === 'PROCESSING' && (
+              <span className="flex items-center gap-1 text-gray animate-pulse">
+                <div className="h-4 w-4 border-2 border-blue-gray border-t-transparent rounded-full animate-spin" />
+                PROCESSANDO...
+              </span>
+            )}
+  
+            {paymentStatus === 'APPROVED' && (
+              <>
+              <span className="flex items-center gap-1 text-green">
+                <FaRegCircleCheck  size={20} /> APROVADO
+              </span>          
+              </>
+            )}
+  
+            {paymentStatus === 'DENIED' && (
+              <>
+              <span className="flex items-center gap-1 text-red">
+                <CgCloseO size={23} /> REJEITADO
+              </span>        
+              </>
+            )}
+          </div>
+        </div>
+          <Button 
+            type="button"
+            label={
+              paymentStatus === 'PROCESSING'
+                ? 'Processando...'
+                : paymentStatus === 'DENIED' 
+                  ? 'Não é possível prosseguir' 
+                  : 'Prosseguir'
+            }
+            style={`mt-2 ${
+              paymentStatus === 'PROCESSING'
+                ? 'opacity-60 cursor-not-allowed'
+              : paymentStatus === 'DENIED'
+                ? '!bg-red-100 !text-red !border-red pointer-events-none'
+              : paymentStatus === 'PENDING'
+                && 'brightness-[0.8] opacity-90 pointer-events-none'
+            }`}
+            colorScheme="secondary"
+            disabled={!!(paymentStatus !== 'APPROVED' && paymentMethod)}
+            onClick={() => {
+              showPayOrder(false);
+              showPayOrderConfirm(true);
+            }}
+        />
+      </Modal>
+
+      <ConfirmAction
+        isOpen={payOrderConfirm}
+        loading={loading}
+        isActionIrreversible={true}
+        decision='PAY'
+        customSentence={{
+          sentence: (
+            <span className='text-secondary-dark'>
+              Tem certeza que deseja pagar esse pedido com esse método de pagamento?
+            </span>
+          ),
+          title: 'Pagar pedido'
+        }}
+        onReject={{
+          handleSubmit: handlePayOrder,
+        }}
+        onCloseActions={() => {
+          showPayOrderConfirm(false);
           showOrdersFromProduct(true);
         }}
       />

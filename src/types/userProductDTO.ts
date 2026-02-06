@@ -10,11 +10,18 @@ export type UserProductDTO = {
   imageUrl: string;
   createdAt: string;
 
-  orderedAmount: number | null;
-  orderTotalPrice: number;
-  orderAcceptedAt: string | null;
+  orders: {
+    id: number;
+    total: number;
+    acceptedAt: string | null;
+    items: {
+      productId: number;
+      quantity: number;
+      price: number;
+    }[];
+  }[];
+
   productRating: number;
   hasReview: boolean;
-  productAverageRating: number | null;
+  productAverageRating: string | null;
 };
-

@@ -1,6 +1,7 @@
-import { Category } from "@prisma/client";
-import { UserProductDTO } from "@/src/types/userProductDTO"; 
 import { UserProductFilterValue } from "@/src/constants/generalConfigs";
+import { UserProductDTO } from "@/src/types/userProductDTO";
+import { Category } from "@prisma/client";
+import { getTotalOrderedAmount } from "../geTotalOrderAmount";
 
 export const filteredSearchForUserProducts = (
   items: UserProductDTO[],
@@ -39,6 +40,9 @@ export const filteredSearchForUserProducts = (
   return [...filteredItems].sort((a, b) => {
     if (!advancedFilter) return 0;
 
+    const aTotalOrdered = getTotalOrderedAmount(a);
+    const bTotalOrdered = getTotalOrderedAmount(b);
+
     switch (advancedFilter) {
       case 'price_asc':
         return a.price - b.price;
@@ -47,16 +51,16 @@ export const filteredSearchForUserProducts = (
         return b.price - a.price;
 
       case 'most_owned':
-        return (b.orderedAmount ?? 0) - (a.orderedAmount ?? 0);
+        return bTotalOrdered - aTotalOrdered;
 
       case 'least_owned':
-        return (a.orderedAmount ?? 0) - (b.orderedAmount ?? 0);
+        return aTotalOrdered - bTotalOrdered;
 
       case 'favorite':
-        return (b.productAverageRating ?? 0) - (a.productAverageRating ?? 0);
+        return Number(b.productAverageRating ?? 0) - Number(a.productAverageRating ?? 0);
 
       case 'least_favorite':
-        return (a.productAverageRating ?? 0) - (b.productAverageRating ?? 0);
+        return Number(a.productAverageRating ?? 0) - Number(b.productAverageRating ?? 0);
 
       default:
         return 0;

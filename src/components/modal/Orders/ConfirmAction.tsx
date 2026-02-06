@@ -32,7 +32,7 @@ type AcceptProps = BaseProps & {
 };
 
 type RejectProps = BaseProps & {
-  decision?: 'REJECT' | 'REMOVE' | 'CANCEL';
+  decision?: 'REJECT' | 'REMOVE' | 'CANCEL' | 'PAY';
   onReject: {
     error?: string;
     onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;

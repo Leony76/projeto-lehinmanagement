@@ -75,16 +75,17 @@ export const getProducts = async() => {
   }));
 }
 
-export const getUserProducts = async(userId: string) => {
+export const getUserProducts = async (userId: string) => {
   const items = await prisma.costumerProduct.findMany({
     where: {
       costumerId: userId,
       deletedAt: null,
     },
-    select: {
+    include: {
       costumerProduct: true,
       order: {
         select: {
+          id: true,
           total: true,
           orderItems: true,
           orderHistory: {
@@ -95,12 +96,12 @@ export const getUserProducts = async(userId: string) => {
         },
       },
     },
-  })
+  });
 
   const reviews = await prisma.productReview.findMany({
     where: {
-      userId, 
-    }
+      userId,
+    },
   });
 
   const reviewMap = new Map(
@@ -109,10 +110,10 @@ export const getUserProducts = async(userId: string) => {
       {
         rating: r.rating,
         comment: r.comment,
-      }
+      },
     ]),
   );
-  
+
   const avgRatings = await prisma.productReview.groupBy({
     by: ['productId'],
     _avg: {
@@ -129,28 +130,46 @@ export const getUserProducts = async(userId: string) => {
     ]),
   );
 
-  return items.map(item => {
-    const review = reviewMap.get(item.costumerProduct.id);
 
-    return {
-      id: item.costumerProduct.id,
-      name: item.costumerProduct.name,
-      category: item.costumerProduct.category,
-      description: item.costumerProduct.description,
-      imageUrl: item.costumerProduct.imageUrl,
-      stock: item.costumerProduct.stock,
-      createdAt: item.costumerProduct.createdAt?.toISOString() ?? null,
-      price: item.costumerProduct.price.toNumber(),
+  const productMap = new Map<number, any>();
 
-      orderedAmount: item.order.orderItems.at(-1)?.quantity,
-      orderTotalPrice: item.order.total.toNumber(),
-      orderAcceptedAt: item.order.orderHistory.at(-1)?.createdAt.toISOString() ?? null,
+  for (const item of items) {
+    const product = item.costumerProduct;
+    const order = item.order;
 
-      productRating: review?.rating ?? 0,
-      hasReview: Boolean(review?.comment?.trim()),
+    if (!productMap.has(product.id)) {
+      const review = reviewMap.get(product.id);
 
-      productAverageRating: avgRatingMap.get(item.costumerProduct.id) ?? null,
-    };
-  });
+      productMap.set(product.id, {
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        description: product.description,
+        imageUrl: product.imageUrl,
+        stock: product.stock,
+        createdAt: product.createdAt?.toISOString() ?? null,
+        price: product.price.toNumber(),
+        orders: [],
+
+        productRating: review?.rating ?? 0,
+        hasReview: Boolean(review?.comment?.trim()),
+        productAverageRating: avgRatingMap.get(product.id),
+      });
+    }
+
+    productMap.get(product.id).orders.push({
+      id: order.id,
+      total: order.total.toNumber(),
+      acceptedAt: order.orderHistory.at(-1)?.createdAt ?? null,
+      items: order.orderItems.map(item => ({
+        id: item.id,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price.toNumber(),       
+        createdAt: item.createdAt.toISOString(),
+      })),
+    });
+  }
+
+  return Array.from(productMap.values());
 }
-

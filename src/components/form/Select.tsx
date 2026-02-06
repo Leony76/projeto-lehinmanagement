@@ -1,7 +1,7 @@
 "use client"
 
 import { forwardRef, useState } from "react"
-import { ColorScheme, PAYMENT_OPTIONS, PRODUCT_FILTER_OPTIONS, CATEGORY_OPTIONS, SelectFilterOptions, ORDER_FILTER_OPTIONS, USER_ORDER_FILTER_OPTIONS, USER_PRODUCT_FILTER_OPTIONS } from "@/src/constants/generalConfigs"
+import { ColorScheme, PAYMENT_OPTIONS, PRODUCT_FILTER_OPTIONS, CATEGORY_OPTIONS, SelectFilterOptions, ORDER_FILTER_OPTIONS, USER_ORDER_FILTER_OPTIONS, USER_PRODUCT_FILTER_OPTIONS, USER_PRODUCT_ORDERS_FILTER_OPTIONS } from "@/src/constants/generalConfigs"
 import { textColors } from "@/src/constants/systemColorsPallet"
 import Error from "../ui/Error"
 import Button from "./Button"
@@ -48,6 +48,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         ? USER_ORDER_FILTER_OPTIONS
       : selectSetup === "CATEGORY" 
         ? CATEGORY_OPTIONS
+      : selectSetup === "USER_PRODUCT_ORDERS_FILTER"
+        ? USER_PRODUCT_ORDERS_FILTER_OPTIONS
       : PAYMENT_OPTIONS
 
     const statusClasses = error

@@ -12,6 +12,7 @@ import { CATEGORY_LABEL_MAP } from "@/src/constants/generalConfigs";
 import { Category } from "@prisma/client";
 import { filteredSearchForOrders } from "@/src/utils/filters/filteredSearchForOrders";
 import { productOrdersGeneralStats } from "@/src/utils/filters/productOrdersGeneralStats";
+import ProductOrdersGeneralStats from "@/src/components/ui/ProductOrdersGeneralStats";
 
 type Props = {
   productsWithOrders: ProductWithOrdersDTO[];
@@ -37,32 +38,14 @@ const Orders = ({productsWithOrders}:Props) => {
   return (
     <div>
       <PageTitle style="my-2 mb-4" title="Pedidos"/>
-      <div className="grid sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 grid-cols-2 gap-2">
-        <div className="flex flex-col p-3 text-xl rounded-xl border text-green border-secondary-middledark bg-secondary-light/35">
-          <span className="text-base text-gray">Aprovados</span> 
-          {ordersStats?.approved}
-        </div>
-        <div className="flex flex-col p-3 text-xl rounded-xl border text-yellow-dark border-secondary-middledark bg-secondary-light/35">
-          <span className="text-base text-gray">Pendentes</span> 
-          {ordersStats?.pending}
-        </div>
-        <div className="flex flex-col p-3 text-xl rounded-xl border text-red border-secondary-middledark bg-secondary-light/35">
-          <span className="text-base text-gray">Cancelados</span> 
-          {ordersStats?.canceled}
-        </div>
-        <div className="flex flex-col p-3 text-xl rounded-xl border text-red border-secondary-middledark bg-secondary-light/35">
-          <span className="text-base text-gray">Rejeitados</span> 
-          {ordersStats?.rejected}
-        </div>
-        <div className="flex flex-col p-3 text-xl rounded-xl border text-red border-secondary-middledark bg-secondary-light/35">
-          <span className="text-base text-gray">Não pagos</span> 
-          {ordersStats?.notPaid}
-        </div>
-        <div className="flex flex-col p-3 text-xl rounded-xl border text-ui-stock border-secondary-middledark bg-secondary-light/35">
-          <span className="text-base text-gray">Total</span> 
-          {ordersStats?.total}
-        </div>
-      </div>
+      <ProductOrdersGeneralStats 
+        approved={ordersStats.approved} 
+        pending={ordersStats.pending} 
+        canceled={ordersStats.canceled} 
+        rejected={ordersStats.rejected} 
+        notPaid={ordersStats.notPaid} 
+        total={ordersStats.total}
+      />
       <div className="flex flex-col gap-3">
         <Search 
           style={{input: 'mt-5 py-1'}} 

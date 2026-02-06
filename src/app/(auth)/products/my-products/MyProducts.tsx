@@ -66,7 +66,7 @@ const MyProducts = ({myProducts}:Props) => {
       <ProductCardsGrid>
       {filteredUserProducts.map((userProduct) => (
         <MyProduct 
-          key={userProduct.orderAcceptedAt}
+          key={userProduct.id}
           userProduct={userProduct}
         />
       ))}

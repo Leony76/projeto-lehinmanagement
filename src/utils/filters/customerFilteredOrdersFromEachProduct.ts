@@ -17,6 +17,14 @@ export const filterOrders = (
   if (!filter) return filtered;
 
   switch (filter) {
+    case 'value_asc':
+      filtered.sort((a, b)  => a.orderTotalPrice - b.orderTotalPrice);
+      break;
+
+    case 'value_desc':
+      filtered.sort((a, b) => b.orderTotalPrice - a.orderTotalPrice);
+      break;
+
     case 'most_sold':
       filtered.sort((a, b) => b.orderedAmount - a.orderedAmount);
       break;

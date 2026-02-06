@@ -8,9 +8,11 @@ import { UserProductsWithOrdersDTO } from "@/src/types/UserProductsWithOrdersDTO
 import ProductCardsGrid from "@/src/components/ui/ProductCardsGrid";
 import NoContentFoundMessage from "@/src/components/ui/NoContentFoundMessage";
 import { useState } from "react";
-import { CATEGORY_LABEL_MAP, USER_ORDER_FILTER_LABEL_MAP, UserOrderFilterValue } from "@/src/constants/generalConfigs";
+import { CATEGORY_LABEL_MAP } from "@/src/constants/generalConfigs";
 import { Category } from "@prisma/client";
 import { filteredSearchForUserOrders } from "@/src/utils/filters/filteredSearchForUserOrders";
+import { userProductOrdersGeneralStats } from "@/src/utils/filters/userProductOrdersGeneralStats";
+import ProductOrdersGeneralStats from "@/src/components/ui/ProductOrdersGeneralStats";
 
 type Props = {
   userOrders: UserProductsWithOrdersDTO[];
@@ -19,16 +21,15 @@ type Props = {
 const MyOrders = ({userOrders}:Props) => {
 
   const [search, setSearch] = useState('');
-  const [advancedFilter, setAdvancedFilter] = useState<UserOrderFilterValue | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<Category | null>(null);
   
-  const translatedAdvandedFilter = advancedFilter ? USER_ORDER_FILTER_LABEL_MAP[advancedFilter] : '';
   const translatedCategoryFilter = categoryFilter ? CATEGORY_LABEL_MAP[categoryFilter] : '';
+
+  const ordersStats = userProductOrdersGeneralStats(userOrders);
 
   const filteredOrders = filteredSearchForUserOrders(
     userOrders,
     search,
-    advancedFilter,
     categoryFilter,
   );
 
@@ -37,30 +38,29 @@ const MyOrders = ({userOrders}:Props) => {
   return (
     <div>
       <PageTitle style="my-2" title="Meus Pedidos"/>
-      <div>
+      <ProductOrdersGeneralStats 
+        approved={ordersStats.approved} 
+        pending={ordersStats.pending} 
+        canceled={ordersStats.canceled} 
+        rejected={ordersStats.rejected} 
+        notPaid={ordersStats.notPaid} 
+        total={ordersStats.total}
+      />
+      <div className="flex flex-col gap-3">
         <Search 
-          style={{input: 'mt-5'}} 
+          style={{input: 'mt-5 py-1'}} 
           colorScheme="primary"
           value={search}
           onClearSearch={() => setSearch('')}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex gap-3 mt-3">
-          <Select 
-            style={{input: 'flex-1 w-full'}} 
-            selectSetup={"USER_ORDER_FILTER"} 
-            colorScheme={"primary"} 
-            label={"Filtro"}
-            onChange={(e) => setAdvancedFilter(e.target.value as UserOrderFilterValue)}
-          />
-          <Select 
-            style={{input: 'flex-1 w-full'}} 
-            selectSetup={"CATEGORY"} 
-            colorScheme={"primary"} 
-            label={"Categoria"}
-            onChange={(e) => setCategoryFilter(e.target.value as Category)}
-          />
-        </div>
+        <Select 
+          style={{input: 'flex-1 w-full'}} 
+          selectSetup={"CATEGORY"} 
+          colorScheme={"primary"} 
+          label={"Categoria"}
+          onChange={(e) => setCategoryFilter(e.target.value as Category)}
+        />     
       </div>
     {(hasUserOrders) ? (
       <ProductCardsGrid>
@@ -74,20 +74,12 @@ const MyOrders = ({userOrders}:Props) => {
     ) : (
       <NoContentFoundMessage 
         text={
-          search && categoryFilter && advancedFilter
-            ? `Nenhum resultado para "${search}", categoria "${translatedCategoryFilter}" e filtro avançado "${translatedAdvandedFilter}"`
-          : search && categoryFilter
+          search && categoryFilter
             ? `Nenhum resultado para "${search}" e para a categoria "${translatedCategoryFilter}"`
-          : search && advancedFilter
-            ? `Nenhum resultado para "${search}" e para o filtro avançado "${translatedAdvandedFilter}"`
-          : categoryFilter && advancedFilter
-            ? `Nenhum resultado para a categoria "${translatedCategoryFilter}" e para o filtro avançado "${translatedAdvandedFilter}"`
           : search
             ? `Nenhum resultado para "${search}"`
           : categoryFilter
             ? `Nenhum resultado para a categoria "${translatedCategoryFilter}"`
-          : advancedFilter
-            ? `Nenhum resultado para o filtro avançado "${translatedAdvandedFilter}"`
           : `Nenhum produto no estoque no momento`
         }
       />
