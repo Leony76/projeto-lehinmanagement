@@ -11,8 +11,7 @@ import { useEffect, useState } from 'react';
 import Modal from '../modal/Modal';
 import TextArea from '../form/TextArea';
 import { UserProductDTO } from '@/src/types/userProductDTO';
-import { formatCurrency } from '@/src/utils/formatCurrency';
-import { lockScrollY } from '@/src/utils/lockScrollY';
+import { useLockScrollY } from '@/src/utils/useLockScrollY';
 import Rating from '../ui/Rating';
 import { useToast } from '@/src/contexts/ToastContext';
 import { rateCommentProduct, removeProduct } from '@/src/actions/productActions';
@@ -20,6 +19,7 @@ import Error from '../ui/Error';
 import { FaRegTrashCan } from 'react-icons/fa6';
 import { motion } from 'framer-motion';
 import UserProductMenu from '../modal/Orders/UserProductMenu';
+import { UserProductPageModals } from '@/src/types/modal';
 
 type Props = {
   userProduct: UserProductDTO;
@@ -31,10 +31,7 @@ const MyProduct = ({
 
   const { showToast } = useToast();
 
-  const [commentModal, showCommentModal] = useState<boolean>(false);
-  const [userProductInfo, showUserProductInfo] = useState<boolean>(false);
-  const [expandImage, setExpandImage] = useState<boolean>(false);
-  const [removeProductConfirm, showRemoveProductConfirm] = useState<boolean>(false);
+  const [activeModal, setActiveModal] = useState<UserProductPageModals | null>(null);
 
   const [orderSearch, setOrderSearch] = useState('');
   const [orderFilter, setOrderFilter] = useState<UserProductOrdersFilterValue | null>(null);
@@ -49,7 +46,7 @@ const MyProduct = ({
 
   const category =  CATEGORY_LABEL_MAP[userProduct.category] ?? 'Categoria não definida';
 
-  lockScrollY(userProductInfo || expandImage || commentModal);
+  useLockScrollY(Boolean(activeModal));
 
   const handleCommentRatingProduct = async() => {
     if (!rating) return;
@@ -83,7 +80,7 @@ const MyProduct = ({
     } catch (err:unknown) {
       showToast('Erro: ' + err, 'error');
     } finally {
-      showRemoveProductConfirm(false);
+      setActiveModal(null);
     }
   }
 
@@ -139,7 +136,7 @@ const MyProduct = ({
           `}>
             <Button
               type="button"
-              onClick={() => showCommentModal(true)}
+              onClick={() => setActiveModal('COMMENT')}
               icon={AiOutlineMessage}
               style={`px-5 text-2xl ${buttonColorsScheme.yellow}`}
             />
@@ -150,13 +147,13 @@ const MyProduct = ({
             type='button' 
             style='text-lg flex-5' 
             label={"Mais Informações"} 
-            onClick={() => showUserProductInfo(true)}
+            onClick={() => setActiveModal('USER_PRODUCT_INFO')}
           />
           <Button 
             style={`flex-1 ${buttonColorsScheme.red}`}
             type={'submit'}            
             icon={FaRegTrashCan}
-            onClick={() => showRemoveProductConfirm(true)}
+            onClick={() => setActiveModal('REMOVE_PRODUCT_CONFIRM')}
           />
         </div>
       </div>
@@ -164,9 +161,9 @@ const MyProduct = ({
     {/* ⇊ MODALS ⇊ */}
 
     <UserProductMenu
-      isOpen={userProductInfo}
-      onCloseActions={() => showUserProductInfo(false)}
-      onImageClick={() => setExpandImage(true)}
+      isOpen={activeModal === 'USER_PRODUCT_INFO'}
+      onCloseActions={() => setActiveModal(null)}
+      onImageClick={() => setActiveModal('EXPAND_IMAGE')}
       product={{
         imageUrl: userProduct.imageUrl,
         name: userProduct.name,
@@ -191,10 +188,10 @@ const MyProduct = ({
 
 
     <Modal 
-    isOpen={commentModal}
+    isOpen={activeModal === 'COMMENT'}
     modalTitle={"Comentar produto"} 
     onCloseModalActions={() => {
-      showCommentModal(false);
+      setActiveModal(null);
       setError('');
     }}
     hasXClose
@@ -229,39 +226,31 @@ const MyProduct = ({
             setError('Não se pode mandar um comentário vazio');
           } else {
             handleCommentRatingProduct();
-            showCommentModal(false);
+            setActiveModal(null);
           }
         }}
       />
     </Modal>
 
       <Modal 
-      isOpen={expandImage} 
+      isOpen={activeModal === 'EXPAND_IMAGE'} 
       modalTitle={''} 
-      onCloseModalActions={() => {
-        setExpandImage(false);
-        showUserProductInfo(true);
-      }}>
+      onCloseModalActions={() => setActiveModal('USER_PRODUCT_INFO')}>
         <div className='relative aspect-square h-[90vh]'>
           <Image 
             src={userProduct.imageUrl} 
             alt={userProduct.name}            
             fill
             className='object-contain aspect-square border-x-4 border-double cursor-zoom-out border-primary'
-            onClick={() => {
-              setExpandImage(false);
-              showUserProductInfo(true);
-            }}
+            onClick={() => setActiveModal('USER_PRODUCT_INFO')}
           />
         </div>
       </Modal>
 
       <Modal 
-      isOpen={removeProductConfirm} 
+      isOpen={activeModal === 'REMOVE_PRODUCT_CONFIRM'} 
       modalTitle={'Excluir produto'} 
-      onCloseModalActions={() => {
-        showRemoveProductConfirm(false);
-      }}
+      onCloseModalActions={() => setActiveModal(null)}
       >
         <p className='text-secondary-dark'>
           Tem certeza que deseja excluir esse produto ?
@@ -280,7 +269,7 @@ const MyProduct = ({
             type={'submit'}
             label='Não'
             style={`${buttonColorsScheme.red} flex-1`}
-            onClick={() => showRemoveProductConfirm(false)}
+            onClick={() => setActiveModal(null)}
           />
         </div>
       </Modal>

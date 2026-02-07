@@ -14,21 +14,18 @@ import { CgCloseO } from 'react-icons/cg';
 import { orderProduct } from '@/src/actions/productActions';
 import Error from '../ui/Error';
 import { useToast } from '@/src/contexts/ToastContext';
+import { ProductPageModals } from '@/src/types/modal';
 
 type Props = {
-  isOpen: boolean;
-  showOrderProductMenu: React.Dispatch<React.SetStateAction<boolean>>;
-  showConfirmModal: React.Dispatch<React.SetStateAction<boolean>>;
-  confirmModal: boolean;
+  activeModal: ProductPageModals | null;
+  setActiveModal: React.Dispatch<React.SetStateAction<ProductPageModals | null>>;
   selectedProduct: ProductDTO | null;
 }
 
 const OrderProduct = ({
   selectedProduct,
-  showOrderProductMenu, 
-  showConfirmModal,
-  confirmModal,
-  isOpen,
+  setActiveModal,
+  activeModal,
 }:Props) => {  
   const { showToast } = useToast();
 
@@ -56,7 +53,7 @@ const OrderProduct = ({
       );
 
       setPaymentStatus('PENDING');
-      showConfirmModal(false);
+      setActiveModal(null);
       setAmountTobeOrdered(null);
       setPaymentMethod(null);
 
@@ -89,10 +86,10 @@ const OrderProduct = ({
     <>
     <Modal 
       hasXClose
-      isOpen={isOpen} 
+      isOpen={activeModal === 'ORDER_PRODUCT_MENU'} 
       modalTitle='Pedir produto' 
       onCloseModalActions={() => {
-        showOrderProductMenu(false);
+        setActiveModal(null);
         setPaymentStatus(!paymentMethod ? 'PENDING' : paymentStatus);
         setAmountTobeOrdered(null);
         setPaymentMethod(null);
@@ -220,18 +217,16 @@ const OrderProduct = ({
               setError('Insira a quantidade que deseja pedir');
               return;
             } 
-            showOrderProductMenu(false);
-            showConfirmModal(true);
+            setActiveModal('CONFIRM_ORDER');
           }}
       />
     </Modal>
 
     <Modal    
-    isOpen={confirmModal} 
+    isOpen={activeModal === 'CONFIRM_ORDER'} 
     modalTitle={'Confirmar pedido'} 
     onCloseModalActions={() => {
-      showConfirmModal(false);
-      showOrderProductMenu(true);
+      setActiveModal('ORDER_PRODUCT_MENU');
       setPaymentMethod(null);
     }} 
     >
@@ -264,10 +259,7 @@ const OrderProduct = ({
         />
         <Button 
           type='button' 
-          onClick={() => {
-            showConfirmModal(false); 
-            showOrderProductMenu(true);
-          }} 
+          onClick={() => setActiveModal('ORDER_PRODUCT_MENU')} 
           style={`text-xl flex-1 ${buttonColorsScheme.red}`} 
           label='Não'
         />

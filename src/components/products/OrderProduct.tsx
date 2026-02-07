@@ -7,7 +7,6 @@ import { productCardSetup } from '@/src/constants/cardConfigs';
 import { startTransition, useCallback, useMemo, useState } from 'react';
 import { CATEGORY_LABEL_MAP, OrderFilterValue } from '@/src/constants/generalConfigs';
 import { ProductWithOrdersDTO } from '@/src/types/ProductWithOrdersDTO';
-import Modal from '../modal/Modal';
 import { useToast } from '@/src/contexts/ToastContext';
 import { acceptRejectProductOrder, removeOrderFromUserOrders, sendMessageAboutCustomerOrderSituation, updatedProductStock } from '@/src/actions/productActions';
 import { motion } from 'framer-motion';
@@ -23,6 +22,8 @@ import ResetProductStock from '../modal/Orders/ResetProductStock';
 import OrdersFromProductsMenu from '../modal/Orders/OrdersFromProductsMenu';
 import ImageExpand from '../modal/Orders/ImageExpand';
 import { filterOrders } from '@/src/utils/filters/sellerFilteredOrdersFromEachProduct';
+import { useLockScrollY } from '@/src/utils/useLockScrollY';
+import { OrderPageModals } from '@/src/types/modal';
 
 type Props = {
   product: ProductWithOrdersDTO;
@@ -50,18 +51,8 @@ const OrderProduct = ({product}:Props) => {
 
   const router = useRouter();
 
-  const [acceptanceOrderConfirm, showAcceptanceOrderConfirm] = useState<boolean>(false);
-  const [rejectionJustifyConfirm, showRejectionJustifyConfirm] = useState<boolean>(false);
-  const [orderRejectionJustify, showOrderRejectionJustify] = useState<boolean>(false);
-  const [editOrderRejectionJustify, showEditOrderRejectionJustify] = useState<boolean>(false);
-  const [productOuttaStockMessage, showProductOuttaStockMessage] = useState<boolean>(false);
-  const [newOrderRejectionJustifyCorfirm, showNewOrderRejectionJustifyCorfirm] = useState<boolean>(false);
-  const [resetProductStock, showResetProductStock] = useState<boolean>(false);
-  const [ordersFromProduct, showOrdersFromProduct] = useState<boolean>(false);
-  const [expandImage, setExpandImage] = useState<boolean>(false);
-  const [removeOrder, showRemoveOrder] = useState<boolean>(false);
-
-
+  const [activeModal, setActiveModal] = useState<OrderPageModals | null>(null);
+  
   const [loading, setLoading] = useState<{
     rejecting: boolean;
     sending: boolean;
@@ -126,13 +117,12 @@ const OrderProduct = ({product}:Props) => {
       );
 
       showToast('Pedido aprovado com sucesso');
-      showAcceptanceOrderConfirm(false);
+      setActiveModal(null);
     } catch(err:unknown) {
       showToast('Erro inesperado:' + err, 'error');
     } finally {
       setLoading(prev => ({...prev, accepting: false}));
-      setMoreActionsOrderId(null);
-      showOrdersFromProduct(true);
+      setActiveModal('ORDERS_FROM_PRODUCT')
     }
   }
 
@@ -161,13 +151,12 @@ const OrderProduct = ({product}:Props) => {
       );
 
       showToast('Pedido rejeitado com sucesso');
-      showRejectionJustifyConfirm(false);
+      setActiveModal(null);
     } catch (err:unknown) {
       showToast('Houve um erro: ' + err, 'error');
     } finally {
       setLoading(prev => ({...prev, rejecting: false}));
-      setMoreActionsOrderId(null);
-      showOrdersFromProduct(true);
+      setActiveModal('ORDERS_FROM_PRODUCT');
     }
   }
 
@@ -192,14 +181,14 @@ const OrderProduct = ({product}:Props) => {
       });
 
       showToast('Pedido removido com sucesso', 'success');
-      showRemoveOrder(false);
+      setActiveModal('REMOVE_ORDER');
     
     } catch (err: unknown) {
       showToast('Houve um erro: ' + err, 'error');
     } finally {
       setLoading(prev => ({...prev, removing: false}));
       setMoreActionsOrderId(null);
-      showOrdersFromProduct(true);
+      setActiveModal('ORDERS_FROM_PRODUCT');
     }
   };
 
@@ -219,13 +208,13 @@ const OrderProduct = ({product}:Props) => {
       );
 
       showToast('Justificativa de rejeição do pedido editada com sucesso', 'success');
-      showNewOrderRejectionJustifyCorfirm(false);
+      setActiveModal('NEW_ORDER_REJECTION_JUSTIFY_CONFIRM');
     } catch (err:unknown) {
       showToast('Houve um erro:' + err, 'error');
     } finally {
       setLoading(prev => ({...prev, editing: false}));
       setMoreActionsOrderId(null);
-      showOrdersFromProduct(true);
+      setActiveModal('ORDERS_FROM_PRODUCT');
     }
   }
 
@@ -249,11 +238,10 @@ const OrderProduct = ({product}:Props) => {
     } catch (err:unknown) {
       showToast('Houve um erro: ' + err, 'error');
     } finally {
-      showProductOuttaStockMessage(false);
       setMessageAboutCustomerOrderSituation('');
       setLoading(prev => ({...prev, sending: false}));
       setMoreActionsOrderId(null);
-      showOrdersFromProduct(true);
+      setActiveModal('ORDERS_FROM_PRODUCT');
     }
   }
 
@@ -271,12 +259,13 @@ const OrderProduct = ({product}:Props) => {
     } catch (err:unknown) {
       showToast('Houve um erro: ' + err, 'error');
     } finally {
-      showResetProductStock(false);
       setLoading(prev => ({...prev, reseting: false}));
       setMoreActionsOrderId(null);
-      showOrdersFromProduct(true);
+      setActiveModal('ORDERS_FROM_PRODUCT');
     }
   }
+
+  useLockScrollY(Boolean(activeModal));
 
   return (
     <motion.div
@@ -348,7 +337,7 @@ const OrderProduct = ({product}:Props) => {
             label='Ver pedidos'
             colorScheme='primary'
             style='w-full text-xl mt-2'
-            onClick={() => showOrdersFromProduct(true)}
+            onClick={() => setActiveModal('ORDERS_FROM_PRODUCT')}
           />        
         </div>       
       </div>
@@ -360,7 +349,7 @@ const OrderProduct = ({product}:Props) => {
       {/* ACCEPT ORDERS FROM CUSTOMERS */}
 
       <ConfirmAction 
-        isOpen={acceptanceOrderConfirm} 
+        isOpen={activeModal === 'ACCEPT_ORDER_CONFIRM'} 
         hasWarning
         decision={'ACCEPT'} 
         loading={loading.accepting} 
@@ -373,16 +362,17 @@ const OrderProduct = ({product}:Props) => {
           amount: selectedOrder?.orderedAmount ?? 1,
         }}
         onCloseActions={() => {
-          showAcceptanceOrderConfirm(loading.accepting ? true : false);
-          showOrdersFromProduct(true);
           setMoreActionsOrderId(null);
+          setActiveModal(loading.accepting 
+            ? 'ACCEPT_ORDER_CONFIRM' 
+            : 'ORDERS_FROM_PRODUCT');
         }} 
       />
 
       {/* REJECT ORDERS FROM CUSTOMERS */}
 
       <ConfirmAction 
-        isOpen={rejectionJustifyConfirm} 
+        isOpen={activeModal === 'REJECT_ORDER_CONFIRM'} 
         hasWarning
         decision={'REJECT'} 
         loading={loading.rejecting} 
@@ -400,17 +390,18 @@ const OrderProduct = ({product}:Props) => {
           amount: selectedOrder?.orderedAmount ?? 1,
         }}
         onCloseActions={() => {
-          showRejectionJustifyConfirm(loading.rejecting ? true : false);
-          showOrdersFromProduct(true);
-          setMoreActionsOrderId(null);
           setError('');
+          setMoreActionsOrderId(null);
+          setActiveModal(loading.rejecting 
+            ? 'REJECT_ORDER_CONFIRM' 
+            : 'ORDERS_FROM_PRODUCT');
         }} 
       />
 
       {/* REMOVE ORDERS FROM CUSTOMERS */}
 
       <ConfirmAction 
-        isOpen={removeOrder} 
+        isOpen={activeModal === 'REMOVE_ORDER'} 
         hasWarning
         decision={'ACCEPT'} 
         loading={loading.removing} 
@@ -426,9 +417,10 @@ const OrderProduct = ({product}:Props) => {
           handleSubmit: handleRemoveOrder,
         }}
         onCloseActions={() => {
-          showRemoveOrder(loading.removing ? true : false);
-          showOrdersFromProduct(true);
           setMoreActionsOrderId(null);
+          setActiveModal(loading.removing 
+            ? 'REMOVE_ORDER' 
+            : 'ORDERS_FROM_PRODUCT');
         }} 
       />
 
@@ -437,24 +429,22 @@ const OrderProduct = ({product}:Props) => {
       <RejectionJustify
         userRole='SELLER'
         error={error}
-        isOpen={orderRejectionJustify}
-        editRejection={editOrderRejectionJustify}
+        isOpen={activeModal === 'ORDER_REJECTION_JUSTIFY'}
+        editRejection={activeModal === 'EDIT_ORDER_REJECTION_JUSTIFY'}
         newRejectionJustify={newOrderRejectionJustify ?? ''}
         sellerRejectionJustify={selectedOrder?.orderRejectionJustify ?? ''}
-        editOrderRejectionJustify={editOrderRejectionJustify}
+        editOrderRejectionJustify={activeModal === 'EDIT_ORDER_REJECTION_JUSTIFY'}
         loading={loading.editing}
         onEdit={{
           onClick: () => {
-            if (editOrderRejectionJustify) {
+            if (activeModal === 'EDIT_ORDER_REJECTION_JUSTIFY') {
               if (newOrderRejectionJustify === selectedOrder?.orderRejectionJustify) {
                 setError('Nenhum caractere foi alterado para ser editado');
                 return;
-              } else {
-                showNewOrderRejectionJustifyCorfirm(true);
-                showOrderRejectionJustify(false);
               }
+              setActiveModal('NEW_ORDER_REJECTION_JUSTIFY_CONFIRM');
             } else {
-              showEditOrderRejectionJustify(true);              
+              setActiveModal('EDIT_ORDER_REJECTION_JUSTIFY');              
             }
           }
         }}
@@ -468,14 +458,13 @@ const OrderProduct = ({product}:Props) => {
           }
         }}
         onCloseActions={() => {
-          if (editOrderRejectionJustify) {
-            showEditOrderRejectionJustify(false);
+          if (activeModal === 'EDIT_ORDER_REJECTION_JUSTIFY') {
+            setActiveModal(null);
             setNewOrderRejectionJustify(selectedOrder?.orderRejectionJustify ?? '');
             setError('');
           } else {
-            showOrderRejectionJustify(false);
             setNewOrderRejectionJustify(selectedOrder?.orderRejectionJustify ?? '');
-            showOrdersFromProduct(true);
+            setActiveModal('ORDERS_FROM_PRODUCT');
           }
         }}
       />
@@ -483,14 +472,13 @@ const OrderProduct = ({product}:Props) => {
       {/* SEND MESSAGE ABOUT CUSMTOMER SITUATION */}
 
       <JustifyAboutOrderSituation
-        isOpen={productOuttaStockMessage}
+        isOpen={activeModal === 'PRODUCT_OUTTA_STOCK_MESSAGE'}
         error={error}
         loading={loading.sending}
         messageAboutSituation={messageAboutCustomerOrderSituation}
         onCloseActions={() => {
-          showProductOuttaStockMessage(false);
           setMessageAboutCustomerOrderSituation('');
-          showOrdersFromProduct(true);
+          setActiveModal('ORDERS_FROM_PRODUCT');
           setError('');
         }}
         onChange={(e) => {
@@ -501,21 +489,19 @@ const OrderProduct = ({product}:Props) => {
           if (!messageAboutCustomerOrderSituation) {
             setError('Não se pode mandar uma mensagem vazia');
             return;
-          } else {
-            handleSendMessageAboutCustomerOrderSituation();
-          }
+          } 
+          handleSendMessageAboutCustomerOrderSituation();
         }}
       />
 
       {/* RESET PRODUCT STOCK */}
         
       <ResetProductStock
-        isOpen={resetProductStock}
+        isOpen={activeModal === 'RESET_PRODUCT_STOCK'}
         error={error}
         loading={loading.reseting}
         onCloseActions={() => {
-          showResetProductStock(false);
-          showOrdersFromProduct(true);
+          setActiveModal('ORDERS_FROM_PRODUCT');
           setError('');
         }}
         onChange={(e) => {
@@ -526,14 +512,13 @@ const OrderProduct = ({product}:Props) => {
           if (newProductStock <= 0) {
             setError('Não se pode repor com um valor menor ou igual a zero');
             return;
-          } else {
-            handleUpdateProductStock();
-          }
+          } 
+          handleUpdateProductStock();
         }}
       />
 
       <ConfirmAction 
-        isOpen={newOrderRejectionJustifyCorfirm}
+        isOpen={activeModal === 'NEW_ORDER_REJECTION_JUSTIFY_CONFIRM'}
         decision={'ACCEPT'} 
         loading={loading.editing} 
         customSentence={{
@@ -544,22 +529,17 @@ const OrderProduct = ({product}:Props) => {
           handleSubmit: handleEditOrderRejectionJustify,
         }}
         onCloseActions={() => {
-          showNewOrderRejectionJustifyCorfirm(false);
           setMoreActionsOrderId(null);
-          showOrdersFromProduct(true);
-          showOrderRejectionJustify(true);
+          setActiveModal('ORDERS_FROM_PRODUCT');
         }} 
       />
 
         
 
       <OrdersFromProductsMenu
-        isOpen={ordersFromProduct}
-        onCloseActions={() => showOrdersFromProduct(false)}
-        onImageClick={() => {
-          setExpandImage(true);
-          showOrdersFromProduct(false);
-        }}
+        isOpen={activeModal === 'ORDERS_FROM_PRODUCT'}
+        onCloseActions={() => setActiveModal(null)}
+        onImageClick={() => setActiveModal('EXPAND_IMAGE')}
         product={{
           imageUrl: product.imageUrl,
           name: product.name,
@@ -567,21 +547,21 @@ const OrderProduct = ({product}:Props) => {
           description: product.description ?? '',
           price: product.price,
           stock: product.stock,
-          onResetStock: () => showResetProductStock(true)      
+          onResetStock: () => setActiveModal('RESET_PRODUCT_STOCK')      
         }}
         productOrders={{
           fromSeller: filteredOrders,
           actions: {
             selectOrder,
-            showOrdersFromProduct,
+            setActiveModal,
             moreActionsOrderId: moreActionsOrderId ?? 1,
             onMoreActionsOpenClick: handleMoreActionsOpen,
-            onAccept: () => showAcceptanceOrderConfirm(true),
-            onReject: () => showRejectionJustifyConfirm(true),
-            onRemove: () => showRemoveOrder(true),
-            onApprove: () => showAcceptanceOrderConfirm(true),
-            onViewJustify: () => showOrderRejectionJustify(true),
-            onJustifyCustomer: () => showProductOuttaStockMessage(true),
+            onAccept: () => setActiveModal('ACCEPT_ORDER_CONFIRM'),
+            onReject: () => setActiveModal('REJECT_ORDER_CONFIRM'),
+            onRemove: () => setActiveModal('REMOVE_ORDER'),
+            onApprove: () => setActiveModal('ACCEPT_ORDER_CONFIRM'),
+            onViewJustify: () => setActiveModal('ORDER_REJECTION_JUSTIFY'),
+            onJustifyCustomer: () => setActiveModal('PRODUCT_OUTTA_STOCK_MESSAGE'),
             onMoreActionsCloseClick: () => setMoreActionsOrderId(null),
           }
         }}
@@ -595,19 +575,13 @@ const OrderProduct = ({product}:Props) => {
       />
 
       <ImageExpand
-        isOpen={expandImage}
+        isOpen={activeModal === 'EXPAND_IMAGE'}
         product={{
           name: product.name,
           imageUrl: product.imageUrl
         }}
-        onCloseActions={() => {
-          setExpandImage(false);
-          showOrdersFromProduct(true);
-        }}
-        onImageClick={() => {
-          setExpandImage(false);
-          showOrdersFromProduct(true);
-        }}
+        onCloseActions={() => setActiveModal('ORDERS_FROM_PRODUCT')}
+        onImageClick={() => setActiveModal('ORDERS_FROM_PRODUCT')}
       />
     </motion.div>
   )

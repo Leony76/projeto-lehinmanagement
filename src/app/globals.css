@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @plugin "tailwind-scrollbar";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary-ultralight: #fae6c4;
   --color-primary-light: #ffc90e;

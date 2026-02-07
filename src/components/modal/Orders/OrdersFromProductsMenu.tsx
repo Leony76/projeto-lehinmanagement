@@ -19,6 +19,7 @@ import { OrderStatus, PaymentStatus, Role } from "@prisma/client";
 import { motion } from "framer-motion";
 import NoContentFoundMessage from "../../ui/NoContentFoundMessage";
 import PaidTag from "../../ui/PaidTag";
+import { OrderPageModals } from "@/src/types/modal";
 
 type Props = {
   isOpen: boolean;
@@ -57,7 +58,7 @@ type Props = {
     }[];
     actions: {
       moreActionsOrderId: number;
-      showOrdersFromProduct: (value: React.SetStateAction<boolean>) => void;
+      setActiveModal: React.Dispatch<React.SetStateAction<OrderPageModals | null>>
       selectOrder: (orderId: number) => void;
       onPay?: () => void;
       onAccept?: () => void;
@@ -324,7 +325,7 @@ const OrdersFromProductsMenu = ({
                           label='Aceitar'
                           onClick={() => {
                             productOrders.actions.onAccept && productOrders.actions.onAccept();
-                            productOrders.actions.showOrdersFromProduct(false);
+                            productOrders.actions.setActiveModal(null);
                             productOrders.actions.selectOrder(order.orderId);
                           }}
                         />
@@ -334,7 +335,7 @@ const OrdersFromProductsMenu = ({
                           label='Rejeitar'
                           onClick={() => {
                             productOrders.actions.onReject && productOrders.actions.onReject();
-                            productOrders.actions.showOrdersFromProduct(false);
+                            productOrders.actions.setActiveModal(null);
                             productOrders.actions.selectOrder(order.orderId);
                           }}
                         />
@@ -388,19 +389,13 @@ const OrdersFromProductsMenu = ({
                     type='button'
                     label="Repor estoque" 
                     style={`px-5 ${buttonColorsScheme.secondary}`}
-                    onClick={() => {
-                      product.onResetStock && product.onResetStock();
-                      productOrders.actions.showOrdersFromProduct(false);
-                    }}
+                    onClick={() => product.onResetStock && product.onResetStock()}
                   />
                   <Button 
                     type='button'
                     label="Justificar ao cliente" 
                     style={`px-5 ${buttonColorsScheme.yellow}`}
-                    onClick={() => {
-                      productOrders.actions.onJustifyCustomer && productOrders.actions.onJustifyCustomer();
-                      productOrders.actions.showOrdersFromProduct(false);
-                    }}
+                    onClick={() => productOrders.actions.onJustifyCustomer && productOrders.actions.onJustifyCustomer()}
                   />
                   </>
                 )}
@@ -408,10 +403,7 @@ const OrdersFromProductsMenu = ({
                   type='button'
                   label="Rejeitar pedido" 
                   style={`px-5 ${buttonColorsScheme.red}`}
-                  onClick={() => {
-                    productOrders.actions.onReject && productOrders.actions.onReject();
-                    productOrders.actions.showOrdersFromProduct(false);
-                  }}
+                  onClick={() => productOrders.actions.onReject && productOrders.actions.onReject()}
                 />
                 </>
               ) : ( order.orderStatus === 'REJECTED') ? (
@@ -420,29 +412,20 @@ const OrdersFromProductsMenu = ({
                   type='button'
                   label="Remover do histórico" 
                   style={`px-5 ${buttonColorsScheme.red}`}
-                  onClick={() =>  {
-                    productOrders.actions.onRemove && productOrders.actions.onRemove();
-                    productOrders.actions.showOrdersFromProduct(false);
-                  }}
+                  onClick={() =>  productOrders.actions.onRemove && productOrders.actions.onRemove()}
                 />
                 <Button 
                   type='button'
                   label="Ver sua justificativa" 
                   style={`px-5 ${buttonColorsScheme.yellow}`}
-                  onClick={() => {
-                    productOrders.actions.onViewJustify && productOrders.actions.onViewJustify()
-                    productOrders.actions.showOrdersFromProduct(false);
-                  }}
+                  onClick={() => productOrders.actions.onViewJustify && productOrders.actions.onViewJustify()}
                 />
                 {order.orderPaymentStatus === 'APPROVED' && (
                   <Button 
                     type='button'
                     label="Aprovar pedido" 
                     style={`px-5 ${buttonColorsScheme.green}`}
-                    onClick={() => {
-                      productOrders.actions.onAccept && productOrders.actions.onAccept()
-                      productOrders.actions.showOrdersFromProduct(false);
-                    }}
+                    onClick={() => productOrders.actions.onAccept && productOrders.actions.onAccept()}
                   />
                 )}
                 </>
@@ -451,10 +434,7 @@ const OrdersFromProductsMenu = ({
                   type='button'
                   label="Remover do histórico" 
                   style={`px-5 ${buttonColorsScheme.red}`}
-                  onClick={() => {
-                    productOrders.actions.onRemove && productOrders.actions.onRemove()
-                    productOrders.actions.showOrdersFromProduct(false);
-                  }}
+                  onClick={() => productOrders.actions.onRemove && productOrders.actions.onRemove()}
                 />
               )}
                 </MoreActions>
@@ -590,20 +570,14 @@ const OrdersFromProductsMenu = ({
                   type='button'
                   label="Pagar" 
                   style={`px-5 ${buttonColorsScheme.green}`}
-                  onClick={() => {
-                    productOrders.actions.onPay && productOrders.actions.onPay();
-                    productOrders.actions.showOrdersFromProduct(false);
-                  }}
+                  onClick={() => productOrders.actions.onPay && productOrders.actions.onPay()}
                 />
               )}
                 <Button 
                   type='button'
                   label="Cancelar pedido" 
                   style={`px-5 ${buttonColorsScheme.red}`}
-                  onClick={() => {
-                    productOrders.actions.onCancel && productOrders.actions.onCancel();
-                    productOrders.actions.showOrdersFromProduct(false);
-                  }}
+                  onClick={() => productOrders.actions.onCancel && productOrders.actions.onCancel()}
                 />
                 </>  
               ) : (order.orderStatus === 'REJECTED') ? (
@@ -612,19 +586,13 @@ const OrdersFromProductsMenu = ({
                   type='button'
                   label="Remover do histórico" 
                   style={`px-5 ${buttonColorsScheme.red}`}
-                  onClick={() => {
-                    productOrders.actions.onRemove && productOrders.actions.onRemove();
-                    productOrders.actions.showOrdersFromProduct(false);
-                  }}
+                  onClick={() => productOrders.actions.onRemove && productOrders.actions.onRemove()}
                 />
                 <Button 
                   type='button'
                   label="Ver justificativa" 
                   style={`px-5 ${buttonColorsScheme.yellow}`}
-                  onClick={() => {
-                    productOrders.actions.onViewJustify && productOrders.actions.onViewJustify();
-                    productOrders.actions.showOrdersFromProduct(false);
-                  }}
+                  onClick={() => productOrders.actions.onViewJustify && productOrders.actions.onViewJustify()}
                 />           
                 </>
               ) : (           
@@ -632,10 +600,7 @@ const OrdersFromProductsMenu = ({
                   type='button'
                   label="Remover do histórico" 
                   style={`px-5 ${buttonColorsScheme.red}`}
-                  onClick={() => {
-                    productOrders.actions.onRemove && productOrders.actions.onRemove();
-                    productOrders.actions.showOrdersFromProduct(false);
-                  }}
+                  onClick={() => productOrders.actions.onRemove && productOrders.actions.onRemove()}
                 />
               )}
                 </MoreActions>

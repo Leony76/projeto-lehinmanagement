@@ -74,6 +74,7 @@ export const buttonColorsScheme = {
     sm:active:bg-primary-ultralight/70 sm:active:text-primary
     active:bg-primary-dark active:text-primary-light
     transition sm:duration-300 duration-150 cursor-pointer
+    dark:bg-primary-light/30
   `,
 
   secondary: `
@@ -84,6 +85,7 @@ export const buttonColorsScheme = {
     sm:active:bg-secondary-light/70 sm:active:text-secondary-middledark
     active:bg-secondary-dark active:text-secondary-light
     transition sm:duration-300 duration-150 cursor-pointer
+    dark:bg-secondary-middledark/40
   `,
 
   green: `
@@ -185,6 +187,7 @@ export const inputColorScheme = {
     hover:bg-primary-dark/90 hover:text-primary
     focus:outline-none focus-visible:bg-primary-dark/90 focus-visible:text-primary
     transition duration-300
+    dark:bg-primary-light/30
   `,
   secondary: `
     bg-secondary-light/70 
@@ -194,5 +197,6 @@ export const inputColorScheme = {
     hover:text-secondary hover:bg-secondary-dark
     focus:outline-none focus-visible:text-secondary focus-visible:bg-secondary-dark
     transition duration-300
+    dark:bg-secodary-light/30
   `,
 };

@@ -22,6 +22,7 @@ import Modal from '../modal/Modal';
 import Select from '../form/Select';
 import { CgCloseO } from 'react-icons/cg';
 import { FaRegClock, FaRegCircleCheck } from 'react-icons/fa6';
+import { OrderPageModals, UserOrderPageModals } from '@/src/types/modal';
 
 type Props = {
   product: UserProductsWithOrdersDTO;
@@ -47,19 +48,14 @@ const MyOrderProduct = ({
   const datePutToSale = new Date(product.createdAt).toLocaleDateString("pt-BR");
   const category = CATEGORY_LABEL_MAP[product.category];
 
-  const [ordersFromProduct, showOrdersFromProduct] = useState<boolean>(false);
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PENDING');
-  const [payOrderConfirm, showPayOrderConfirm] = useState<boolean>(false); 
   const [paymentMethod, setPaymentMethod] = useState<PaymentOptionsValue | null>(null); 
-  const [payOrder, showPayOrder] = useState<boolean>(false);
-  const [expandImage, setExpandImage] = useState<boolean>(false);
-  const [removeOrder, showRemoveOrder] = useState<boolean>(false);
-  const [orderRejectionJustify, showOrderRejectionJustify] = useState<boolean>(false);
-  const [cancelOrder, showCancelOrder] = useState<boolean>(false);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PENDING');
 
   const [loading, setLoading] = useState<boolean>(false);
-    
-  const [orderSearch, setOrderSearch] = useState('');
+
+  const [activeModal, setActiveModal] = useState<UserOrderPageModals | null>(null);
+
+  const [orderSearch, setOrderSearch] = useState<string>('');
   const [orderFilter, setOrderFilter] = useState<OrderFilterValue | null>(null);
 
   const filteredOrders = useMemo(() => 
@@ -103,8 +99,7 @@ const MyOrderProduct = ({
       showToast(`${err}`, 'error');
     } finally {
       setLoading(false);
-      showRemoveOrder(false);
-      showOrdersFromProduct(true);
+      setActiveModal('ORDERS_FROM_PRODUCT');
       setMoreActionsOrderId(null);
     }
   }
@@ -128,8 +123,7 @@ const MyOrderProduct = ({
       showToast(`${err}`, 'error');
     } finally {
       setLoading(false);
-      showCancelOrder(false);
-      showOrdersFromProduct(true);
+      setActiveModal('ORDERS_FROM_PRODUCT');
       setMoreActionsOrderId(null);
     }
   }
@@ -153,8 +147,7 @@ const MyOrderProduct = ({
       showToast(`${err}`, 'error');
     } finally {
       setLoading(false);
-      showPayOrderConfirm(false);
-      showOrdersFromProduct(true);
+      setActiveModal('ORDERS_FROM_PRODUCT');
       setMoreActionsOrderId(null);
     }
   }
@@ -242,7 +235,7 @@ const MyOrderProduct = ({
             label='Ver pedidos'
             colorScheme='primary'
             style='w-full text-xl mt-2'
-            onClick={() => showOrdersFromProduct(true)}
+            onClick={() => setActiveModal('ORDERS_FROM_PRODUCT')}
           />        
         </div>       
       </div>
@@ -252,15 +245,12 @@ const MyOrderProduct = ({
       {/* ================================================== */}
 
       <OrdersFromProductsMenu
-        isOpen={ordersFromProduct}
+        isOpen={activeModal === 'ORDERS_FROM_PRODUCT'}
         onCloseActions={() => {
-          showOrdersFromProduct(false);
+          setActiveModal(null);
           setOrderSearch('');
         }}
-        onImageClick={() => {
-          setExpandImage(true);
-          showOrdersFromProduct(false);
-        }}
+        onImageClick={() => setActiveModal('EXPAND_IMAGE')}
         product={{
           imageUrl: product.imageUrl,
           name: product.name,
@@ -273,14 +263,14 @@ const MyOrderProduct = ({
           fromCustomer: filteredOrders,
           actions: {
             selectOrder,
-            showOrdersFromProduct,
+            setActiveModal: setActiveModal as React.Dispatch<React.SetStateAction<OrderPageModals | null>>,
             moreActionsOrderId: moreActionsOrderId ?? 1,
             onMoreActionsOpenClick: handleMoreActionsOpen,
             onMoreActionsCloseClick: () => setMoreActionsOrderId(null), 
-            onPay: () => showPayOrder(true),  
-            onRemove: () => showRemoveOrder(true),
-            onViewJustify: () => showOrderRejectionJustify(true),
-            onCancel: () => showCancelOrder(true),
+            onPay: () => setActiveModal('PAY_ORDER'),  
+            onRemove: () => setActiveModal('REMOVE_ORDER'),
+            onViewJustify: () => setActiveModal('ORDER_REJECTION_JUSTIFY'),
+            onCancel: () => setActiveModal('CANCEL_ORDER'),
           }
         }}
         search={{
@@ -293,7 +283,7 @@ const MyOrderProduct = ({
       />
 
       <ConfirmAction
-        isOpen={removeOrder}
+        isOpen={activeModal === 'REMOVE_ORDER'}
         loading={loading}
         hasWarning={true}
         isActionIrreversible={true}
@@ -305,14 +295,11 @@ const MyOrderProduct = ({
         onReject={{
           handleSubmit: handleRemoveOrder
         }}
-        onCloseActions={() => {
-          showRemoveOrder(false);
-          showOrdersFromProduct(true);
-        }}
+        onCloseActions={() => setActiveModal('ORDERS_FROM_PRODUCT')}
       />
 
       <ConfirmAction
-        isOpen={cancelOrder}
+        isOpen={activeModal === 'CANCEL_ORDER'}
         loading={loading}
         hasWarning={true}
         isActionIrreversible={true}
@@ -328,30 +315,21 @@ const MyOrderProduct = ({
         onReject={{
           handleSubmit: handleCancelOrder,
         }}
-        onCloseActions={() => {
-          showCancelOrder(false);
-          showOrdersFromProduct(true);
-        }}
+        onCloseActions={() => setActiveModal('ORDERS_FROM_PRODUCT')}
       />
 
       <RejectionJustify
         userRole='CUSTOMER'
-        isOpen={orderRejectionJustify}
+        isOpen={activeModal === 'ORDER_REJECTION_JUSTIFY'}
         sellerRejectionJustify={selectedOrder?.orderRejectionJustify ?? '[Sem justificativa]'}
-        onCloseActions={() => {
-          showOrderRejectionJustify(false);
-          showOrdersFromProduct(true);
-        }}
+        onCloseActions={() => setActiveModal('ORDERS_FROM_PRODUCT')}
       />
 
       <Modal 
-      isOpen={payOrder} 
+      isOpen={activeModal === 'PAY_ORDER'} 
       hasXClose
       modalTitle={'Pagar pedido'} 
-      onCloseModalActions={() => {
-        showPayOrder(false);
-        showOrdersFromProduct(true);
-      }}
+      onCloseModalActions={() => setActiveModal('ORDERS_FROM_PRODUCT')}
       >
         <p className='text-secondary-middledark'>
           Selecione um método de pagamento disponível.
@@ -412,15 +390,12 @@ const MyOrderProduct = ({
             }`}
             colorScheme="secondary"
             disabled={!!(paymentStatus !== 'APPROVED' && paymentMethod)}
-            onClick={() => {
-              showPayOrder(false);
-              showPayOrderConfirm(true);
-            }}
+            onClick={() => setActiveModal('ORDERS_FROM_PRODUCT')}
         />
       </Modal>
 
       <ConfirmAction
-        isOpen={payOrderConfirm}
+        isOpen={activeModal === 'PAY_ORDER_CONFIRM'}
         loading={loading}
         isActionIrreversible={true}
         decision='PAY'
@@ -435,26 +410,17 @@ const MyOrderProduct = ({
         onReject={{
           handleSubmit: handlePayOrder,
         }}
-        onCloseActions={() => {
-          showPayOrderConfirm(false);
-          showOrdersFromProduct(true);
-        }}
+        onCloseActions={() => setActiveModal('ORDERS_FROM_PRODUCT')}
       />
 
       <ImageExpand
-        isOpen={expandImage}
+        isOpen={activeModal === 'EXPAND_IMAGE'}
         product={{
           name: product.name,
           imageUrl: product.imageUrl
         }}
-        onCloseActions={() => {
-          setExpandImage(false);
-          showOrdersFromProduct(true);
-        }}
-        onImageClick={() => {
-          setExpandImage(false);
-          showOrdersFromProduct(true);
-        }}
+        onCloseActions={() => setActiveModal('ORDERS_FROM_PRODUCT')}
+        onImageClick={() => setActiveModal('ORDERS_FROM_PRODUCT')}
       />
     </motion.div>
   )

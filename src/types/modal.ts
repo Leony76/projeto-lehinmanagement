@@ -1,0 +1,37 @@
+export type GenericPageModals  =
+| 'REMOVE_ORDER'
+| 'EXPAND_IMAGE'
+| 'ORDERS_FROM_PRODUCT'
+;
+
+export type ProductPageModals = GenericPageModals 
+| 'CONFIRM_REMOVE_PRODUCT'
+| 'REMOVE_PRODUCT_JUSTIFY'
+| 'PRODUCT_INFO'
+| 'CONFIRM_ORDER'
+| 'EDIT_PRODUCT'
+| 'ORDER_PRODUCT_MENU'
+;
+
+export type OrderPageModals = GenericPageModals
+| 'ACCEPT_ORDER_CONFIRM'
+| 'REJECT_ORDER_CONFIRM'
+| 'ORDER_REJECTION_JUSTIFY'
+| 'EDIT_ORDER_REJECTION_JUSTIFY'
+| 'PRODUCT_OUTTA_STOCK_MESSAGE'
+| 'NEW_ORDER_REJECTION_JUSTIFY_CONFIRM'
+| 'RESET_PRODUCT_STOCK'
+;
+
+export type UserOrderPageModals = GenericPageModals
+| 'PAY_ORDER_CONFIRM'
+| 'PAY_ORDER'
+| 'ORDER_REJECTION_JUSTIFY'
+| 'CANCEL_ORDER'
+;
+
+export type UserProductPageModals = GenericPageModals
+| 'COMMENT'
+| 'USER_PRODUCT_INFO'
+| 'REMOVE_PRODUCT_CONFIRM'
+;

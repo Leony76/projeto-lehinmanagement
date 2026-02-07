@@ -18,10 +18,10 @@ import EditProductForm from '../form/EditProductForm';
 import TextArea from '../form/TextArea';
 import Error from '../ui/Error';
 import OrderProduct from '../modal/OrderProduct';
-import { lockScrollY } from '@/src/utils/lockScrollY';
+import { useLockScrollY } from '@/src/utils/useLockScrollY';
 import { FaInfo } from 'react-icons/fa6';
 import { motion } from 'framer-motion';
-import { setTimeout } from 'timers/promises';
+import { ProductPageModals } from '@/src/types/modal';
 
 type Props = {
   product: ProductDTO;
@@ -36,18 +36,11 @@ const Product = ({
   const datePutToSale = new Date(product.createdAt).toLocaleDateString("pt-BR");
   const category = CATEGORY_LABEL_MAP[product.category];
 
-  const [confirmRemoveProduct, showConfirmRemoveProduct] = useState<boolean>(false);
-  const [removeProductJustify, showRemoveProductJustify] = useState<boolean>(false);
-  const [productInfo, showProductInfo] = useState<boolean>(false);
-  const [expandImage, setExpandImage] = useState<boolean>(false);
-  const [confirmModal, showConfirmModal] = useState(false);
-
-  const [orderProductMenu, showOrderProductMenu] = useState(false);
+  const [activeModal, setActiveModal] = useState<ProductPageModals | null>(null);
 
   const [removeJustify, setRemoveJustify] = useState<string>('');
   const [error, setError] = useState<string>('');
 
-  const [editProduct, showEditProduct] = useState<boolean>(false);
 
   const user = useUserStore((stats) => stats.user);
 
@@ -61,24 +54,25 @@ const Product = ({
     }
 
     try {
-      showRemoveProductJustify(false);
       
       await removeProduct(product.id, removeJustify);
-
+      
       setRemoveJustify('');
       showToast('Produto removido com sucesso', 'success');
     } catch (err) {
       showToast('Erro ao remover produto', 'error');
+    } finally {
+      setActiveModal(null);
     }
   };
 
-  lockScrollY(orderProductMenu || confirmModal);  
+  useLockScrollY(Boolean(activeModal));  
 
   return (
     <motion.div
       layout 
       initial={{ opacity: 1, scale: 1 }}
-      className={`relative ${productCardSetup.mainContainer}`}
+      className={`relative ${productCardSetup.mainContainer} dark:shadow-[0px_0px_3px_orange] dark:bg-primary-dark/30`}
       exit={{ 
         opacity: 0, 
         scale: 2, 
@@ -91,7 +85,7 @@ const Product = ({
           src={product.imageUrl}
           alt={product.name}
           fill
-          className={productCardSetup.image}
+          className={`${productCardSetup.image} dark:border-[1.5px] dark:shadow-[0px_0px_3px_cyan]`}
         />
       </div>
       <div className={productCardSetup.infosContainer}>
@@ -150,7 +144,7 @@ const Product = ({
               type={'button'}
               icon={FaInfo}
               style='p-2 px-4'
-              onClick={() => showProductInfo(true)}
+              onClick={() => setActiveModal('PRODUCT_INFO')}
             />
           </div>
         </div>
@@ -159,7 +153,7 @@ const Product = ({
           <Button
             label="Fazer pedido"
             colorScheme="primary"
-            onClick={() => showOrderProductMenu(true)}
+            onClick={() => setActiveModal('ORDER_PRODUCT_MENU')}
             type="button"
           />
         ) : (
@@ -176,13 +170,13 @@ const Product = ({
             type="button"
             label="Editar"
             style={`flex-1 ${buttonColorsScheme.yellow}`}
-            onClick={() => showEditProduct(true)}
+            onClick={() => setActiveModal('EDIT_PRODUCT')}
           />
           <Button
             type="button"
             label="Remover"
             style={`flex-1 ${buttonColorsScheme.red}`}
-            onClick={() => showConfirmRemoveProduct(true)}
+            onClick={() => setActiveModal('CONFIRM_REMOVE_PRODUCT')}
           />
         </div>
       )}
@@ -191,10 +185,10 @@ const Product = ({
       {/* ⇊ MODALS ⇊ */}
 
       <Modal 
-      isOpen={confirmRemoveProduct} 
+      isOpen={activeModal === 'CONFIRM_REMOVE_PRODUCT'} 
       modalTitle={'Confirmar remoção'}
       onCloseModalActions={() => {
-        showConfirmRemoveProduct(false);
+        setActiveModal(null);
       }}
       >
         <p className={textColors.secondaryDark}>Tem certeza que deseja tirar esse produto de venda ?</p>
@@ -205,27 +199,21 @@ const Product = ({
             type={'button'}
             label='Sim'
             style={`flex-1 ${buttonColorsScheme.green}`}
-            onClick={() => {
-              showRemoveProductJustify(true);
-              showConfirmRemoveProduct(false);
-            }}
+            onClick={() => setActiveModal('REMOVE_PRODUCT_JUSTIFY')}
             />
           <Button 
             type={'button'}
             label='Não'
             style={`flex-1 ${buttonColorsScheme.red}`}
-            onClick={() => showConfirmRemoveProduct(false)}
+            onClick={() => setActiveModal(null)}
           />
         </div>
       </Modal>
 
       <Modal 
-      isOpen={removeProductJustify} 
+      isOpen={activeModal === 'REMOVE_PRODUCT_JUSTIFY'} 
       modalTitle={'Justificativa de remoção'}
-      onCloseModalActions={() => {
-        showRemoveProductJustify(false);
-        showConfirmRemoveProduct(true);
-      }}
+      onCloseModalActions={() => setActiveModal('CONFIRM_REMOVE_PRODUCT')}
       >
         <p className={textColors.secondaryDark}>Cite a justificativa para a remoção desse produto ofertado por {product.sellerName}</p>
         <TextArea 
@@ -248,33 +236,29 @@ const Product = ({
             type={'button'}
             label='Cancelar'
             style={`flex-1 ${buttonColorsScheme.red}`}
-            onClick={() => showRemoveProductJustify(false)}
+            onClick={() => setActiveModal(null)}
           />
         </div>
       </Modal>
 
       <Modal 
-      isOpen={editProduct} 
+      isOpen={activeModal === 'EDIT_PRODUCT'} 
       modalTitle={'Editar produto'}
-      onCloseModalActions={() => {
-        showEditProduct(false);
-      }}
+      onCloseModalActions={() => setActiveModal(null)}
       hasXClose
       style={{container: '!max-w-215'}}
       > 
         <EditProductForm
           productToBeEdited={product}
-          closeModal={() => showEditProduct(false)}
+          closeModal={() => setActiveModal(null)}
         />
       </Modal>
 
       <Modal 
-      isOpen={productInfo} 
+      isOpen={activeModal === 'PRODUCT_INFO'} 
       modalTitle={'Informações'}
       hasXClose 
-      onCloseModalActions={() => {
-        showProductInfo(false);
-      }}
+      onCloseModalActions={() => setActiveModal(null)}
       >
         <div className='flex sm:flex-row h-full sm:max-h-full max-h-[70vh] overflow-y-auto h flex-col gap-5 mt-2'>
           <div className='flex-1 relative aspect-square'>
@@ -282,11 +266,8 @@ const Product = ({
               src={product.imageUrl} 
               alt={product.name}            
               fill
-              className='rounded-2xl object-cover aspect-square cursor-zoom-in'
-              onClick={() => {
-                setExpandImage(true);
-                showProductInfo(false);
-              }}
+              className='rounded-2xl hover:opacity-80 transition duration-200 active:opacity-100 object-cover aspect-square cursor-zoom-in'
+              onClick={() => setActiveModal('EXPAND_IMAGE')}
             />
           </div>
           <div className='flex bg-primary-ultralight/25 p-2 rounded-2xl flex-col gap-1.5 flex-2'>
@@ -344,32 +325,24 @@ const Product = ({
       </Modal>
 
       <Modal 
-      isOpen={expandImage} 
+      isOpen={activeModal === 'EXPAND_IMAGE'} 
       modalTitle={''} 
-      onCloseModalActions={() => {
-        setExpandImage(false);
-        showProductInfo(true);
-      }}>
+      onCloseModalActions={() => setActiveModal('PRODUCT_INFO')}>
         <div className='relative aspect-square h-[90vh]'>
           <Image 
             src={product.imageUrl} 
             alt={product.name}            
             fill
             className='object-contain aspect-square border-x-4 border-double cursor-zoom-out border-primary'
-            onClick={() => {
-              setExpandImage(false);
-              showProductInfo(true);
-            }}
+            onClick={() => setActiveModal('PRODUCT_INFO')}
           />
         </div>
       </Modal>
 
       <OrderProduct
-        isOpen={orderProductMenu}
+        activeModal={activeModal}
         selectedProduct={product}
-        showOrderProductMenu={showOrderProductMenu}
-        showConfirmModal={showConfirmModal}
-        confirmModal={confirmModal}
+        setActiveModal={setActiveModal} 
       />
     </motion.div>
   )

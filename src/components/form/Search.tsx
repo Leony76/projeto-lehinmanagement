@@ -34,7 +34,9 @@ const Search = ({
       <VscSearch size={17}/>
       <input 
         placeholder="Pesquisar" 
-        className="flex-1 px-2 text-primary-middledark outline-none" 
+        className="flex-1 px-2 text-primary-middledark outline-none
+          
+        " 
         type="text"
         value={value}
         onChange={onChange}
