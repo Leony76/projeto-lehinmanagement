@@ -1,8 +1,9 @@
 "use server"
 
+import { getRequiredSession } from "../lib/get-session-user";
 import prisma from "../lib/prisma";
 
-export const getUsersRoleCount = async () => {
+export async function getUsersRoleCount() {
   const stats = await prisma.user.groupBy({
     by: ['role'],
     _count: {
@@ -11,7 +12,7 @@ export const getUsersRoleCount = async () => {
   });
 
   const counts = stats.reduce((acc, curr) => {
-    acc[curr.role] = curr._count.id;
+    acc[curr.role ?? 'CUSTOMER'] = curr._count.id;
     return acc;
   }, { ADMIN: 0, CUSTOMER: 0, SELLER: 0 } as Record<string, number>);
 
@@ -22,3 +23,20 @@ export const getUsersRoleCount = async () => {
     total: counts.ADMIN + counts.CUSTOMER + counts.SELLER
   };
 };
+
+export async function getUserSystemTheme() {
+  const session = await getRequiredSession();
+
+  const userTheme = await prisma.user.findUnique({
+    where: {
+      id: session.user.id,
+    },
+    select: {
+      darkTheme: true,
+    },
+  });
+
+  return userTheme 
+    ? userTheme.darkTheme 
+    : false;
+}

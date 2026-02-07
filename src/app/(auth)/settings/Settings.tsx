@@ -1,16 +1,44 @@
 "use client";
 
+import { toggleDarkTheme } from "@/src/actions/userActions";
 import PageTitle from "@/src/components/ui/PageTitle"
 import SectionTitle from "@/src/components/ui/SectionTitle"
 import ToggleButton from "@/src/components/ui/ToggleButton"
+import { useToast } from "@/src/contexts/ToastContext";
 import { useThemeStore } from "@/src/store/useDarkTheme";
-import { useState } from "react";
+import { useUserStore } from "@/src/store/useUserStore";
+import { useEffect } from "react";
 import { FaRegMoon } from "react-icons/fa6"
 
-const Settings = () => {
+type Props = {
+  settings: {
+    systemTheme: boolean;
+  };
+}
+
+const Settings = ({settings}:Props) => {
+
+  const { showToast } = useToast();
 
   const isDark = useThemeStore((state) => state.isDark);
   const setDark = useThemeStore((state) => state.setDark);
+
+  const handleToggleTheme = async() => {
+
+    const toggleTheme = !isDark;
+    setDark(toggleTheme);
+
+    try {
+      await toggleDarkTheme(toggleTheme);
+    } catch (err:unknown) {
+      setDark(isDark);
+      showToast("Erro ao trocar o tema do sistema", "error");
+    } 
+  }
+
+  useEffect(() => {
+    setDark(settings.systemTheme);
+  }, [settings.systemTheme, setDark]);
 
   return (
     <div>
@@ -29,7 +57,7 @@ const Settings = () => {
           </span>
           <ToggleButton 
             value={isDark}
-            onChange={setDark}
+            onChange={handleToggleTheme}
           />
         </div>
       </div>

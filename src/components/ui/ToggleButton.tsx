@@ -3,7 +3,7 @@ import { useState } from "react";
 
 type Props = {
   value: boolean;
-  onChange: (value: boolean) => void;
+  onChange: () => void;
   disabled?: boolean;
 };
 
@@ -16,7 +16,7 @@ const ToggleButton = ({
     <button
       type="button"
       disabled={disabled}
-      onClick={() => onChange(!value)}
+      onClick={onChange}
       className={`
         w-14 h-8 rounded-full p-1 transition-colors 
         ${value 

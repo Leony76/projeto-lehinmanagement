@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 type ThemeState = {
   isDark: boolean;
@@ -8,15 +7,9 @@ type ThemeState = {
 };
 
 export const useThemeStore = create<ThemeState>()(
-  persist(
-    (set) => ({
-      isDark: false,
-      toggleTheme: () =>
-        set((state) => ({ isDark: !state.isDark })),
-      setDark: (value) => set({ isDark: value }),
-    }),
-    {
-      name: "app-theme",
-    }
-  )
+  (set) => ({
+    isDark: false,
+    toggleTheme: () => set((state) => ({ isDark: !state.isDark })),
+    setDark: (value) => set({ isDark: value }),
+  }),
 );

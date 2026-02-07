@@ -72,7 +72,8 @@ const Product = ({
     <motion.div
       layout 
       initial={{ opacity: 1, scale: 1 }}
-      className={`relative ${productCardSetup.mainContainer} dark:shadow-[0px_0px_3px_orange] dark:bg-primary-dark/30`}
+      className={`relative ${productCardSetup.mainContainer} 
+      dark:shadow-[0px_0px_3px_orange] dark:bg-primary-dark/30`}
       exit={{ 
         opacity: 0, 
         scale: 2, 

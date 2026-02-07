@@ -43,7 +43,6 @@ export default function AuthLayout({
     };
   }, [lastScrollY]);
 
-
   return (
     <div className="flex flex-col min-h-dvh dark:bg-black">
       <Menu 

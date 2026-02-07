@@ -110,7 +110,7 @@ const Dashboard = async () => {
       <InfoCard title={"Menor"} content={formatCurrency(sellerOrdersRevenue._min.total)} style={{content: 'text-ui-money !text-base'}} />
       <InfoCard title={"Maior"} content={formatCurrency(sellerOrdersRevenue._max.total)} style={{content: 'text-ui-money !text-base'}} />
       
-      <InfoCard colSpanFull title={"Mais recente feita"} content={sellerSales.mostRecentSale}/>
+      <InfoCard colSpanFull title={"Mais recente feita"} content={sellerSales.mostRecentSale ?? '??/??/??'}/>
       <InfoCard colSpanFull title={"Categoria mais vendida"} content={sellerSales.mostSoldCategory ?? 'Nenhuma venda aprovada no momento'}/>
     </div>
     <SectionTitle style="pb-1" title="Pedidos"/>

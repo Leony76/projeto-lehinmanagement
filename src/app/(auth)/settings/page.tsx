@@ -1,8 +1,18 @@
+import { getUserSystemTheme } from "@/src/services/users"
 import Settings from "./Settings"
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+
+  const systemTheme = await getUserSystemTheme();
+
+  const settings = {
+    systemTheme: systemTheme,
+  };
+
   return (
-    <Settings/>
+    <Settings
+      settings={settings}
+    />
   )
 }
 
