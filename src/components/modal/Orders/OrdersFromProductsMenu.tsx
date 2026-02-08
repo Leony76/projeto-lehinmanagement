@@ -119,11 +119,11 @@ const OrdersFromProductsMenu = ({
               src={product.imageUrl}
               fill
               alt={product.name}
-              className='rounded-xl border border-primary-middledark object-cover cursor-zoom-in hover:opacity-80 transition duration-200'
+              className='rounded-xl border border-primary-middledark dark:border-secondary-dark/70 dark:border-2 object-cover cursor-zoom-in hover:opacity-80 transition duration-200'
               onClick={onImageClick}
             />
           </div>
-          <div className='flex bg-primary-ultralight/25 p-2 border border-primary-middledark rounded-2xl flex-col gap-1.5 flex-2'>
+          <div className='flex bg-primary-ultralight/25 dark:bg-primary/15 dark:brightness-[1.2] p-2 border border-primary-middledark rounded-2xl flex-col gap-1.5 flex-2'>
             <div className='flex flex-col'>
               <label className='text-primary-middledark font-bold'>
                 Nome
@@ -242,7 +242,7 @@ const OrdersFromProductsMenu = ({
               }}
               className="flex flex-col gap-2"
               >
-              <div className='flex lg:flex-row flex-col bg-secondary-light/25 p-2 ml-2 rounded-2xl border border-secondary-middledark'>
+              <div className='flex lg:flex-row flex-col bg-secondary-light/25 dark:bg-secondary/15 dark:brightness-[1.2] p-2 ml-2 rounded-2xl border border-secondary-middledark'>
                 <div className="sm:text-base text-sm sm:space-y-0 space-y-1">
                   <h3 className='text-primary-middledark text-lg italic'>
                     Pedido #{order.orderId}
@@ -325,7 +325,7 @@ const OrdersFromProductsMenu = ({
                           label='Aceitar'
                           onClick={() => {
                             productOrders.actions.onAccept && productOrders.actions.onAccept();
-                            productOrders.actions.setActiveModal(null);
+                            productOrders.actions.setActiveModal('ACCEPT_ORDER_CONFIRM');
                             productOrders.actions.selectOrder(order.orderId);
                           }}
                         />
@@ -335,7 +335,7 @@ const OrdersFromProductsMenu = ({
                           label='Rejeitar'
                           onClick={() => {
                             productOrders.actions.onReject && productOrders.actions.onReject();
-                            productOrders.actions.setActiveModal(null);
+                            productOrders.actions.setActiveModal('REJECT_ORDER_CONFIRM');
                             productOrders.actions.selectOrder(order.orderId);
                           }}
                         />

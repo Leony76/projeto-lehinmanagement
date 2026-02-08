@@ -6,8 +6,6 @@ import SectionTitle from "@/src/components/ui/SectionTitle"
 import ToggleButton from "@/src/components/ui/ToggleButton"
 import { useToast } from "@/src/contexts/ToastContext";
 import { useThemeStore } from "@/src/store/useDarkTheme";
-import { useUserStore } from "@/src/store/useUserStore";
-import { useEffect } from "react";
 import { FaRegMoon } from "react-icons/fa6"
 
 type Props = {
@@ -35,10 +33,6 @@ const Settings = ({settings}:Props) => {
       showToast("Erro ao trocar o tema do sistema", "error");
     } 
   }
-
-  useEffect(() => {
-    setDark(settings.systemTheme);
-  }, [settings.systemTheme, setDark]);
 
   return (
     <div>

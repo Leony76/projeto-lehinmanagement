@@ -89,7 +89,7 @@ const EditProductForm = ({
 
   return (
     <form
-    className="mb-4 sm:flex block gap-3 w-full max-w-200 mx-auto"
+    className="mb-4 sm:flex block gap-3 w-full dark:bg-gray-900 max-w-200 mx-auto"
     onSubmit={handleSubmit(onSubmit)}
     >
       <input

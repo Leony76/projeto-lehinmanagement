@@ -35,7 +35,7 @@ const MoreActions = ({ moreActions,
           }
         `}
       >
-        <div className={`flex flex-col gap-2 shadow-[0px_0px_10px_lightgray] p-2 rounded-3xl bg-white ${style?.container ?? ''}`}>
+        <div className={`flex flex-col gap-2 shadow-[0px_0px_10px_lightgray] dark:shadow-[0px_0px_10px_cyan] p-2 rounded-3xl dark:bg-gray-800 bg-white ${style?.container ?? ''}`}>
           {children}
         </div>
       </div>

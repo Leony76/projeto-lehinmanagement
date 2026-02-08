@@ -4,6 +4,7 @@ import "./globals.css";
 import { ToastProvider } from "../contexts/ToastContext";
 import { AuthInitializer } from "../components/auth/AuthInitializer";
 import { ThemeProvider } from "../contexts/ThemeProvider";
+import { getUserSystemTheme } from "../services/users";
 
 const novaSquare = Nova_Square({
   variable: "--font-nova-square",
@@ -15,11 +16,14 @@ export const metadata: Metadata = {
   description: "Best management site ever exist",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+  const systemTheme = await getUserSystemTheme();
+
   return (
     <html lang="pt-BR" >
       <body
@@ -28,7 +32,7 @@ export default function RootLayout({
       >   
         <ToastProvider>
           <AuthInitializer>
-            <ThemeProvider />
+            <ThemeProvider initialDark={systemTheme} />
             {children}
           </AuthInitializer>
         </ToastProvider>

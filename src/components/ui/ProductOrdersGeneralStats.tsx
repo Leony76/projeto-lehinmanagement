@@ -19,27 +19,27 @@ const ProductOrdersGeneralStats = ({
 }:Props) => {
   return (
     <div className="grid sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 grid-cols-2 gap-2">
-      <div className="flex flex-col p-3 text-xl rounded-xl border text-green border-secondary-middledark bg-secondary-light/35">
+      <div className="flex flex-col p-3 text-xl rounded-xl border text-green border-secondary-middledark bg-secondary-light/35 dark:bg-secondary/25 shadow-[0px_0px_3px_darkorange] hover:scale-[1.025] transition duration-200 hover:shadow-[0px_0px_8px_darkorange] dark:shadow-none dark:brightness-[1.2]">
         <span className="text-base text-gray">Aprovados</span> 
         {approved}
       </div>
-      <div className="flex flex-col p-3 text-xl rounded-xl border text-yellow-dark border-secondary-middledark bg-secondary-light/35">
+      <div className="flex flex-col p-3 text-xl rounded-xl border text-yellow-dark border-secondary-middledark bg-secondary-light/35 dark:bg-secondary/25 shadow-[0px_0px_3px_darkorange] hover:scale-[1.025] transition duration-200 hover:shadow-[0px_0px_8px_darkorange] dark:shadow-none dark:brightness-[1.2]">
         <span className="text-base text-gray">Pendentes</span> 
         {pending}
       </div>
-      <div className="flex flex-col p-3 text-xl rounded-xl border text-red border-secondary-middledark bg-secondary-light/35">
+      <div className="flex flex-col p-3 text-xl rounded-xl border text-red border-secondary-middledark bg-secondary-light/35 dark:bg-secondary/25 shadow-[0px_0px_3px_darkorange] hover:scale-[1.025] transition duration-200 hover:shadow-[0px_0px_8px_darkorange] dark:shadow-none dark:brightness-[1.2]">
         <span className="text-base text-gray">Cancelados</span> 
         {canceled}
       </div>
-      <div className="flex flex-col p-3 text-xl rounded-xl border text-red border-secondary-middledark bg-secondary-light/35">
+      <div className="flex flex-col p-3 text-xl rounded-xl border text-red border-secondary-middledark bg-secondary-light/35 dark:bg-secondary/25 shadow-[0px_0px_3px_darkorange] hover:scale-[1.025] transition duration-200 hover:shadow-[0px_0px_8px_darkorange] dark:shadow-none dark:brightness-[1.2]">
         <span className="text-base text-gray">Rejeitados</span> 
         {rejected}
       </div>
-      <div className="flex flex-col p-3 text-xl rounded-xl border text-red border-secondary-middledark bg-secondary-light/35">
+      <div className="flex flex-col p-3 text-xl rounded-xl border text-red border-secondary-middledark bg-secondary-light/35 dark:bg-secondary/25 shadow-[0px_0px_3px_darkorange] hover:scale-[1.025] transition duration-200 hover:shadow-[0px_0px_8px_darkorange] dark:shadow-none dark:brightness-[1.2]">
         <span className="text-base text-gray">Não pagos</span> 
         {notPaid}
       </div>
-      <div className="flex flex-col p-3 text-xl rounded-xl border text-ui-stock border-secondary-middledark bg-secondary-light/35">
+      <div className="flex flex-col p-3 text-xl rounded-xl border text-ui-stock border-secondary-middledark bg-secondary-light/35 dark:bg-secondary/25 shadow-[0px_0px_3px_darkorange] hover:scale-[1.025] transition duration-200 hover:shadow-[0px_0px_8px_darkorange] dark:shadow-none dark:brightness-[1.2]">
         <span className="text-base text-gray">Total</span> 
         {total}
       </div>

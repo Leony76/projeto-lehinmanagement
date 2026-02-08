@@ -19,6 +19,9 @@ const InfoCard = ({
 }:Props) => {
   return (
     <div className={`bg-primary-ultralight/50 transition duration-500 
+        dark:shadow-[0px_0px_5px_cyan]
+        dark:active:shadow-[0px_0px_3px_cyan]
+        dark:bg-primary-dark/60
         hover:scale-[1.020] 
         hover:shadow-[0px_0px_8px_#4ad6cd] 
         active:scale-[1.020] 
@@ -31,8 +34,8 @@ const InfoCard = ({
       style?.container
        ? style.container
        : ''
-    }`}>
-      <h3 className={`text-lg ${textColors.secondaryDark} ${
+    }`}>    
+      <h3 className={`text-lg dark:text-secondary  ${textColors.secondaryDark} ${
         style?.title
           ? style.title
           : ''

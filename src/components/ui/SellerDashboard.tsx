@@ -46,22 +46,22 @@ const SellerDashboard = ({data}:Props) => {
       <InfoCard 
         title={"Faturado"} 
         content={formatCurrency(data.sales.earn.total ?? 0)} 
-        style={{content: 'text-ui-money !text-base'}} 
+        style={{content: 'text-ui-money dark:text-ui-money dark:brightness-[1.5] !text-base'}} 
       />
       <InfoCard 
         title={"Fatura média"} 
         content={formatCurrency(data.sales.earn.average ?? 0)} 
-        style={{content: 'text-ui-money !text-base', title: 'text-[17px]'}} 
+        style={{content: 'text-ui-money dark:text-ui-money dark:brightness-[1.5] !text-base', title: 'text-[17px]'}} 
       />
       <InfoCard 
         title={"Menor"} 
         content={formatCurrency(data.sales.earn.lowest ?? 0)} 
-        style={{content: 'text-ui-money !text-base'}} 
+        style={{content: 'text-ui-money dark:text-ui-money dark:brightness-[1.5] !text-base'}} 
       />
       <InfoCard 
         title={"Maior"} 
         content={formatCurrency(data.sales.earn.highest ?? 0)} 
-        style={{content: 'text-ui-money !text-base'}} 
+        style={{content: 'text-ui-money dark:text-ui-money dark:brightness-[1.5] !text-base'}} 
       />
       
       <InfoCard 
@@ -127,22 +127,22 @@ const SellerDashboard = ({data}:Props) => {
     <div className="grid grid-cols-2 gap-4 mx-2 my-4 mb-6">
       <InfoCard 
         title={"Totais"} 
-        style={{content: 'text-ui-money !text-base'}} 
+        style={{content: 'text-ui-money dark:text-ui-money dark:brightness-[1.5] !text-base'}} 
         content={formatCurrency(data.spend.total ?? 0)}
       />
       <InfoCard 
         title={"Médios"} 
-        style={{content: 'text-ui-money !text-base'}} 
+        style={{content: 'text-ui-money dark:text-ui-money dark:brightness-[1.5] !text-base'}} 
         content={formatCurrency(data.spend.average ?? 0)}
       />
       <InfoCard 
         title={"Menor"} 
-        style={{content: 'text-ui-money !text-base'}} 
+        style={{content: 'text-ui-money dark:text-ui-money dark:brightness-[1.5] !text-base'}} 
         content={formatCurrency(data.spend.lowest ?? 0)}
       />
       <InfoCard 
         title={"Maior"} 
-        style={{content: 'text-ui-money !text-base'}} 
+        style={{content: 'text-ui-money dark:text-ui-money dark:brightness-[1.5] !text-base'}} 
         content={formatCurrency(data.spend.highest ?? 0)}
       />
     </div>

@@ -99,8 +99,11 @@ const OrderProduct = ({
         Peça uma quantidade dentro do estoque disponível.
       </p>
       <div className='flex items-center text-base'>
-        <span className={`flex-1 ${textColors.uiStock}`}>
-          Estoque: {selectedProduct?.stock ?? 'Sem informação'}
+        <span className={`flex-1 text-lg flex gap-1 ${textColors.gray}`}>
+          Estoque: 
+          <span className='text-ui-stock'>
+            {selectedProduct?.stock ?? 'Sem informação'}
+          </span>
         </span>
         <div className='w-[60%] space-y-1'>
           <Input
@@ -136,7 +139,7 @@ const OrderProduct = ({
       </div>
       <p className={`${textColors.gray} flex gap-2`}>
         A ser pedido:  
-        <span className={textColors.uiMoney}> 
+        <span className={textColors.uiMoney + ' dark:brightness-[1.4]'}> 
           {formatCurrency(selectedProduct?.price ?? 0)} 
         </span> 
         x 
@@ -146,7 +149,7 @@ const OrderProduct = ({
       </p>
       <h3 className={`text-2xl ${textColors.gray} flex gap-2`}>
         Total: 
-        <span className={textColors.uiMoney}>
+        <span className={textColors.uiMoney + ' dark:brightness-[1.4]'}>
           {formatCurrency(totalOrderPrice)}
         </span>
       </h3>
@@ -163,13 +166,13 @@ const OrderProduct = ({
         />
         <div className="flex flex-1 items-center gap-1 mb-1 text-lg font-bold self-end">
           {paymentStatus === 'PENDING' && (
-            <span className="flex items-center tracking-wider gap-1 text-yellow-dark">
+            <span className="flex items-center tracking-wider gap-1 dark:brightness-[1.4] text-yellow-dark">
               <FaRegClock size={20} /> PENDENTE
             </span>
           )}
 
           {paymentStatus === 'PROCESSING' && (
-            <span className="flex items-center gap-1 text-gray animate-pulse">
+            <span className="flex items-center gap-1 text-gray dark:brightness-[1.4] animate-pulse">
               <div className="h-4 w-4 border-2 border-blue-gray border-t-transparent rounded-full animate-spin" />
               PROCESSANDO...
             </span>
@@ -177,7 +180,7 @@ const OrderProduct = ({
 
           {paymentStatus === 'APPROVED' && (
             <>
-            <span className="flex items-center gap-1 text-green">
+            <span className="flex items-center gap-1 dark:brightness-[1.4] text-green">
               <FaRegCircleCheck  size={20} /> APROVADO
             </span>          
             </>
@@ -185,7 +188,7 @@ const OrderProduct = ({
 
           {paymentStatus === 'DENIED' && (
             <>
-            <span className="flex items-center gap-1 text-red">
+            <span className="flex items-center gap-1 dark:brightness-[1.4] text-red">
               <CgCloseO size={23} /> REJEITADO
             </span>        
             </>
@@ -231,7 +234,7 @@ const OrderProduct = ({
     }} 
     >
       <p className={textColors.secondaryDark}>
-        Tem certeza que deseja pedir <span className={textColors.uiStock}>{amountTobeOrdered}</span> {(amountTobeOrdered ?? 1) > 1 ? 'unidades' : 'unidade'} desse produto por <span className={textColors.uiMoney}>{formatCurrency(totalOrderPrice)}</span> ? 
+        Tem certeza que deseja pedir <span className={textColors.uiStock}>{amountTobeOrdered}</span> {(amountTobeOrdered ?? 1) > 1 ? 'unidades' : 'unidade'} desse produto por <span className='text-ui-money dark:brightness-[1.3]'>{formatCurrency(totalOrderPrice)}</span> ? 
       </p>
     {paymentStatus === 'APPROVED' ? (
       <p className={`text-sm ${textColors.secondaryMiddleDark}`}>

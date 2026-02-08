@@ -40,7 +40,8 @@ const Modal = ({isOpen,
         -translate-x-1/2
         rounded-3xl bg-white p-4
         flex flex-col gap-2
-
+      dark:bg-gray-900
+        dark:shadow-[0px_0px_8px_orange]
         transition-all duration-300 ease-out
         ${
           isOpen
@@ -49,7 +50,7 @@ const Modal = ({isOpen,
         }
       ${style?.container ?? ''}`}
     >
-      <div className='flex justify-between'>
+      <div className='flex justify-between mb-2'>
         <h2 className={`${style?.modalTitle ?? 'text-3xl'} ${titleColors.primaryDark}`}>{modalTitle}</h2>
         {hasXClose && <Button type='button' onClick={onCloseModalActions} colorScheme='red' style={style?.xClose ?? 'text-2xl px-1.25 border rounded-[50%]!'} icon={IoClose}/>}
       </div>

@@ -18,11 +18,11 @@ const OrderSituationBottomTag = ({situation}:Props) => {
   return (
     <span className={`flex py-1.5 items-center gap-1 justify-center w-full text-xl ${
       situation === 'Aprovado'
-        ? 'text-green'
+        ? 'text-green dark:brightness-[1.2]'
       : situation === 'Cancelado' 
       || situation === 'Rejeitado' 
       || situation === 'Estoque insuficiente'
-        ? 'text-red-dark'
+        ? 'text-red-dark dark:text-red'
       : 'text-yellow-dark'
     }`}>
       {situation === 'Aprovado'

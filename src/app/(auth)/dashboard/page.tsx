@@ -1,10 +1,11 @@
 import { getDashboardStats } from "@/src/services/dashboard";
 import Dashboard from "./Dashboard";
 
-
 export default async function DashboardPage() {
 
-  const dashboardStats = await getDashboardStats();
+  const [dashboardStats] = await Promise.all([
+    getDashboardStats(),
+  ]);
 
   return (
     <Dashboard 

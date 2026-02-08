@@ -76,7 +76,7 @@ const ConfirmAction = ({
           } o pedido do cliente <span className='text-cyan'>{order?.customerName}</span> de <span className='text-ui-stock'>{order?.amount}</span> {order?.amount ?? 1 > 1 
             ? 'unidades' 
             : 'unidade'
-          } desse produto pela comissão de <span className='text-ui-money'>{formatCurrency(order?.commission ?? 0)}</span> ?
+          } desse produto pela comissão de <span className='text-ui-money dark:brightness-[1.3]'>{formatCurrency(order?.commission ?? 0)}</span> ?
         </p>
       )}
       {(decision === 'REJECT') ? (

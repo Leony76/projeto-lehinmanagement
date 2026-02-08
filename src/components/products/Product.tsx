@@ -72,8 +72,7 @@ const Product = ({
     <motion.div
       layout 
       initial={{ opacity: 1, scale: 1 }}
-      className={`relative ${productCardSetup.mainContainer} 
-      dark:shadow-[0px_0px_3px_orange] dark:bg-primary-dark/30`}
+      className={`relative ${productCardSetup.mainContainer} `}
       exit={{ 
         opacity: 0, 
         scale: 2, 
@@ -170,7 +169,7 @@ const Product = ({
           <Button
             type="button"
             label="Editar"
-            style={`flex-1 ${buttonColorsScheme.yellow}`}
+            style={`flex-1 dark:bg-yellow-500 ${buttonColorsScheme.yellow}`}
             onClick={() => setActiveModal('EDIT_PRODUCT')}
           />
           <Button
@@ -267,11 +266,11 @@ const Product = ({
               src={product.imageUrl} 
               alt={product.name}            
               fill
-              className='rounded-2xl hover:opacity-80 transition duration-200 active:opacity-100 object-cover aspect-square cursor-zoom-in'
+              className='rounded-2xl hover:opacity-80 dark:border-2 dark:border-secondary-dark transition duration-200 active:opacity-100 object-cover aspect-square cursor-zoom-in'
               onClick={() => setActiveModal('EXPAND_IMAGE')}
             />
           </div>
-          <div className='flex bg-primary-ultralight/25 p-2 rounded-2xl flex-col gap-1.5 flex-2'>
+          <div className='flex bg-primary-ultralight/25 dark:bg-gray-800 p-2 rounded-2xl flex-col gap-1.5 flex-2'>
             <div className='flex flex-col'>
               <label className='text-primary-middledark font-bold'>
                 Nome
