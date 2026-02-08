@@ -3,8 +3,9 @@
 import { Category } from "@prisma/client";
 import { getRequiredSession } from "../lib/get-session-user";
 import prisma from "../lib/prisma";
+import { DashboardDTO } from "../types/dashboardDTO";
 
-export const getDashboardStats = async() => {
+export const getDashboardStats = async(): Promise<DashboardDTO> => {
   const user = (await getRequiredSession()).user;
   const userId = user.id;
 
@@ -72,19 +73,22 @@ export const getDashboardStats = async() => {
       }
 
       return {
+        role: 'CUSTOMER',
         orders: {
           done: ordersDone,
           pending: pendingOrders,
           approved: accecptedOrders,
           rejected: rejectedOrders,
-          mostRecent: mostRecentOrder,
+          mostRecent: {
+            createdAt: mostRecentOrder?.createdAt?.toISOString() ?? null,
+          },
           mostOrderedCategory: mostOrderedCategoryName,
         },
         spend: {
-          total: total_average_highestAndLowestSpend._sum.total,
-          average: total_average_highestAndLowestSpend._avg.total,
-          lowest: total_average_highestAndLowestSpend._min.total,
-          highest: total_average_highestAndLowestSpend._max.total,
+          total: total_average_highestAndLowestSpend._sum.total?.toNumber() ?? 0,
+          average: total_average_highestAndLowestSpend._avg.total?.toNumber() ?? 0,
+          lowest: total_average_highestAndLowestSpend._min.total?.toNumber() ?? 0,
+          highest: total_average_highestAndLowestSpend._max.total?.toNumber() ?? 0,
         },
       };
     } 
@@ -228,39 +232,45 @@ export const getDashboardStats = async() => {
         return acc;
       }, {} as Record<string, number>);
 
-      const mostSoldCategory =
-        Object.entries(categoryMap).sort((a, b) => b[1] - a[1])[0] ?? null;
+      const mostSoldCategory = Object.entries(categoryMap)
+        .map(([category, total]) => [category as Category, total] as [Category, number])
+        .sort((a, b) => b[1] - a[1])[0] ?? null;
 
       return {
+        role: 'SELLER',
         orders: {
           done: ordersDone,
           pending: pendingOrders,
           approved: accecptedOrders,
           rejected: rejectedOrders,
-          mostRecent: mostRecentOrder,
+          mostRecent: {
+            createdAt: mostRecentOrder?.createdAt?.toISOString() ?? null,
+          },
           mostOrderedCategory: mostOrderedCategoryName,
         },
 
         spend: {
-          total: total_average_highestAndLowestSpend._sum.total,
-          average: total_average_highestAndLowestSpend._avg.total,
-          lowest: total_average_highestAndLowestSpend._min.total,
-          highest: total_average_highestAndLowestSpend._max.total,
+          total: total_average_highestAndLowestSpend._sum.total?.toNumber() ?? 0,
+          average: total_average_highestAndLowestSpend._avg.total?.toNumber() ?? 0,
+          lowest: total_average_highestAndLowestSpend._min.total?.toNumber() ?? 0,
+          highest: total_average_highestAndLowestSpend._max.total?.toNumber() ?? 0,
         },
         
         sales: {
           done: salesDone,
           pending: pendingSales,
-          total: totalProductsSold,
+          total: totalProductsSold._sum.quantity ?? 0,
           unsuccessful: unsuccessfulSales,
           earn: {
-            total: total_average_highestAndLowestEarn._sum.price,
-            average: total_average_highestAndLowestEarn._avg.price,
-            highest: total_average_highestAndLowestEarn._max.price,
-            lowest: total_average_highestAndLowestEarn._min.price,
+            total: total_average_highestAndLowestEarn._sum.price?.toNumber() ?? 0,
+            average: total_average_highestAndLowestEarn._avg.price?.toNumber() ?? 0,
+            highest: total_average_highestAndLowestEarn._max.price?.toNumber() ?? 0,
+            lowest: total_average_highestAndLowestEarn._min.price?.toNumber() ?? 0,
           },
           mostSoldCategory,
-          mostRecentSale,
+          mostRecentSale: mostRecentSale
+            ? { createdAt: mostRecentSale.createdAt.toISOString() }
+            : null,
         },
       };
     }
@@ -295,13 +305,11 @@ export const getDashboardStats = async() => {
         prisma.user.count({ where: { role: 'SELLER' } }),
         prisma.user.count({ where: { role: 'ADMIN' } }),
 
-        // 🔹 Receita total por seller (só número)
         prisma.orderItem.aggregate({
           where: { order: { status: 'APPROVED' } },
           _sum: { price: true },
         }),
 
-        // 🔹 Receita diária
         prisma.orderItem.aggregate({
           where: {
             order: {
@@ -312,7 +320,6 @@ export const getDashboardStats = async() => {
           _sum: { price: true },
         }),
 
-        // 🔹 Produtos vendidos (nome + categoria)
         prisma.orderItem.findMany({
           where: { order: { status: 'APPROVED' } },
           select: {
@@ -337,7 +344,6 @@ export const getDashboardStats = async() => {
           _avg: { total: true },
         }),
 
-        // 🔹 Produtos pedidos por clientes
         prisma.orderItem.findMany({
           where: {
             order: { status: 'APPROVED', user: { role: 'CUSTOMER' } },
@@ -370,7 +376,6 @@ export const getDashboardStats = async() => {
           _avg: { price: true },
         }),
 
-        // 🔹 Produtos vendidos por sellers
         prisma.orderItem.findMany({
           where: {
             order: { status: 'APPROVED' },
@@ -400,38 +405,37 @@ export const getDashboardStats = async() => {
       }, {} as Record<string, number>);
 
       const mostSoldCategory =
-        Object.entries(categoryMap).sort((a, b) => b[1] - a[1])[0] ?? null;
+        (Object.entries(categoryMap)
+          .map(([category, total]) => [category as Category, total] as [Category, number])
+          .sort((a, b) => b[1] - a[1])[0]) ?? null;
+
 
       const productMap = salesWithProduct.reduce((acc, item) => {
         const id = item.product.id;
-        acc[id] ??= { name: item.product.name, quantity: 0 };
+        acc[id] ??= { id, name: item.product.name, quantity: 0 };
         acc[id].quantity += item.quantity;
         return acc;
-      }, {} as Record<number, { name: string; quantity: number }>);
+      }, {} as Record<number, { id: number; name: string; quantity: number }>);
 
       const mostSoldProduct =
         Object.values(productMap).sort((a, b) => b.quantity - a.quantity)[0] ?? null;
 
-      const mostOrderedProductByCustomers =
-        Object.values(
-          customerOrdersWithProduct.reduce((acc, item) => {
-            const id = item.product.id;
-            acc[id] ??= { name: item.product.name, quantity: 0 };
-            acc[id].quantity += item.quantity;
-            return acc;
-          }, {} as Record<number, { name: string; quantity: number }>)
-        ).sort((a, b) => b.quantity - a.quantity)[0] ?? null;
-
-      const salesByCategory = Object.entries(
-        salesWithProduct.reduce((acc, item) => {
-          const category = item.product.category;
-          acc[category] = (acc[category] || 0) + item.quantity;
+    const mostOrderedProductByCustomers =
+      Object.values(
+        customerOrdersWithProduct.reduce((acc, item) => {
+          const id = item.product.id;
+          acc[id] ??= { id, name: item.product.name, quantity: 0 };
+          acc[id].quantity += item.quantity;
           return acc;
-        }, {} as Record<string, number>)
-      ).map(([category, total]) => ({
-        category,
-        total,
-      }));
+        }, {} as Record<number, { id: number; name: string; quantity: number }>)
+      ).sort((a, b) => b.quantity - a.quantity)[0] ?? null;
+
+      const salesByCategory = Object.entries(categoryMap).map(
+        ([category, total]) => ({
+          category: category as Category,
+          total,
+        })
+      );
 
       const mostOrderedProductBySellers =
         Object.values(
@@ -451,29 +455,41 @@ export const getDashboardStats = async() => {
 
 
       return {
-        customersCount,
-        sellersCount,
-        adminsCount,
+        role: 'ADMIN',
 
-        sellersAverageEarning,
-        dailyEarnFromSellers,
-        mostSoldProduct,
-        salesByCategory,
+        usersCount: {
+          customers: customersCount,
+          sellers: sellersCount,
+          admins: adminsCount,
+        },
 
-        ordersDoneByCustomers,
-        customersPendingOrders,
-        approvedOrdersFromCustomers,
-        rejectedOrdersFromCustomers,
-        avarageSpendFromCustomers,
-        mostOrderedProductByCustomers,
+        sellers: {
+          averageEarn: sellersAverageEarning,
+          dailyEarn: dailyEarnFromSellers._sum.price?.toNumber() ?? 0,
+          mostSoldProduct,
+          salesByCategory,
+          mostSoldCategory,
 
-        ordersDoneBySellers,
-        sellersPendingOrders,
-        approvedOrdersFromSellers,
-        rejectedOrdersFromSellers,
-        avarageSpendFromSellers,
-        mostOrderedProductBySellers,
-        mostSoldCategory,
+          orders: {
+            done: ordersDoneBySellers,
+            pending: sellersPendingOrders,
+            approved: approvedOrdersFromSellers,
+            rejected: rejectedOrdersFromSellers, 
+            averageExpenditure: avarageSpendFromSellers._avg.price?.toNumber() ?? 0,
+            mostOrderedProduct: mostOrderedProductBySellers,
+          }
+        },
+        
+        customers: {
+          orders: {
+            done: ordersDoneByCustomers,
+            pending: customersPendingOrders,
+            approved: approvedOrdersFromCustomers,
+            rejected: rejectedOrdersFromCustomers,
+            averageExpediture: avarageSpendFromCustomers._avg.total?.toNumber() ?? 0,
+            mostOrderedProduct: mostOrderedProductByCustomers,
+          }
+        },
       }
   }
 };
