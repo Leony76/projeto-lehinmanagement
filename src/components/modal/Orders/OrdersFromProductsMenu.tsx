@@ -473,7 +473,7 @@ const OrdersFromProductsMenu = ({
               }}
               className="flex flex-col gap-2"
               >
-              <div className='flex lg:flex-row flex-col bg-secondary-light/25 p-2 ml-2 rounded-2xl border border-secondary-middledark'>
+              <div className='flex lg:flex-row flex-col dark:bg-secondary/15 dark:brightness-[1.2] bg-secondary-light/25 p-2 ml-2 rounded-2xl border border-secondary-middledark'>
                 <div className="flex flex-col m-1 justify-between sm:text-base text-sm sm:space-y-0 space-y-1">
                   <OrderRequestDate
                     orderDate={order.orderDate}

@@ -10,6 +10,8 @@ export type ProductDTO = {
   reservedStock: number;
   imageUrl: string;
   createdAt: string;
+  updatedAt: string;
+
   sellerId: string;
   sellerName: string | null;
   sellerRole: string | null;

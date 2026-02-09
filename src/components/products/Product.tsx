@@ -22,6 +22,10 @@ import { useLockScrollY } from '@/src/utils/useLockScrollY';
 import { FaInfo } from 'react-icons/fa6';
 import { motion } from 'framer-motion';
 import { ProductPageModals } from '@/src/types/modal';
+import ProductInfo from '../modal/Product/ProductInfo';
+import ImageExpand from '../modal/ImageExpand';
+import RemoveProductJustify from '../modal/Product/RemoveProductJustify';
+import ConfirmRemove from '../modal/Product/ConfirmRemove';
 
 type Props = {
   product: ProductDTO;
@@ -159,7 +163,7 @@ const Product = ({
         ) : (
           <Button
             style={`pointer-events-none ${buttonColorsScheme.red}`}
-            label="Produto indisponível"
+            label="Indisponível"
             colorScheme="primary"
             type="button"
           />
@@ -184,62 +188,35 @@ const Product = ({
 
       {/* ⇊ MODALS ⇊ */}
 
-      <Modal 
-      isOpen={activeModal === 'CONFIRM_REMOVE_PRODUCT'} 
-      modalTitle={'Confirmar remoção'}
-      onCloseModalActions={() => {
-        setActiveModal(null);
-      }}
-      >
-        <p className={textColors.secondaryDark}>Tem certeza que deseja tirar esse produto de venda ?</p>
-        {user?.role !== 'ADMIN' && <p className={textColors.secondaryMiddleDark}>Caso o queira à venda novamente depois, basta o pôr na aba 'Produtos removidos'.</p>}
-        <p className='text-sm text-yellow-dark'>*Clientes que tivem pedidos pendentes do mesmo serão automaticamente reembolsados caso tiverem já tenham pago pelo pedido.</p>
-        <div className='flex gap-2'>
-          <Button 
-            type={'button'}
-            label='Sim'
-            style={`flex-1 ${buttonColorsScheme.green}`}
-            onClick={() => setActiveModal('REMOVE_PRODUCT_JUSTIFY')}
-            />
-          <Button 
-            type={'button'}
-            label='Não'
-            style={`flex-1 ${buttonColorsScheme.red}`}
-            onClick={() => setActiveModal(null)}
-          />
-        </div>
-      </Modal>
+      <ConfirmRemove
+        modal={{
+          isOpen: activeModal === 'CONFIRM_REMOVE_PRODUCT',
+          onCloseActions: () => setActiveModal(null),
+        }}
+        user={{ role: user?.role }}
+        onClick={{
+          yes: () => setActiveModal('REMOVE_PRODUCT_JUSTIFY'),
+          no: () => setActiveModal(null),
+        }}
+      />
 
-      <Modal 
-      isOpen={activeModal === 'REMOVE_PRODUCT_JUSTIFY'} 
-      modalTitle={'Justificativa de remoção'}
-      onCloseModalActions={() => setActiveModal('CONFIRM_REMOVE_PRODUCT')}
-      >
-        <p className={textColors.secondaryDark}>Cite a justificativa para a remoção desse produto ofertado por {product.sellerName}</p>
-        <TextArea 
-          style={{input: `h-20 mb-[-3px] ${error ? 'shadow-[0px_0px_8px_red]' : ''}`}}
-          placeholder='Justificativa...'
-          onChange={(e) => {
-            setRemoveJustify(e.target.value);
-            setError('');
-          }}
-        />
-        {error && <Error error={error}/>}
-        <div className='flex gap-2 mt-2'>
-          <Button 
-            type={'button'}
-            label='Confirmar'
-            style={`flex-1 ${buttonColorsScheme.green}`}
-            onClick={handleRemoveProduct}
-          />
-          <Button 
-            type={'button'}
-            label='Cancelar'
-            style={`flex-1 ${buttonColorsScheme.red}`}
-            onClick={() => setActiveModal(null)}
-          />
-        </div>
-      </Modal>
+      <RemoveProductJustify
+        modal={{ 
+          isOpen: activeModal === 'REMOVE_PRODUCT_JUSTIFY',
+          onCloseActions: () => setActiveModal(null),
+        }}
+        onChange={{ textarea: (e) => {
+          setRemoveJustify(e.target.value);
+          setError('');
+        }}}
+        onClick={{ 
+          confirm: () => handleRemoveProduct(),
+          cancel: () => setActiveModal(null),
+        }}
+        product={{ sellerName: product.sellerName ?? '[Desconhecido]' }}
+        misc={{ error }}
+      />
+
 
       <Modal 
       isOpen={activeModal === 'EDIT_PRODUCT'} 
@@ -254,90 +231,37 @@ const Product = ({
         />
       </Modal>
 
-      <Modal 
-      isOpen={activeModal === 'PRODUCT_INFO'} 
-      modalTitle={'Informações'}
-      hasXClose 
-      onCloseModalActions={() => setActiveModal(null)}
-      >
-        <div className='flex sm:flex-row h-full sm:max-h-full max-h-[70vh] overflow-y-auto h flex-col gap-5 mt-2'>
-          <div className='flex-1 relative aspect-square'>
-            <Image 
-              src={product.imageUrl} 
-              alt={product.name}            
-              fill
-              className='rounded-2xl hover:opacity-80 dark:border-2 dark:border-secondary-dark transition duration-200 active:opacity-100 object-cover aspect-square cursor-zoom-in'
-              onClick={() => setActiveModal('EXPAND_IMAGE')}
-            />
-          </div>
-          <div className='flex bg-primary-ultralight/25 dark:bg-gray-800 p-2 rounded-2xl flex-col gap-1.5 flex-2'>
-            <div className='flex flex-col'>
-              <label className='text-primary-middledark font-bold'>
-                Nome
-              </label>
-              <span className='text-secondary-dark'>
-                {product.name}
-              </span>
-            </div>
-            <div className='flex flex-col'>
-              <label className='text-primary-middledark font-bold'>
-                Categoria
-              </label>
-              <span className='text-secondary-dark'>
-                {category}
-              </span>
-            </div>
-            <div className='flex flex-col'>
-              <label className='text-primary-middledark font-bold'>
-                Descrição
-              </label>
-              <span className='h-30 overflow-y-auto  
-              hover:scrollbar-thumb-primary-light
-              scrollbar-thumb-primary-middledark 
-                scrollbar-track-transparent
-                hover:scrollbar-track-transparent
-                scrollbar-active-track-transparent
-                scrollbar-active-thumb-primary-light
-                scrollbar-thin text-secondary-dark flex-col'>
-                {product.description}
-              </span>
-            </div>
-            <div className='flex gap-10'>
-              <div className='flex flex-col '>
-                <label className='text-primary-middledark font-bold'>
-                  Preço unitário
-                </label>
-                <span className='text-secondary-dark'>
-                  {formatCurrency(product.price)}
-                </span>
-              </div>
-              <div className='flex flex-col '>
-                <label className='text-primary-middledark font-bold'>
-                  Estoque
-                </label>
-                <span className='text-secondary-dark'>
-                  {product.stock}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Modal>
+      <ProductInfo
+         modal={{
+          isActive: activeModal === 'PRODUCT_INFO',
+          onCloseActions: () => setActiveModal(null),
+        }}
+        product={{
+          imageUrl: product.imageUrl,
+          name: product.name,
+          category: category,
+          description: product.description ?? '[Sem descrição]',
+          price: product.price,
+          stock: product.stock,
+          publishedAt: product.createdAt,
+          updatedAt: product.updatedAt,
+          salesCount: product.productSalesCount ?? 0,
+        }}
+        actions={{
+          onImageClick: () => setActiveModal('EXPAND_IMAGE'),
+        }}
+      />
 
-      <Modal 
-      isOpen={activeModal === 'EXPAND_IMAGE'} 
-      modalTitle={''} 
-      onCloseModalActions={() => setActiveModal('PRODUCT_INFO')}>
-        <div className='relative aspect-square h-[90vh]'>
-          <Image 
-            src={product.imageUrl} 
-            alt={product.name}            
-            fill
-            className='object-contain aspect-square border-x-4 border-double cursor-zoom-out border-primary'
-            onClick={() => setActiveModal('PRODUCT_INFO')}
-          />
-        </div>
-      </Modal>
+      <ImageExpand
+        modal={{
+          isOpen: activeModal === 'EXPAND_IMAGE',
+          onCloseActions: () => setActiveModal('PRODUCT_INFO'),
+        }}
+        product={{
+          imageUrl: product.imageUrl,
+          name: product.name,
+        }}
+      />
 
       <OrderProduct
         activeModal={activeModal}

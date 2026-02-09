@@ -429,7 +429,10 @@ const OrderProduct = ({product}:Props) => {
       <RejectionJustify
         userRole='SELLER'
         error={error}
-        isOpen={activeModal === 'ORDER_REJECTION_JUSTIFY'}
+        isOpen={
+          activeModal === 'ORDER_REJECTION_JUSTIFY'
+        ||activeModal === 'EDIT_ORDER_REJECTION_JUSTIFY'
+        }
         editRejection={activeModal === 'EDIT_ORDER_REJECTION_JUSTIFY'}
         newRejectionJustify={newOrderRejectionJustify ?? ''}
         sellerRejectionJustify={selectedOrder?.orderRejectionJustify ?? ''}
@@ -459,12 +462,13 @@ const OrderProduct = ({product}:Props) => {
         }}
         onCloseActions={() => {
           if (activeModal === 'EDIT_ORDER_REJECTION_JUSTIFY') {
-            setActiveModal(null);
+            setActiveModal('ORDER_REJECTION_JUSTIFY');
             setNewOrderRejectionJustify(selectedOrder?.orderRejectionJustify ?? '');
             setError('');
-          } else {
-            setNewOrderRejectionJustify(selectedOrder?.orderRejectionJustify ?? '');
+            return;
+          } if (activeModal === 'ORDER_REJECTION_JUSTIFY') {
             setActiveModal('ORDERS_FROM_PRODUCT');
+            return;
           }
         }}
       />
@@ -530,7 +534,7 @@ const OrderProduct = ({product}:Props) => {
         }}
         onCloseActions={() => {
           setMoreActionsOrderId(null);
-          setActiveModal('ORDERS_FROM_PRODUCT');
+          setActiveModal('EDIT_ORDER_REJECTION_JUSTIFY');
         }} 
       />
 

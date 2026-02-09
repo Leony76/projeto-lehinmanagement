@@ -18,7 +18,7 @@ const ToggleButton = ({
       disabled={disabled}
       onClick={onChange}
       className={`
-        w-14 h-8 rounded-full p-1 transition-colors 
+        w-14 h-8 rounded-full p-1 transition-colors cursor-pointer
         ${value 
           ? "bg-linear-to-r from-primary-middledark to-primary focus:shadow-[0px_0px_7px_orange] outline-none" 
           : "bg-linear-to-r from-secondary to-secondary-middledark focus:shadow-[0px_0px_5px_cyan] outline-none"

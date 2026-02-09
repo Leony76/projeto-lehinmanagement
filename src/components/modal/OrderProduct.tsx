@@ -99,7 +99,7 @@ const OrderProduct = ({
         Peça uma quantidade dentro do estoque disponível.
       </p>
       <div className='flex items-center text-base'>
-        <span className={`flex-1 text-lg flex gap-1 ${textColors.gray}`}>
+        <span className={`flex-1 sm:text-lg flex gap-1 ${textColors.gray}`}>
           Estoque: 
           <span className='text-ui-stock'>
             {selectedProduct?.stock ?? 'Sem informação'}

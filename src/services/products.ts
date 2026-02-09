@@ -3,42 +3,49 @@
 import prisma from "../lib/prisma"
 
 export const getProducts = async() => {
-  const products = await prisma.product.findMany({
-    where: {
-      isActive: true,
-    },
-    include: {
-      seller: {
-        select: {
-          id: true,
-          name: true,
-          role: true,
+
+  const [
+    products,
+    avgRatings,
+    productSales, 
+  ] = await Promise.all([
+    prisma.product.findMany({
+      where: {
+        isActive: true,
+      },
+      include: {
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+          },
         },
       },
-    },
-    orderBy: { id: 'desc' },
-  });
-
-
-  const avgRatings = await prisma.productReview.groupBy({
-    by: ['productId'],
-    _avg: {
-      rating: true,
-    },
-  });
-
-  const productSales = await prisma.orderItem.groupBy({
-    by: ['productId'],
-    where: {
-      order: {
-        status: 'APPROVED',
-        deletedAt: null,
+      orderBy: { id: 'desc' },
+    }),
+  
+  
+    prisma.productReview.groupBy({
+      by: ['productId'],
+      _avg: {
+        rating: true,
       },
-    },
-    _sum: {
-      quantity: true,
-    },
-  });
+    }),
+  
+    prisma.orderItem.groupBy({
+      by: ['productId'],
+      where: {
+        order: {
+          status: 'APPROVED',
+          deletedAt: null,
+        },
+      },
+      _sum: {
+        quantity: true,
+      },
+    }),
+  ]);
   
   const avgRatingMap = new Map(
     avgRatings.map(r => [
@@ -65,6 +72,7 @@ export const getProducts = async() => {
     stock: product.stock,
     reservedStock: product.reservedStock,
     createdAt: product.createdAt?.toISOString() ?? null,
+    updatedAt: product.updatedAt?.toISOString() ?? null,
     price: product.price.toNumber(),
 
     sellerId: product.seller.id,
