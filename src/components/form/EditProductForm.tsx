@@ -14,6 +14,7 @@ import { useToast } from '@/src/contexts/ToastContext'
 import Error from '../ui/Error'
 import { updateProduct } from '@/src/actions/productActions';
 import { ProductDTO } from '@/src/types/productDTO'
+import { editProductFormStyle as style } from '@/src/styles/Product/editProductForm.style'
 
 const EditProductForm = ({
   productToBeEdited,
@@ -89,7 +90,7 @@ const EditProductForm = ({
 
   return (
     <form
-    className="mb-4 sm:flex block gap-3 w-full dark:bg-gray-900 max-w-200 mx-auto"
+    className={style.mainContainer}
     onSubmit={handleSubmit(onSubmit)}
     >
       <input
@@ -110,25 +111,28 @@ const EditProductForm = ({
         <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className={`relative flex w-full flex-col justify-center items-center text-sm text-center mt-5 mb-1 border aspect-square rounded-3xl overflow-hidden ${buttonColorsScheme.primary} ${imageError ? 'shadow-[0px_0px_5px_red]' : ''}`}
+        className={`${style.changeImageContainer} ${imageError 
+          ? style.misc.errorInputGlow  
+          : ''
+        }`}
         >
           {preview ? (
             <img
               src={preview}
               alt={productToBeEdited.name}
-              className="absolute inset-0 w-full h-full object-cover"
+              className={style.image}
             />
           ) : (
              <img
               src={productToBeEdited.imageUrl}
               alt={productToBeEdited.name}
-              className="absolute inset-0 w-full h-full object-cover"
+              className={style.image}
             />
           )}
         </button>
         {imageError && <Error error={imageError}/>}
       </div>
-      <div className="flex flex-1 flex-col gap-2 justify-between sm:gap-0 mt-2">
+      <div className={style.formInputsContainer}>
         <Input
           label="Nome"
           placeholder="Nome"
@@ -161,8 +165,8 @@ const EditProductForm = ({
             placeholder="Preço"
             miscConfigs={{step: 'any'}}
             style={{
-              input: 'w-full flex-1',
-              container: 'w-full'
+              input: style.price_stock.input,
+              container: style.price_stock.container 
             }}
             type="number"
             {...register("price")}
@@ -174,8 +178,8 @@ const EditProductForm = ({
             placeholder="Estoque"
             type="number"
             style={{
-              input: 'w-full flex-1',
-              container: 'w-full'
+              input: style.price_stock.input,
+              container: style.price_stock.container
             }}
             {...register("stock")}
             error={errors.stock?.message}
@@ -183,30 +187,33 @@ const EditProductForm = ({
         </div>
         
         <Button
-          style={`mt-3 text-xl ${buttonColorsScheme.yellow}`}
+          style={style.editButton}
           label="Editar"
           type="submit"
           loading={loading}
           loadingLabel='Editando'
         />
       </div>
-      <div className='hidden sm:flex flex-col flex-1'>
+      <div className={style.imageContainerForMobile}>
         <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className={`relative flex w-full flex-col justify-center items-center text-sm text-center mt-5 mb-1 border aspect-square rounded-3xl overflow-hidden ${buttonColorsScheme.primary} ${imageError ? 'shadow-[0px_0px_5px_red]' : ''}`}
+        className={`${style.changeImageContainer} ${imageError 
+          ? style.misc.errorInputGlow 
+          : ''
+        }`}
         >
           {preview ? (
             <img
               src={preview}
               alt={productToBeEdited.name}
-              className="absolute inset-0 w-full h-full object-cover"
+              className={style.image}
             />
           ) : (
              <img
               src={productToBeEdited.imageUrl}
               alt={productToBeEdited.name}
-              className="absolute inset-0 w-full h-full object-cover"
+              className={style.image}
             />
           )}
         </button>

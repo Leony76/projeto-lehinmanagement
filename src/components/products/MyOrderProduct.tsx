@@ -1,6 +1,6 @@
 "use client";
 
-import { productCardSetup } from '@/src/constants/cardConfigs';
+import { productCardSetup } from '@/src/styles/Product/productCard.style';
 import { CATEGORY_LABEL_MAP, OrderFilterValue, PaymentOptionsValue, PaymentStatus } from '@/src/constants/generalConfigs';
 import { useToast } from '@/src/contexts/ToastContext';
 import { useUserStore } from '@/src/store/useUserStore';

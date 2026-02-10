@@ -5,7 +5,6 @@ import { IoStar, IoStarOutline } from 'react-icons/io5';
 import Button from '../form/Button';
 import { CATEGORY_LABEL_MAP, OrderFilterValue, UserProductOrdersFilterValue } from '@/src/constants/generalConfigs';
 import { AiOutlineMessage } from 'react-icons/ai';
-import { productCardSetup } from '@/src/constants/cardConfigs';
 import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
 import { useEffect, useState } from 'react';
 import Modal from '../modal/Modal';
@@ -20,6 +19,7 @@ import { FaRegTrashCan } from 'react-icons/fa6';
 import { motion } from 'framer-motion';
 import UserProductMenu from '../modal/Orders/UserProductMenu';
 import { UserProductPageModals } from '@/src/types/modal';
+import { productCardStyles as style } from '@/src/styles/Product/productCard.style';
 
 type Props = {
   userProduct: UserProductDTO;
@@ -92,7 +92,7 @@ const MyProduct = ({
     <motion.div
       layout 
       initial={{ opacity: 1, scale: 1 }}
-      className={`relative ${productCardSetup.mainContainer}`}
+      className={style.mainContentContainer}
       exit={{ 
         opacity: 0, 
         scale: 2, 
@@ -100,23 +100,23 @@ const MyProduct = ({
         transition: { duration: 0.25 } 
       }}
     >
-      <div className="relative aspect-square w-full">
+      <div className={style.imageContainer}>
         <Image 
           src={userProduct.imageUrl} 
           alt={userProduct.name}
           fill
-          className={productCardSetup.image}
+          className={style.image}
         />
       </div>
-      <div className={productCardSetup.infosContainer}>
-        <h3 className={productCardSetup.name}>{userProduct.name}</h3>
-        <div className={productCardSetup.categoryDateRatingContainer}>
-          <div className={productCardSetup.categoryDate}>
+      <div className={style.productInfosContainer}>
+        <h3 className={style.name}>{userProduct.name}</h3>
+        <div className={style.category_date_ratingContainer}>
+          <div className={style.category_date}>
             <span>{category}</span>
             <span className="text-[10px] text-gray-400">●</span>
             <span>{datePutToSale}</span>
           </div>
-          <div className={productCardSetup.rating}>
+          <div className={style.rating}>
             {!userProduct.productAverageRating 
               ? <IoStarOutline/>
               : <IoStar/> 

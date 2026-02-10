@@ -50,7 +50,7 @@ const Modal = ({isOpen,
         }
       ${style?.container ?? ''}`}
     >
-      <div className='flex justify-between mb-2'>
+      <div className='flex justify-between'>
         <h2 className={`${style?.modalTitle ?? 'text-3xl'} ${titleColors.primaryDark}`}>{modalTitle}</h2>
         {hasXClose && <Button type='button' onClick={onCloseModalActions} colorScheme='red' style={style?.xClose ?? 'text-2xl px-1.25 border rounded-[50%]!'} icon={IoClose}/>}
       </div>

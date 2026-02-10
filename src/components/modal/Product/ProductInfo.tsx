@@ -1,8 +1,8 @@
 import { formatCurrency } from '@/src/utils/formatCurrency'
 import React from 'react'
 import Modal from '../Modal'
-import { ProductPageModals } from '@/src/types/modal'
 import Image from 'next/image'
+import { productCardInfoStyles as styles } from '@/src/styles/Product/productCardInfo.style'
 
 type Props = {
   modal: {
@@ -19,6 +19,7 @@ type Props = {
     salesCount: number;
     publishedAt: string;
     updatedAt: string;
+    rating: string | null;
   };
   actions: {
     onImageClick: () => void;
@@ -41,95 +42,88 @@ const ProductInfo = ({
     hasXClose 
     onCloseModalActions={modal.onCloseActions}
     >
-      <div className='flex sm:flex-row h-full sm:max-h-full max-h-[70vh] overflow-y-auto h flex-col gap-5 mt-2'>
-        <div className='flex-1 relative aspect-square'>
+      <div className={styles.mainContainer}>
+        <div className={styles.imageContainer}>
           <Image 
             src={product.imageUrl} 
             alt={product.name}            
             fill
-            className='rounded-2xl hover:opacity-80 dark:border-2 dark:border-secondary-dark transition duration-200 active:opacity-100 object-cover aspect-square cursor-zoom-in'
+            className={styles.image}
             onClick={actions.onImageClick}
           />
         </div>
-        <div className='flex bg-primary-ultralight/25 dark:bg-gray-800 dark:brightness-[1.3] p-2 rounded-2xl flex-col gap-1.5 flex-2'>
-          <div className='flex flex-col'>
-            <label className='text-primary-middledark font-bold'>
+        <div className={styles.infosContainer}>
+          <div className={styles.genericLabelValue.container}>
+            <label className={styles.genericLabelValue.label}>
               Nome
             </label>
-            <span className='text-secondary-dark'>
+            <span className={styles.genericLabelValue.value}>
               {product.name}
             </span>
           </div>
-          <div className='flex flex-col'>
-            <label className='text-primary-middledark font-bold'>
+          <div className={styles.genericLabelValue.container}>
+            <label className={styles.genericLabelValue.label}>
               Categoria
             </label>
-            <span className='text-secondary-dark'>
+            <span className={styles.genericLabelValue.value}>
               {product.category}
             </span>
           </div>
-          <div className='flex flex-col'>
-            <label className='text-primary-middledark font-bold'>
+          <div className={styles.genericLabelValue.container}>
+            <label className={styles.genericLabelValue.label}>
               Descrição
             </label>
-            <span className='max-h-30 overflow-y-auto  
-            hover:scrollbar-thumb-primary-light
-            scrollbar-thumb-primary-middledark 
-              scrollbar-track-transparent
-              hover:scrollbar-track-transparent
-              scrollbar-active-track-transparent
-              scrollbar-active-thumb-primary-light
-              scrollbar-thin text-secondary-dark flex-col'>
+            <span className={styles.descriptionValue}>
               {product.description}
             </span>
           </div>
-          <div className='flex flex-wrap gap-6'>
-            <div className='flex flex-col '>
-              <label className='text-primary-middledark font-bold'>
+          <div className={styles.infosLowerContainer}>
+            <div className={styles.genericLabelValue.container}>
+              <label className={styles.genericLabelValue.label}>
                 Preço unitário
               </label>
-              <span className='text-secondary-dark'>
+              <span className={styles.genericLabelValue.value}>
                 {formatCurrency(product.price)}
               </span>
             </div>
-            <div className='flex flex-col sm:ml-0 ml-5'>
-              <label className='text-primary-middledark font-bold'>
+            <div className={styles.stockContainer}>
+              <label className={styles.genericLabelValue.label}>
                 Estoque
               </label>
-              <span className='text-secondary-dark'>
+              <span className={styles.genericLabelValue.value}>
                 {product.stock}
               </span>
             </div>
-            <div className='flex flex-col '>
-              <label className='text-primary-middledark text-sm font-bold'>
+            <div className={styles.soldUnits.container}>
+              <label className={styles.soldUnits.label}>
                 Unidades Vendidas
               </label>
-              <span className='text-secondary-dark'>
+              <span className={styles.genericLabelValue.value}>
                 {product.salesCount}
               </span>
             </div>
-            <div className='flex flex-col '>
-              <label className='text-primary-middledark font-bold'>
+            <div className={styles.genericLabelValue.container}>
+              <label className={styles.genericLabelValue.label}>
                 Publicado
               </label>
-              <span className='text-secondary-dark'>
+              <span className={styles.genericLabelValue.value}>
                 {publishedAt}
               </span>
             </div>
-            <div className='flex flex-col '>
-              <label className='text-primary-middledark font-bold'>
+            <div className={styles.genericLabelValue.container}>
+              <label className={styles.genericLabelValue.label}>
                 Atualizado
               </label>
-              <span className='text-secondary-dark'>
+              <span className={styles.genericLabelValue.value}>
                 {updatedAt}
               </span>
             </div>
-            <div className='flex flex-col '>
-              <label className='text-primary-middledark font-bold'>
+            <div className={styles.genericLabelValue.container}>
+              <label className={styles.genericLabelValue.label}>
                 Avaliação
               </label>
-              <span className='text-secondary-dark'>
-                4,5
+              <span className={styles.genericLabelValue.value}>
+                {product.rating}
               </span>
             </div>
           </div>

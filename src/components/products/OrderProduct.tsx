@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { IoStar, IoStarOutline } from 'react-icons/io5';
 import Button from '../form/Button';
-import { productCardSetup } from '@/src/constants/cardConfigs';
+import { productCardStyles as style } from '@/src/styles/Product/productCard.style';
 import { startTransition, useCallback, useMemo, useState } from 'react';
 import { CATEGORY_LABEL_MAP, OrderFilterValue } from '@/src/constants/generalConfigs';
 import { ProductWithOrdersDTO } from '@/src/types/ProductWithOrdersDTO';
@@ -271,7 +271,7 @@ const OrderProduct = ({product}:Props) => {
     <motion.div
       layout 
       initial={{ opacity: 1, scale: 1 }}
-      className={`relative ${productCardSetup.mainContainer}`}
+      className={`relative ${style.mainContentContainer}`}
       exit={{ 
         opacity: 0, 
         scale: 2, 
@@ -285,20 +285,20 @@ const OrderProduct = ({product}:Props) => {
           src={product.imageUrl} 
           alt={product.name}
           fill
-          className={productCardSetup.image}
+          className={style.image}
           onClick={() => setMoreActionsOrderId(null)}
         />
       </div>
-      <div className={productCardSetup.infosContainer}>
+      <div className={style.productInfosContainer}>
         <div onClick={() => setMoreActionsOrderId(null)}>
-          <h3 className={productCardSetup.name}>{product.name}</h3>
-          <div className={productCardSetup.categoryDateRatingContainer}>
-            <div className={productCardSetup.categoryDate}>
+          <h3 className={style.name}>{product.name}</h3>
+          <div className={style.category_date_ratingContainer}>
+            <div className={style.category_date}>
               <span>{category}</span>
               <span className="text-[10px] text-gray-400">●</span>
               <span>{datePutToSale}</span>
             </div>
-            <div className={productCardSetup.rating}>
+            <div className={style.rating}>
               {!product.productAverageRating 
               ? <IoStarOutline/>
               : <IoStar/> 

@@ -20,6 +20,7 @@ import { motion } from "framer-motion";
 import NoContentFoundMessage from "../../ui/NoContentFoundMessage";
 import PaidTag from "../../ui/PaidTag";
 import { OrderPageModals } from "@/src/types/modal";
+import { ordersFromProductMenu as style } from "@/src/styles/Order/ordersFromProductMenu.style";
 
 type Props = {
   isOpen: boolean;
@@ -104,113 +105,85 @@ const OrdersFromProductsMenu = ({
     hasXClose
     onCloseModalActions={onCloseActions}
     >
-      <div className='flex h-full max-h-[80vh]'>
-        <div className='sm:flex hidden flex-col rounded-b-2xl gap-3 pr-2 flex-1 overflow-y-auto w-full
-        hover:scrollbar-thumb-secondary-light
-        scrollbar-thumb-secondary-middledark 
-          scrollbar-track-transparent
-          hover:scrollbar-track-transparent
-          scrollbar-active-track-transparent
-          scrollbar-active-thumb-primary-light
-          scrollbar-thin
-        '>
-          <div className='relative aspect-square'>
+      <div className={style.mainContainer}>
+        <div className={style.productInfo}>
+          <div className={style.image.container}>
             <Image
               src={product.imageUrl}
               fill
               alt={product.name}
-              className='rounded-xl border border-primary-middledark dark:border-secondary-dark/70 dark:border-2 object-cover cursor-zoom-in hover:opacity-80 transition duration-200'
+              className={style.image.self}
               onClick={onImageClick}
             />
           </div>
-          <div className='flex bg-primary-ultralight/25 dark:bg-primary/15 dark:brightness-[1.2] p-2 border border-primary-middledark rounded-2xl flex-col gap-1.5 flex-2'>
-            <div className='flex flex-col'>
-              <label className='text-primary-middledark font-bold'>
+          <div className={style.productInfoSubcontainer}>
+            <div className={style.genericLabelValue.container}>
+              <label className={style.genericLabelValue.label}>
                 Nome
               </label>
-              <span className='text-secondary-dark'>
+              <span className={style.genericLabelValue.value}>
                 {product.name}
               </span>
             </div>
-            <div className='flex flex-col'>
-              <label className='text-primary-middledark font-bold'>
+            <div className={style.genericLabelValue.container}>
+              <label className={style.genericLabelValue.label}>
                 Categoria
               </label>
-              <span className='text-secondary-dark'>
+              <span className={style.genericLabelValue.value}>
                 {category}
               </span>
             </div>
-            <div className='flex flex-col'>
-              <label className='text-primary-middledark font-bold'>
+            <div className={style.genericLabelValue.container}>
+              <label className={style.genericLabelValue.label}>
                 Descrição
               </label>
-              <span className='h-full max-h-30 overflow-y-auto text-secondary-dark flex-col  
-              hover:scrollbar-thumb-primary-light
-              scrollbar-thumb-primary-middledark 
-                scrollbar-track-transparent
-                hover:scrollbar-track-transparent
-                scrollbar-active-track-transparent
-                scrollbar-active-thumb-primary-light
-                scrollbar-thin
-                '>
+              <span className={style.descriptionValue}>
                 {product.description}
               </span>
             </div>
-            <div className='flex gap-10'>
-              <div className='flex flex-col '>
-                <label className='text-primary-middledark font-bold'>
+            <div className={style.price_stockContainer}>
+              <div className={style.genericLabelValue.container}>
+                <label className={style.genericLabelValue.label}>
                   Preço unitário
                 </label>
-                <span className='text-secondary-dark'>
+                <span className={style.genericLabelValue.value}>
                   {formatCurrency(product.price)}
                 </span>
               </div>
-              <div className='flex flex-col '>
-                <label className='text-primary-middledark font-bold'>
+              <div className={style.genericLabelValue.container}>
+                <label className={style.genericLabelValue.label}>
                   Estoque
                 </label>
-                <span className='text-secondary-dark'>
+                <span className={style.genericLabelValue.value}>
                   {product.stock}
                 </span>
               </div>
             </div>
           </div>
         </div>
-        <div className='flex flex-col gap-1 overflow-y-auto flex-2 pr-2
-        hover:scrollbar-thumb-primary-light
-        scrollbar-thumb-primary-middledark 
-          scrollbar-track-transparent
-          hover:scrollbar-track-transparent
-          scrollbar-active-track-transparent
-          scrollbar-active-thumb-primary-light
-          scrollbar-thin
-        '>
-        <div className="flex flex-col md:flex-row items-center gap-3 pl-2 mb-2 mt-3">
-          <Search
-            style={{ input: 'py-1 w-full flex-1' }}
-            colorScheme="primary"
-            value={search.order}
-            onChange={search.onSearch}
-            onClearSearch={search.onClearSearch}
-          />
-          <Select
-            style={{ 
-              input: 'flex-1 w-full', 
-              container: 'flex-1',
-              grid: `
-                !grid-cols-1
-                sm:!grid-cols-2
-                md:!grid-cols-1
-                lg:!grid-cols-2
-              ` 
-            }}
-            selectSetup="ORDER_FILTER"
-            colorScheme="primary"
-            label="Filtro"
-            value={search.filter ?? ''}
-            onChange={search.onFilter}
-          />
-        </div>
+
+        <div className={style.productOrdersContainer}>
+          <div className={style.search_selectContainer}>
+            <Search
+              style={{ input: style.search}}
+              colorScheme="primary"
+              value={search.order}
+              onChange={search.onSearch}
+              onClearSearch={search.onClearSearch}
+            />
+            <Select
+              style={{ 
+                input: style.select.input, 
+                container: style.select.container,
+                grid: style.select.grid,
+              }}
+              selectSetup="ORDER_FILTER"
+              colorScheme="primary"
+              label="Filtro"
+              value={search.filter ?? ''}
+              onChange={search.onFilter}
+            />
+          </div>
         {productOrders.fromSeller ? (  
           productOrders.fromSeller.length > 0 ? (
             productOrders.fromSeller.map((order) => {
@@ -240,11 +213,11 @@ const OrdersFromProductsMenu = ({
                 duration: .25,
                 ease: "easeOut"
               }}
-              className="flex flex-col gap-2"
+              className={style.productOrdersInnerContainer}
               >
-              <div className='flex lg:flex-row flex-col bg-secondary-light/25 dark:bg-secondary/15 dark:brightness-[1.2] p-2 ml-2 rounded-2xl border border-secondary-middledark'>
-                <div className="sm:text-base text-sm sm:space-y-0 space-y-1">
-                  <h3 className='text-primary-middledark text-lg italic'>
+              <div className={style.orderCardContainer}>
+                <div className={style.orderCardInnerLeftContainer}>
+                  <h3 className={style.orderId}>
                     Pedido #{order.orderId}
                   </h3>
                   <OrderRequestDate
@@ -270,8 +243,8 @@ const OrdersFromProductsMenu = ({
                     orderCommission={order.orderComission}
                   />
                 </div>
-                <div className='flex flex-col lg:flex-col sm:flex-row justify-between gap-3 flex-1'>
-                  <div className="flex sm:justify-end">
+                <div className={style.orderCardInnerRightContainer}>
+                  <div className={style.orderSituationTagContainer}>
                     {order.orderPaymentStatus === 'PENDING' && order.orderStatus !== 'CANCELED' ? (
                       <OrderSituationTopTag situation='Pagamento pendente'/>
                     ) : order.orderStatus === 'CANCELED' ? (
@@ -282,9 +255,9 @@ const OrdersFromProductsMenu = ({
                       <OrderSituationTopTag situation='Não analisado'/>
                     )}
                   </div>
-                  <div className='flex gap-2 justify-end'>
+                  <div className={style.buttonSchemeContainer}>
                     {order.orderStatus === 'APPROVED' ? (
-                      <div className='flex gap-5'>
+                      <div className={style.buttonsContainer}>
                         <OrderSituationBottomTag
                           situation={'Aprovado'}
                         />
@@ -294,7 +267,7 @@ const OrdersFromProductsMenu = ({
                         />
                       </div>
                     ) : (order.orderStatus === 'CANCELED') ? (
-                      <div className='flex gap-5'>
+                      <div className={style.buttonsContainer}>
                         <OrderSituationBottomTag
                           situation={'Cancelado'}
                         />
@@ -304,7 +277,7 @@ const OrdersFromProductsMenu = ({
                         />
                       </div>
                     ) : (order.orderStatus === 'REJECTED') ? ( 
-                      <div className='flex gap-5'>
+                      <div className={style.buttonsContainer}>
                         <OrderSituationBottomTag
                           situation={'Rejeitado'}
                         />
@@ -318,10 +291,10 @@ const OrdersFromProductsMenu = ({
                       && !order.orderDeletedByCustomer 
                       && stockIfOrderAccepted >= 0 
                       ? (
-                      <div className='flex gap-2 sm:w-fit w-full'>
+                      <div className={style.decisionButtonsContainer}>
                         <Button
                           type='button'
-                          style={`px-5 flex-1 ${buttonColorsScheme.green}`}
+                          style={style.decisionButtons}
                           label='Aceitar'
                           onClick={() => {
                             productOrders.actions.onAccept && productOrders.actions.onAccept();
@@ -331,7 +304,7 @@ const OrdersFromProductsMenu = ({
                         />
                         <Button
                           type='button'
-                          style={`px-5 flex-1 ${buttonColorsScheme.red}`}
+                          style={style.decisionButtons}
                           label='Rejeitar'
                           onClick={() => {
                             productOrders.actions.onReject && productOrders.actions.onReject();
@@ -344,7 +317,7 @@ const OrdersFromProductsMenu = ({
                       && !order.orderDeletedByCustomer 
                       && stockIfOrderAccepted < 0  
                       ? (
-                      <div className='flex gap-5'>
+                      <div className={style.buttonsContainer}>
                         <OrderSituationBottomTag
                           situation={'Estoque insuficiente'}
                         />
@@ -357,7 +330,7 @@ const OrdersFromProductsMenu = ({
                       && order.orderPaymentStatus !== 'APPROVED' 
                       && !order.orderDeletedByCustomer 
                       && stockIfOrderAccepted >= 0 ) && (
-                      <div className='flex gap-5'>
+                      <div className={style.buttonsContainer}>
                         <OrderSituationBottomTag
                           situation={'Pendente'}
                         />
@@ -471,10 +444,10 @@ const OrdersFromProductsMenu = ({
                 duration: .25,
                 ease: "easeOut"
               }}
-              className="flex flex-col gap-2"
+              className={style.productOrdersInnerContainer}
               >
-              <div className='flex lg:flex-row flex-col dark:bg-secondary/15 dark:brightness-[1.2] bg-secondary-light/25 p-2 ml-2 rounded-2xl border border-secondary-middledark'>
-                <div className="flex flex-col m-1 justify-between sm:text-base text-sm sm:space-y-0 space-y-1">
+              <div className={style.orderCardContainerFromUser}>
+                <div className={style.orderCardInnerLeftContainerFromUser}>
                   <OrderRequestDate
                     orderDate={order.orderDate}
                   />
@@ -493,8 +466,8 @@ const OrdersFromProductsMenu = ({
                     <PaidTag/>
                   }
                 </div>
-                <div className='flex flex-col lg:flex-col sm:flex-row justify-between gap-3 flex-1'>
-                  <div className="flex sm:justify-end">
+                <div className={style.orderCardInnerRightContainerFromUser}>
+                  <div className={style.orderSituationTagContainer}>
                     {(order.orderPaymentStatus !== 'APPROVED' 
                     && order.orderStatus !== 'CANCELED') 
                     ? (
@@ -507,9 +480,9 @@ const OrdersFromProductsMenu = ({
                       <OrderSituationTopTag situation='Em analise'/>
                     )}
                   </div>
-                  <div className='flex gap-2 justify-end'>
+                  <div className={style.orderSituationBottomTag}>
                     {order.orderStatus === 'APPROVED' ? (
-                      <div className='flex gap-5'>
+                      <div className={style.buttonsContainer}>
                         <OrderSituationBottomTag
                           situation={'Aprovado'}
                         />
@@ -519,7 +492,7 @@ const OrdersFromProductsMenu = ({
                         />
                       </div>
                     ) : (order.orderStatus === 'CANCELED') ? (
-                      <div className='flex gap-5'>
+                       <div className={style.buttonsContainer}>
                         <OrderSituationBottomTag
                           situation={'Cancelado'}
                         />
@@ -529,7 +502,7 @@ const OrdersFromProductsMenu = ({
                         />
                       </div>
                     ) : (order.orderStatus === 'REJECTED') ? ( 
-                      <div className='flex gap-5'>
+                      <div className={style.buttonsContainer}>
                         <OrderSituationBottomTag
                           situation={'Rejeitado'}
                         />
@@ -539,7 +512,7 @@ const OrdersFromProductsMenu = ({
                         />
                       </div>
                     ) : (order.orderStatus === 'PENDING') && (
-                      <div className='flex gap-5'>
+                      <div className={style.buttonsContainer}>
                         <OrderSituationBottomTag
                           situation={'Pendente'}
                         />

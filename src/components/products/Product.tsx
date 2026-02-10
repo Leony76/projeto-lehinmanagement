@@ -4,19 +4,17 @@ import Image from 'next/image'
 import { IoStar, IoStarOutline } from 'react-icons/io5';
 import Button from '../form/Button';
 import { CATEGORY_LABEL_MAP } from '@/src/constants/generalConfigs';
-import { productCardSetup } from '@/src/constants/cardConfigs';
+import { productCardSetup } from '@/src/styles/Product/productCard.style';
 import { ProductDTO } from '@/src/types/productDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 import { useUserStore } from '@/src/store/useUserStore';
 import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
 import { getNameAndSurname } from '@/src/utils/getNameAndSurname';
 import { removeProduct } from '@/src/actions/productActions';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Modal from '../modal/Modal';
 import { useToast } from '@/src/contexts/ToastContext';
 import EditProductForm from '../form/EditProductForm';
-import TextArea from '../form/TextArea';
-import Error from '../ui/Error';
 import OrderProduct from '../modal/OrderProduct';
 import { useLockScrollY } from '@/src/utils/useLockScrollY';
 import { FaInfo } from 'react-icons/fa6';
@@ -26,6 +24,7 @@ import ProductInfo from '../modal/Product/ProductInfo';
 import ImageExpand from '../modal/ImageExpand';
 import RemoveProductJustify from '../modal/Product/RemoveProductJustify';
 import ConfirmRemove from '../modal/Product/ConfirmRemove';
+import { productCardStyles as styles } from '@/src/styles/Product/productCard.style';
 
 type Props = {
   product: ProductDTO;
@@ -76,7 +75,7 @@ const Product = ({
     <motion.div
       layout 
       initial={{ opacity: 1, scale: 1 }}
-      className={`relative ${productCardSetup.mainContainer} `}
+      className={styles.mainContentContainer}
       exit={{ 
         opacity: 0, 
         scale: 2, 
@@ -84,32 +83,35 @@ const Product = ({
         transition: { duration: 0.25 } 
       }}
     >
-      <div className="relative aspect-square w-full">
+      <div className={styles.imageContainer}>
         <Image
           src={product.imageUrl}
           alt={product.name}
           fill
-          className={`${productCardSetup.image} dark:border-[1.5px] dark:shadow-[0px_0px_3px_cyan]`}
+          className={styles.image}
         />
       </div>
-      <div className={productCardSetup.infosContainer}>
-        <h3 className={productCardSetup.name}>{product.name}</h3>
-        <div className={productCardSetup.categoryDateRatingContainer}>
-          <div className={productCardSetup.categoryDate}>
+
+      <div className={styles.productInfosContainer}>
+        <h3 className={styles.name}>
+          {product.name}
+        </h3>
+        <div className={styles.category_date_ratingContainer}>
+          <div className={styles.category_date}>
             <span>{category}</span>
             <span className="text-[10px] text-gray-400">●</span>
             <span>{datePutToSale}</span>
           </div>
-          <div className={productCardSetup.rating}>
-          {!product.productAverageRating 
-            ? <IoStarOutline/>
-            : <IoStar/> 
-          }
+          <div className={styles.rating}>
+            {!product.productAverageRating 
+              ? <IoStarOutline/>
+              : <IoStar/> 
+            }
             {product.productAverageRating ?? 'Não avaliado'}
           </div>
         {(product.sellerRole !== 'ADMIN') ? (       
-          <div className={productCardSetup.seller.container}>
-            <span className={productCardSetup.seller.label}>
+          <div className={styles.sellerContainer}>
+            <span className={styles.label}>
               Vendedor(a):
             </span> 
             {product.sellerName === user?.name
@@ -118,30 +120,26 @@ const Product = ({
             }
           </div>
         ) : (
-          <div className={productCardSetup.seller.container}> 
+          <div className={styles.label}> 
             Ofertado pelo sistema
           </div>
         )}
         </div>
-        <div className={productCardSetup.priceStockContainer}>
-        {product.stock > 0 ? (
-          <span className={
-            product.stock > 0 
-            ? productCardSetup.stock + ' flex gap-1 items-center'
-            : 'text-red flex gap-1 items-center'
-          }>
-            <span className={productCardSetup.stockLabel}>
-              Em estoque:
+        <div className={styles.price_stockContainer}>
+          {product.stock > 0 ? (
+            <span className={styles.stock.withStock}>
+              <span className={productCardSetup.stockLabel}>
+                Em estoque:
+              </span> 
+              {product.stock}
+            </span>
+          ) : (
+            <span className={styles.stock.withoutStock}>
+              Sem estoque
             </span> 
-            {product.stock}
-          </span>
-        ) : (
-          <span className='text-red italic bg-linear-to-r from-red/20 pl-2 rounded-tl-xl to-transparent'>
-            Sem estoque
-          </span> 
-        )}
-          <div className='flex justify-between items-center'>
-            <span className={productCardSetup.price}>
+          )}
+          <div className={styles.price_productInfoContainer}>
+            <span className={styles.price}>
               {formatCurrency(product.price)}
             </span>
             <Button 
@@ -246,6 +244,7 @@ const Product = ({
           publishedAt: product.createdAt,
           updatedAt: product.updatedAt,
           salesCount: product.productSalesCount ?? 0,
+          rating: product.productAverageRating ?? 'Não avaliado',
         }}
         actions={{
           onImageClick: () => setActiveModal('EXPAND_IMAGE'),
