@@ -1,106 +1,279 @@
 "use client";
 
-import Image, { StaticImageData } from 'next/image'
-import { IoStar } from 'react-icons/io5';
+import Image from 'next/image'
+import { IoStar, IoStarOutline } from 'react-icons/io5';
 import Button from '../form/Button';
-import { CategoryTranslatedValue } from '@/src/constants/generalConfigs';
-import { IoIosStarOutline } from 'react-icons/io';
+import { CATEGORY_LABEL_MAP, OrderFilterValue, UserProductOrdersFilterValue } from '@/src/constants/generalConfigs';
 import { AiOutlineMessage } from 'react-icons/ai';
-import { productCardSetup } from '@/src/constants/cardConfigs';
 import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from '../modal/Modal';
 import TextArea from '../form/TextArea';
+import { UserProductDTO } from '@/src/types/userProductDTO';
+import { useLockScrollY } from '@/src/utils/useLockScrollY';
+import Rating from '../ui/Rating';
+import { useToast } from '@/src/contexts/ToastContext';
+import { rateCommentProduct, removeProduct } from '@/src/actions/productActions';
+import Error from '../ui/Error';
+import { FaRegTrashCan } from 'react-icons/fa6';
+import { motion } from 'framer-motion';
+import UserProductMenu from '../modal/Orders/UserProductMenu';
+import { UserProductPageModals } from '@/src/types/modal';
+import { productCardStyles as style } from '@/src/styles/Product/productCard.style';
 
 type Props = {
-  image: string | StaticImageData;
-  name: string;
-  category: CategoryTranslatedValue;
-  datePutToSale: string;
-  rating: number;
-  price: number;
-  stock: number;
-  onComment: () => void;
+  userProduct: UserProductDTO;
 }
 
-
 const MyProduct = ({
-  image,
-  name,
-  category,
-  datePutToSale,
-  rating,
-  price,
-  stock,
-  onComment,
+  userProduct,
 }:Props) => {
 
-  const [commentModal, showCommentModal] = useState(false);
+  const { showToast } = useToast();
+
+  const [activeModal, setActiveModal] = useState<UserProductPageModals | null>(null);
+
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderFilter, setOrderFilter] = useState<UserProductOrdersFilterValue | null>(null);
+
+  const [error, setError] = useState<string>('');
+
+  const [productComment, setProductComment] = useState<string>('');
+
+  const [rating, setRating] = useState<number>(userProduct.productRating);
+
+  const datePutToSale = new Date(userProduct.createdAt).toLocaleDateString("pt-BR");
+
+  const category =  CATEGORY_LABEL_MAP[userProduct.category] ?? 'Categoria não definida';
+
+  useLockScrollY(Boolean(activeModal));
+
+  const handleCommentRatingProduct = async() => {
+    if (!rating) return;
+
+    try {
+      await rateCommentProduct(
+        userProduct.id,
+        rating,
+        productComment,
+      );
+
+      if (rating !== userProduct.productRating) {
+        showToast('Produto avaliado', 'info');
+      } if (productComment) {
+        showToast('Seu comentário sobre o produto foi ao ar', 'info');
+        setProductComment('');
+      }
+    } catch (err:unknown) { 
+      showToast('Houve um erro: ' + err, 'error');
+    } 
+  }
+
+  const handleRemoveUserProduct = async() => {
+    try {
+      await removeProduct(
+        userProduct.id,
+        ''
+      );
+
+      showToast('Produto removido com sucesso', 'success');
+    } catch (err:unknown) {
+      showToast('Erro: ' + err, 'error');
+    } finally {
+      setActiveModal(null);
+    }
+  }
+
+  useEffect(() => {
+    handleCommentRatingProduct();
+  },[rating]);
 
   return (
-    <div className={productCardSetup.mainContainer}>
-      <Image 
-        src={image} 
-        alt={name}
-        className={productCardSetup.image}
-      />
-      <div className={productCardSetup.infosContainer}>
-        <h3 className={productCardSetup.name}>{name}</h3>
-        <div className={productCardSetup.categoryDateRatingContainer}>
-          <div className={productCardSetup.categoryDate}>
+    <motion.div
+      layout 
+      initial={{ opacity: 1, scale: 1 }}
+      className={style.mainContentContainer}
+      exit={{ 
+        opacity: 0, 
+        scale: 2, 
+        filter: "blur(10px)",
+        transition: { duration: 0.25 } 
+      }}
+    >
+      <div className={style.imageContainer}>
+        <Image 
+          src={userProduct.imageUrl} 
+          alt={userProduct.name}
+          fill
+          className={style.image}
+        />
+      </div>
+      <div className={style.productInfosContainer}>
+        <h3 className={style.name}>{userProduct.name}</h3>
+        <div className={style.category_date_ratingContainer}>
+          <div className={style.category_date}>
             <span>{category}</span>
             <span className="text-[10px] text-gray-400">●</span>
             <span>{datePutToSale}</span>
           </div>
-          <div className={productCardSetup.rating}>
-            <IoStar/>
-            {rating}
+          <div className={style.rating}>
+            {!userProduct.productAverageRating 
+              ? <IoStarOutline/>
+              : <IoStar/> 
+            }
+            {userProduct.productAverageRating ?? 'Não avaliado'}
           </div>
         </div>
-        <div className={productCardSetup.priceStockContainer}>
-          <span className={productCardSetup.price}>R$ {price.toFixed(2).replace('.',',')}</span>
-          <span className={productCardSetup.stock}>Em estoque: {stock}</span>
-        </div>
-        <div className='flex justify-between'>
-          <div className='flex text-4xl gap-1 text-yellow'>
-            <IoIosStarOutline/>
-            <IoIosStarOutline/>
-            <IoIosStarOutline/>
-            <IoIosStarOutline/>
-            <IoIosStarOutline/>
+        <div className="flex justify-between items-center">
+          <Rating 
+            value={rating}
+            onChange={setRating}
+          />
+          <div className={`transition-all duration-300 ease-out
+            ${rating !== 0 
+              ? 'opacity-100 translate-x-0 pointer-events-auto' 
+              : 'opacity-0 translate-x-3 pointer-events-none'}
+          `}>
+            <Button
+              type="button"
+              onClick={() => setActiveModal('COMMENT')}
+              icon={AiOutlineMessage}
+              style={`px-5 text-2xl ${buttonColorsScheme.yellow}`}
+            />
           </div>
-          <Button onClick={() => showCommentModal(true)} icon={AiOutlineMessage} style={`px-5 text-2xl ${buttonColorsScheme.yellow}`}/>
         </div>
-        <Button style='mt-2 text-xl' label={"Mais Informações"} colorScheme={'primary'}/>
+        <div className='flex mt-2 gap-2'>
+          <Button 
+            type='button' 
+            style='text-lg flex-5' 
+            label={"Mais Informações"} 
+            onClick={() => setActiveModal('USER_PRODUCT_INFO')}
+          />
+          <Button 
+            style={`flex-1 ${buttonColorsScheme.red}`}
+            type={'submit'}            
+            icon={FaRegTrashCan}
+            onClick={() => setActiveModal('REMOVE_PRODUCT_CONFIRM')}
+          />
+        </div>
       </div>
 
-      {/* ⇊ MODALS ⇊ */}
+    {/* ⇊ MODALS ⇊ */}
+
+    <UserProductMenu
+      isOpen={activeModal === 'USER_PRODUCT_INFO'}
+      onCloseActions={() => setActiveModal(null)}
+      onImageClick={() => setActiveModal('EXPAND_IMAGE')}
+      product={{
+        imageUrl: userProduct.imageUrl,
+        name: userProduct.name,
+        category: userProduct.category,
+        description: userProduct.description ?? '[Sem descrição]',
+        price: userProduct.price,
+      }}
+      orders={userProduct.orders.map(order => ({
+        id: order.id,
+        orderedAmount: order.items.reduce((sum, item) => sum + item.quantity, 0),
+        orderDate: order.acceptedAt ?? '',
+        orderTotalPrice: order.total,
+      }))}
+      search={{
+        order: orderSearch,
+        filter: orderFilter ?? 'most_recent',
+        onSearch: (e) => setOrderSearch(e.target.value),
+        onFilter: (e) => setOrderFilter(e.target.value as UserProductOrdersFilterValue),
+        onClearSearch: () => setOrderSearch(''),
+      }}
+    />
+
+
+    <Modal 
+    isOpen={activeModal === 'COMMENT'}
+    modalTitle={"Comentar produto"} 
+    onCloseModalActions={() => {
+      setActiveModal(null);
+      setError('');
+    }}
+    hasXClose
+    >
+      <p className={`text-[15px] ${textColors.secondaryDark}`}>
+        Deixe um comentário público acerca do que você achou do produto que pediu!
+      </p>
+      <TextArea 
+        style={{input: `h-30 ${error ? 'shadow-[0px_0px_5px_red] mb-[-1px]' : ''}`}} 
+        colorScheme='primary' 
+        placeholder={'Deixe seu comentário...'}
+        onChange={(e) => {
+          setProductComment(e.target.value);
+          setError('');
+        }}
+      />
+      {userProduct.hasReview && !error && 
+        <p className='text-sm text-yellow-dark -mt-2'>
+          (!) Você já teçou um comentário a esse produto. O novo que você der sobrescreverá o seu atual.
+        </p>
+      }
+      {error && 
+        <Error error={error}/>
+      }
+      <Button 
+        type='button'
+        style='mt-1 text-xl' 
+        colorScheme='secondary' 
+        label='Comentar'
+        onClick={() => {
+          if (!productComment) {
+            setError('Não se pode mandar um comentário vazio');
+          } else {
+            handleCommentRatingProduct();
+            setActiveModal(null);
+          }
+        }}
+      />
+    </Modal>
 
       <Modal 
-        isOpen={commentModal}
-        modalTitle={"Comentar produto"} 
-        openedModal={showCommentModal}
-        hasXClose
-        style={{
-          modalTitle: 'text-2xl',
-          xClose: 'text-2xl px-1 border rounded-[50%]!'
-        }}
-       >
-        <p className={`text-[15px] ${textColors.secondaryDark}`}>
-          Deixe um comentário público acerca do que você achou do produto que pediu!
-        </p>
-        <TextArea style={{input: 'h-30'}} colorScheme='primary' placeholder={'Deixe seu comentário...'}/>
-        <Button 
-          style='mt-1 text-xl' 
-          colorScheme='secondary' 
-          label='Comentar'
-          onClick={() => {
-            onComment();
-            showCommentModal(false);
-          }}
-        />
+      isOpen={activeModal === 'EXPAND_IMAGE'} 
+      modalTitle={''} 
+      onCloseModalActions={() => setActiveModal('USER_PRODUCT_INFO')}>
+        <div className='relative aspect-square h-[90vh]'>
+          <Image 
+            src={userProduct.imageUrl} 
+            alt={userProduct.name}            
+            fill
+            className='object-contain aspect-square border-x-4 border-double cursor-zoom-out border-primary'
+            onClick={() => setActiveModal('USER_PRODUCT_INFO')}
+          />
+        </div>
       </Modal>
-    </div>
+
+      <Modal 
+      isOpen={activeModal === 'REMOVE_PRODUCT_CONFIRM'} 
+      modalTitle={'Excluir produto'} 
+      onCloseModalActions={() => setActiveModal(null)}
+      >
+        <p className='text-secondary-dark'>
+          Tem certeza que deseja excluir esse produto ?
+        </p>
+        <p className='text-yellow-dark'> 
+          (!) Essa ação é inrreversível
+        </p>
+        <div className='flex gap-3 text-lg'>
+          <Button 
+            type={'submit'}
+            label='Sim'
+            style={`${buttonColorsScheme.green} flex-1`}
+            onClick={handleRemoveUserProduct}
+          />
+          <Button 
+            type={'submit'}
+            label='Não'
+            style={`${buttonColorsScheme.red} flex-1`}
+            onClick={() => setActiveModal(null)}
+          />
+        </div>
+      </Modal>
+    </motion.div>
   )
 }
 

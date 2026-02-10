@@ -1,4 +1,4 @@
-import { ColorScheme } from "@/src/constants/generalConfigs";
+import { Buttontype, ColorScheme } from "@/src/constants/generalConfigs";
 import { buttonColorsScheme } from "@/src/constants/systemColorsPallet"
 import { IconType } from "react-icons";
 import Spinner from "../ui/Spinner";
@@ -9,6 +9,9 @@ type ButtonProps = {
   style?: string;
   iconStyle?: string;
   icon?: IconType;
+  type: Buttontype;
+  spinnerColor?: string;
+  disabled?: boolean;
 
   loading?: boolean;
   loadingLabel?: string;
@@ -20,14 +23,17 @@ const Button = ({
   colorScheme,
   label,
   style,
+  disabled,
   icon: Icon,
   iconStyle,
   loading,
   loadingLabel,
+  spinnerColor,
+  type,
   onClick,
 }:ButtonProps) => {
   return (
-    <button onClick={onClick} className={`${style ?? ""} ${
+    <button disabled={disabled} type={type ?? 'submit'} onClick={onClick} className={`${style ?? ""} ${
       colorScheme === 'primary' 
         ? buttonColorsScheme.primary
       : colorScheme == 'red'
@@ -35,9 +41,11 @@ const Button = ({
       :   buttonColorsScheme.secondary
     } text-left flex justify-center items-center gap-2`}>{
       loading && <Spinner color={
-        colorScheme === 'primary'
-         ? 'primary'
-         : 'secondary'
+        colorScheme 
+          ? colorScheme === 'primary'
+            ? 'primary'
+            : 'secondary'
+          : spinnerColor ? 'text-' + spinnerColor : 'white'
       }/> 
     }{
       Icon

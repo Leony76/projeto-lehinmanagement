@@ -1,44 +1,25 @@
-"use client";
+import { getUserProducts } from "@/src/services/products";
+import MyProducts from "./MyProducts";
+import { auth } from "@/src/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-import PageTitle from "@/src/components/ui/PageTitle";
-import Select from "@/src/components/form/Select";
-import Search from "@/src/components/form/Search";
-import Placeholder from '@/public/my-interpretation-of-the-torque-twister-before-picture-on-v0-2p6oyytw55691.jpg';
-import MyProduct from "@/src/components/products/MyProduct";
-import { useToast } from "@/src/contexts/ToastContext";
+export default async function MyProductsPage() {
 
-const MyProducts = () => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  const { showToast } = useToast();
+  if (!session) {
+    redirect('/login');
+  }
 
-  const handleShowToast = () => {
-    showToast("Comentário enviado com sucesso!", "success");
-  };
+  const myProducts = await getUserProducts(session.user.id);
 
   return (
-    <div>
-      <PageTitle style="my-2" title="Meus Produtos"/>
-      <div>
-        <Search style={{input: 'mt-5'}} colorScheme="primary"/>
-        <div className="flex gap-3 mt-3">
-          <Select style={{input: 'flex-1 w-full'}} selectSetup={"FILTER"} colorScheme={"primary"} label={"Filtro"}/>
-          <Select style={{input: 'flex-1 w-full'}} selectSetup={"CATEGORY"} colorScheme={"primary"} label={"Categoria"}/>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-5 my-4 mt-6">
-        <MyProduct 
-          image={Placeholder} 
-          name={`Produto #1`} 
-          category={"Brinquedo"} 
-          datePutToSale={"14/01/26"} 
-          rating={3.5} 
-          price={99.97} 
-          stock={123}
-          onComment={handleShowToast}
-        />
-      </div>
-    </div>
+    <MyProducts
+      myProducts={myProducts}
+    />
   )
 }
 
-export default MyProducts

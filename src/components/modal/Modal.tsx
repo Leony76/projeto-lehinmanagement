@@ -5,15 +5,15 @@ import { IoClose } from 'react-icons/io5';
 
 type Props = {
   isOpen: boolean;
-  modalTitle: string;
+  modalTitle: React.ReactNode;
   style?:{
-    modalTitle:string;
-    xClose: string;
+    modalTitle?:string;
+    xClose?: string;
+    container?: string;
   };
   hasXClose?: boolean;
   children: React.ReactNode;
-  openedModal: React.Dispatch<React.SetStateAction<boolean>>;
-  reopenPrevModal?: React.Dispatch<React.SetStateAction<boolean>>; 
+  onCloseModalActions: () => void;
 }
 
 const Modal = ({isOpen,
@@ -21,8 +21,7 @@ const Modal = ({isOpen,
   modalTitle,
   hasXClose,
   style,
-  openedModal,
-  reopenPrevModal,  
+  onCloseModalActions, 
 }:Props) => {
   return (
     <>
@@ -32,7 +31,7 @@ const Modal = ({isOpen,
         transition-opacity duration-300
         ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
       `}
-      onClick={() => {openedModal(false); reopenPrevModal?.(true)}}
+      onClick={onCloseModalActions}
     />
     <div
       className={`
@@ -41,18 +40,19 @@ const Modal = ({isOpen,
         -translate-x-1/2
         rounded-3xl bg-white p-4
         flex flex-col gap-2
-
+      dark:bg-gray-900
+        dark:shadow-[0px_0px_8px_orange]
         transition-all duration-300 ease-out
         ${
           isOpen
             ? 'opacity-100 translate-y-[-50%]'
             : 'opacity-0 -translate-y-full pointer-events-none'
         }
-      `}
+      ${style?.container ?? ''}`}
     >
       <div className='flex justify-between'>
         <h2 className={`${style?.modalTitle ?? 'text-3xl'} ${titleColors.primaryDark}`}>{modalTitle}</h2>
-        {hasXClose && <Button onClick={() => {openedModal(false); reopenPrevModal?.(true)}} colorScheme='red' style={style?.xClose ?? 'text-2xl px-1.25 border rounded-[50%]!'} icon={IoClose}/>}
+        {hasXClose && <Button type='button' onClick={onCloseModalActions} colorScheme='red' style={style?.xClose ?? 'text-2xl px-1.25 border rounded-[50%]!'} icon={IoClose}/>}
       </div>
       {children}
     </div>

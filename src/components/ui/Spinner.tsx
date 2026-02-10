@@ -1,6 +1,6 @@
 import React from 'react'
 
-const Spinner = ({color}:{color: 'primary' | 'secondary'}) => {
+const Spinner = ({color}:{color: string}) => {
   return (
     <svg 
       className={`animate-spin h-5 w-5 text-${color}`} 

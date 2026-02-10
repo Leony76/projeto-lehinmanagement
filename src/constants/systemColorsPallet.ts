@@ -1,6 +1,6 @@
 export const titleColors = {
   primary: "text-primary-light text-shadow-[1px_1px_0px_var(--color-primary)]",
-  primaryDark: "text-primary-middledark text-shadow-[1px_1px_0px_#976344]",
+  primaryDark: "text-primary-middledark text-shadow-[1px_1px_0px_#976344] dark:brightness-[1.4]",
 
   secondary: "text-secondary text-shadow-[1px_1px_0px_var(--color-secondary-middledark)]",
   secondaryDark: "text-secondary text-shadow-[1px_1px_0px_var(--color-secondary-middledark)]",
@@ -10,7 +10,7 @@ export const titleColors = {
 
 export const textColors = {
   primary: "text-primary",
-  primaryMiddleDark: "text-primary-middledark",
+  primaryMiddleDark: "text-primary-middledark dark:text-primary",
   primaryDark: "text-primary-dark",
   primaryLight: "text-primary-light",
   primaryLighter: "text-primary-ultralight",
@@ -18,7 +18,7 @@ export const textColors = {
   secondaryLight: "text-secondary-light",
   secondary: "text-secondary",
   secondaryMiddleDark: "text-secondary-middledark",
-  secondaryDark: "text-secondary-dark",
+  secondaryDark: "text-secondary-dark dark:text-secondary-middledark",
 
   yellowLight: "text-yellow-light",
   yellow: "text-yellow",
@@ -74,6 +74,7 @@ export const buttonColorsScheme = {
     sm:active:bg-primary-ultralight/70 sm:active:text-primary
     active:bg-primary-dark active:text-primary-light
     transition sm:duration-300 duration-150 cursor-pointer
+    dark:bg-primary-light/30
   `,
 
   secondary: `
@@ -84,10 +85,11 @@ export const buttonColorsScheme = {
     sm:active:bg-secondary-light/70 sm:active:text-secondary-middledark
     active:bg-secondary-dark active:text-secondary-light
     transition sm:duration-300 duration-150 cursor-pointer
+    dark:bg-secondary-middledark/40
   `,
 
   green: `
-    !border-green !bg-green/15 !text-green
+    !border-green !bg-green/15 !text-green dark:bg-green/30!
     border-[1.5px] rounded-3xl p-1
     hover:!bg-green hover:!text-white
     focus:outline-none focus-visible:!bg-green focus-visible:!text-white
@@ -97,7 +99,7 @@ export const buttonColorsScheme = {
   `,
 
   red: `
-    !border-red !bg-red/15 !text-red
+    !border-red !bg-red/15 !text-red dark:bg-red/30!
     border-[1.5px] rounded-3xl p-1
     hover:!bg-red hover:!text-white
     focus:outline-none focus-visible:!bg-red focus-visible:!text-white
@@ -107,7 +109,7 @@ export const buttonColorsScheme = {
   `,
 
   yellow: `
-    !border-yellow !bg-yellow-100 !text-yellow
+    !border-yellow !bg-yellow-100 !text-yellow dark:bg-yellow-100/15!
     border-[1.5px] rounded-3xl p-1
     hover:!bg-yellow-dark hover:!text-yellow-100
     focus:outline-none focus-visible:!bg-yellow-dark focus-visible:!text-white
@@ -185,14 +187,17 @@ export const inputColorScheme = {
     hover:bg-primary-dark/90 hover:text-primary
     focus:outline-none focus-visible:bg-primary-dark/90 focus-visible:text-primary
     transition duration-300
+    dark:bg-primary-light/30
   `,
   secondary: `
     bg-secondary-light/70 
+    dark:bg-secondary/30
     text-secondary-middledark
     border-[1.5px] border-secondary rounded-2xl 
     p-0.5 px-3
     hover:text-secondary hover:bg-secondary-dark
     focus:outline-none focus-visible:text-secondary focus-visible:bg-secondary-dark
     transition duration-300
+    dark:bg-secodary-light/30
   `,
 };

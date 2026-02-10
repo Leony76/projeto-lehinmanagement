@@ -4,6 +4,11 @@ import { buttonColorsScheme, titleColors } from '@/src/constants/systemColorsPal
 import MenuItem from './MenuItem';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/src/lib/auth-client';
+import { useUserStore } from '@/src/store/useUserStore';
+import Spinner from './Spinner';
+import { ROLE_LABEL } from '@/src/constants/generalConfigs';
+import { getNameAndSurname } from '@/src/utils/getNameAndSurname';
+import Link from 'next/link';
 
 type Props = {
   menu: boolean;
@@ -11,6 +16,7 @@ type Props = {
 }
 
 const Menu = ({menu, showMenu}:Props) => {
+  const user = useUserStore((status) => status.user);
 
   const router = useRouter();
 
@@ -18,6 +24,9 @@ const Menu = ({menu, showMenu}:Props) => {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
+          setTimeout(() => {
+            useUserStore.getState().clearUser();
+          },1000);
           router.push("/login");
         },
       },
@@ -40,6 +49,7 @@ const Menu = ({menu, showMenu}:Props) => {
         h-dvh w-40
         border-l-2 border-primary rounded-bl-[75px]
         bg-linear-to-r from-primary-middledark to-primary-dark
+        dark:bg-linear-to-r dark:from-gray-800 dark:to-gray-900
         shadow-xl
         transform transition-transform duration-300 ease-in-out
         ${menu ? "translate-x-0" : "translate-x-full"}
@@ -53,13 +63,36 @@ const Menu = ({menu, showMenu}:Props) => {
           <ul className="text-[15px]">
             <MenuItem route='/dashboard' closeMenu={showMenu} label={'Dashboard'}/>
             <MenuItem route='/products' closeMenu={showMenu} label={'Produtos'}/>
-            <MenuItem route='/orders' closeMenu={showMenu} label={'Pedidos'}/>
-            <MenuItem route='/products/my-products' closeMenu={showMenu} label={'Meus Produtos'}/>
+            {user?.role === 'SELLER' && <MenuItem route='/orders' closeMenu={showMenu} label={'Pedidos'}/>}
+            {(user?.role === 'CUSTOMER' || user?.role === 'SELLER') &&  <MenuItem route='/products/my-products' closeMenu={showMenu} label={'Meus Produtos'}/>}
+          {user?.role === 'SELLER' ? (
             <MenuItem route='/products/sell-product' closeMenu={showMenu} label={'Vender Produto'}/>
-            <MenuItem route='/orders/my-orders' closeMenu={showMenu} label={'Meus Pedidos'}/>
+          ) : user?.role === 'ADMIN' ? (
+            <MenuItem style='text-[13px]' route='/products/sell-product' closeMenu={showMenu} label={'Adicionar Produto'}/>) : (<></>)}
+          {user?.role !== 'ADMIN' && <MenuItem route='/orders/my-orders' closeMenu={showMenu} label={'Meus Pedidos'}/>}
           </ul>
           <ul className="mt-auto text-center mb-5">
-            <li className={`${buttonColorsScheme.menuLi} text-secondary!`}>Leony Leandro</li>
+            <li className={`${buttonColorsScheme.menuLi} text-secondary!`}>
+              {user?.name 
+                ? getNameAndSurname(user.name) 
+                : <Spinner color='primary'/> + "Carregando..."
+              }
+            </li>
+            <li className={`${buttonColorsScheme.menuLi} pt-0 text-sm hover:bg-transparent! hover:cursor-auto text-yellow!`}>
+              {user?.role 
+                ? ROLE_LABEL[user.role] 
+                : '—'
+                }
+            </li>
+            <li className={`${buttonColorsScheme.menuLi} p-0! flex flex-col text-gray-300! text-lg text-shadow-2xs hover:text-white! active:text-gray-300!`}>
+              <Link 
+              href={'/settings'} 
+              className='p-1 text-base cursor-pointer'
+              onClick={() => showMenu(false)}
+              >
+                Configurações
+              </Link>
+            </li>
             <li className={`${buttonColorsScheme.menuLi} p-0! flex flex-col text-red-300 text-lg text-shadow-2xs hover:text-red-100! active:text-red-600!`}>
               <button className='p-1 cursor-pointer' onClick={handleLogout}>
                 Sair
