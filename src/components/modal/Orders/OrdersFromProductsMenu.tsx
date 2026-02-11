@@ -1,4 +1,4 @@
-import { CATEGORY_LABEL_MAP, CategoryValue, OrderFilterValue } from "@/src/constants/generalConfigs";
+import { CATEGORY_LABEL_MAP, CategoryValue, OrderFilterValue, PaymentStatus } from "@/src/constants/generalConfigs";
 import { buttonColorsScheme } from "@/src/constants/systemColorsPallet";
 import { formatCurrency } from "@/src/utils/formatCurrency";
 import Button from "../../form/Button";
@@ -15,7 +15,7 @@ import StockIfAccpeted from "../../ui/StockIfAccpeted";
 import Modal from "../Modal";
 import Image from "next/image";
 import MoreActions from "../MoreActions";
-import { OrderStatus, PaymentStatus, Role } from "@prisma/client";
+import { OrderStatus, Role } from "@prisma/client";
 import { motion } from "framer-motion";
 import NoContentFoundMessage from "../../ui/NoContentFoundMessage";
 import PaidTag from "../../ui/PaidTag";
@@ -294,7 +294,7 @@ const OrdersFromProductsMenu = ({
                       <div className={style.decisionButtonsContainer}>
                         <Button
                           type='button'
-                          style={style.decisionButtons}
+                          style={style.decisionButtons.accept}
                           label='Aceitar'
                           onClick={() => {
                             productOrders.actions.onAccept && productOrders.actions.onAccept();
@@ -304,7 +304,7 @@ const OrdersFromProductsMenu = ({
                         />
                         <Button
                           type='button'
-                          style={style.decisionButtons}
+                          style={style.decisionButtons.reject}
                           label='Rejeitar'
                           onClick={() => {
                             productOrders.actions.onReject && productOrders.actions.onReject();

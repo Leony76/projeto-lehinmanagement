@@ -5,7 +5,7 @@ import Image from "next/image";
 import LRC from "@/public/LericoriaPadraoFogo2.png";
 import { IoMenu } from "react-icons/io5";
 import Menu from "@/src/components/ui/Menu";
-import { useLockScrollY } from "@/src/utils/useLockScrollY";
+import { useLockScrollY } from "@/src/hooks/useLockScrollY";
 
 type Props = {
  children: React.ReactNode;

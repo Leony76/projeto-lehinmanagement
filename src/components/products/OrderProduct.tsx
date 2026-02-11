@@ -4,16 +4,9 @@ import Image from 'next/image'
 import { IoStar, IoStarOutline } from 'react-icons/io5';
 import Button from '../form/Button';
 import { productCardStyles as style } from '@/src/styles/Product/productCard.style';
-import { startTransition, useCallback, useMemo, useState } from 'react';
-import { CATEGORY_LABEL_MAP, OrderFilterValue } from '@/src/constants/generalConfigs';
+import { OrderFilterValue } from '@/src/constants/generalConfigs';
 import { ProductWithOrdersDTO } from '@/src/types/ProductWithOrdersDTO';
-import { useToast } from '@/src/contexts/ToastContext';
-import { acceptRejectProductOrder, removeOrderFromUserOrders, sendMessageAboutCustomerOrderSituation, updatedProductStock } from '@/src/actions/productActions';
 import { motion } from 'framer-motion';
-import { useUserStore } from '@/src/store/useUserStore';
-import { useRouter } from 'next/navigation';
-import { editOrderRejectionJustify as editRejectionJustify } from '@/src/actions/productActions';
-import { getProductOrdersStats } from '@/src/utils/filters/productOrdersStats';
 import OrderStatusLabel from '../ui/OrderStatusLabel';
 import ConfirmAction from '../modal/Orders/ConfirmAction';
 import RejectionJustify from '../modal/Orders/RejectionJustify';
@@ -21,9 +14,7 @@ import JustifyAboutOrderSituation from '../modal/Orders/JustifyAboutOrderSituati
 import ResetProductStock from '../modal/Orders/ResetProductStock';
 import OrdersFromProductsMenu from '../modal/Orders/OrdersFromProductsMenu';
 import ImageExpand from '../modal/Orders/ImageExpand';
-import { filterOrders } from '@/src/utils/filters/sellerFilteredOrdersFromEachProduct';
-import { useLockScrollY } from '@/src/utils/useLockScrollY';
-import { OrderPageModals } from '@/src/types/modal';
+import { useOrderLogic } from '@/src/hooks/pageLogic/useOrderLogic';
 
 type Props = {
   product: ProductWithOrdersDTO;
@@ -31,241 +22,39 @@ type Props = {
 
 const OrderProduct = ({product}:Props) => {
 
-  const { showToast } = useToast()
-
-  const userRole = useUserStore((stats) => stats.user?.role);
-
-  const ordersStats = useMemo(
-    () => getProductOrdersStats(product),
-    [product.orders]
-  );
-
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
-  const selectedOrder = product.orders.find(
-    o => o.orderId === selectedOrderId
-  );
-
-  const [moreActionsOrderId, setMoreActionsOrderId] = useState<number | null>(null);
-  const datePutToSale = new Date(product.createdAt).toLocaleDateString("pt-BR");
-  const category = CATEGORY_LABEL_MAP[product.category];
-
-  const router = useRouter();
-
-  const [activeModal, setActiveModal] = useState<OrderPageModals | null>(null);
-  
-  const [loading, setLoading] = useState<{
-    rejecting: boolean;
-    sending: boolean;
-    accepting: boolean;
-    removing: boolean;
-    editing: boolean;
-    reseting: boolean;
-  }>({
-    rejecting: false,
-    accepting: false,
-    sending: false,
-    removing: false,
-    editing: false,
-    reseting: false,
-  });
-
-  const [error, setError] = useState<string>('');
-  const [newOrderRejectionJustify, setNewOrderRejectionJustify] = useState<string | null>(selectedOrder?.orderRejectionJustify ?? '')
-  const [rejectionJustify, setRejectionJustify] = useState<string>('');
-  const [messageAboutCustomerOrderSituation, setMessageAboutCustomerOrderSituation] = useState<string>('');
-  const [orderSearch, setOrderSearch] = useState('');
-  const [orderFilter, setOrderFilter] = useState<OrderFilterValue | null>(null);
-  const [newProductStock, setNewProductStock] = useState<number>(0);
-
-  const filteredOrders = useMemo(() => 
-    filterOrders(
-      product.orders,
-      orderSearch,
-      orderFilter
-    ),[product.orders, orderSearch, orderFilter]
-  );
-
-  const selectOrder = useCallback((orderId: number) => {
-    setSelectedOrderId(orderId);
-    setMoreActionsOrderId(prev =>
-      prev === orderId ? null : orderId
-    );
-  }, []);
-
-  const handleMoreActionsOpen = useCallback(
-    (orderId: number) => {
-      selectOrder(orderId);
-    },
-    [selectOrder]
-  );
-
-  const handleAcceptOrder = async() => {
-    if (!selectedOrder) {
-      showToast('Pedido inválido ou não selecionado', 'error');
-      return;
-    }
-
-    if (loading.accepting) return;
-    setLoading(prev => ({...prev, accepting: true}));
-
-    try {
-      await acceptRejectProductOrder(
-        'APPROVED',
-        selectedOrder.orderId,
-        product.id,
-        selectedOrder.orderedAmount,
-      );
-
-      showToast('Pedido aprovado com sucesso');
-      setActiveModal(null);
-    } catch(err:unknown) {
-      showToast('Erro inesperado:' + err, 'error');
-    } finally {
-      setLoading(prev => ({...prev, accepting: false}));
-      setActiveModal('ORDERS_FROM_PRODUCT')
-    }
-  }
-
-  const handleRejectOrder = async() => {
-    if (!selectedOrder) {
-      showToast('Pedido inválido ou não selecionado', 'error');
-      return;
-    }
-
-    if (!rejectionJustify) {
-      setError('A justificativa de rejeição é obrigatória');
-      setLoading(prev => ({...prev, rejecting: false}));
-      return;
-    } 
-    
-    if (loading.rejecting)return;
-    setLoading(prev => ({...prev, rejecting: true}));
-
-    try {
-      await acceptRejectProductOrder(
-        'REJECTED',
-        selectedOrder.orderId,
-        product.id,
-        selectedOrder.orderedAmount,
-        rejectionJustify
-      );
-
-      showToast('Pedido rejeitado com sucesso');
-      setActiveModal(null);
-    } catch (err:unknown) {
-      showToast('Houve um erro: ' + err, 'error');
-    } finally {
-      setLoading(prev => ({...prev, rejecting: false}));
-      setActiveModal('ORDERS_FROM_PRODUCT');
-    }
-  }
-
-  const handleRemoveOrder = async() => {
-    if (!selectedOrder) {
-      showToast('Pedido inválido ou não selecionado', 'error');
-      return;
-    }
-
-    if (loading.removing || !userRole) return;
-    setLoading(prev => ({...prev, removing: true}));
-
-    try {
-      await removeOrderFromUserOrders(
-        selectedOrder.orderId,
-        selectedOrder.orderStatus,
-        userRole,
-      );
-
-      startTransition(() => {
-        router.refresh(); 
-      });
-
-      showToast('Pedido removido com sucesso', 'success');
-      setActiveModal('REMOVE_ORDER');
-    
-    } catch (err: unknown) {
-      showToast('Houve um erro: ' + err, 'error');
-    } finally {
-      setLoading(prev => ({...prev, removing: false}));
-      setMoreActionsOrderId(null);
-      setActiveModal('ORDERS_FROM_PRODUCT');
-    }
-  };
-
-  const handleEditOrderRejectionJustify = async() => {
-    if (!selectedOrder) {
-      showToast('Pedido inválido ou não selecionado', 'error');
-      return;
-    }
-
-    if (loading.editing) return;
-    setLoading(prev => ({...prev, editing: true}));
-
-    try {
-      await editRejectionJustify(
-        newOrderRejectionJustify ?? '',
-        selectedOrder.orderId,
-      );
-
-      showToast('Justificativa de rejeição do pedido editada com sucesso', 'success');
-      setActiveModal('NEW_ORDER_REJECTION_JUSTIFY_CONFIRM');
-    } catch (err:unknown) {
-      showToast('Houve um erro:' + err, 'error');
-    } finally {
-      setLoading(prev => ({...prev, editing: false}));
-      setMoreActionsOrderId(null);
-      setActiveModal('ORDERS_FROM_PRODUCT');
-    }
-  }
-
-  const handleSendMessageAboutCustomerOrderSituation = async() => {
-    if (!selectedOrder) {
-      showToast('Pedido inválido ou não selecionado', 'error');
-      return;
-    }
-
-    if (loading.sending) return;
-    setLoading(prev => ({...prev, sending: true}));
-
-    try {
-      await sendMessageAboutCustomerOrderSituation(
-        selectedOrder.orderId,
-        selectedOrder.orderStatus,
-        messageAboutCustomerOrderSituation,
-      );
-
-      showToast('Mensagem mandada com sucesso', 'success');
-    } catch (err:unknown) {
-      showToast('Houve um erro: ' + err, 'error');
-    } finally {
-      setMessageAboutCustomerOrderSituation('');
-      setLoading(prev => ({...prev, sending: false}));
-      setMoreActionsOrderId(null);
-      setActiveModal('ORDERS_FROM_PRODUCT');
-    }
-  }
-
-  const handleUpdateProductStock = async() => {
-    if (loading.reseting) return;
-    setLoading(prev => ({...prev, reseting: true}));
-
-    try { 
-      await updatedProductStock(
-        product.id,
-        newProductStock,
-      );
-
-      showToast('Estoque atualizado com sucesso', 'success');
-    } catch (err:unknown) {
-      showToast('Houve um erro: ' + err, 'error');
-    } finally {
-      setLoading(prev => ({...prev, reseting: false}));
-      setMoreActionsOrderId(null);
-      setActiveModal('ORDERS_FROM_PRODUCT');
-    }
-  }
-
-  useLockScrollY(Boolean(activeModal));
+  const {
+    error,
+    loading,
+    category,
+    ordersStats,
+    activeModal,
+    orderSearch,
+    orderFilter,
+    selectedOrder,
+    datePutToSale,
+    filteredOrders,
+    newProductStock,
+    moreActionsOrderId,
+    newOrderRejectionJustify,
+    messageAboutCustomerOrderSituation,
+    handleSendMessageAboutCustomerOrderSituation,
+    setMessageAboutCustomerOrderSituation,
+    handleEditOrderRejectionJustify,
+    setNewOrderRejectionJustify,
+    handleUpdateProductStock,
+    handleMoreActionsOpen,
+    setMoreActionsOrderId,
+    setRejectionJustify,
+    setNewProductStock,
+    handleAcceptOrder,
+    handleRejectOrder,
+    handleRemoveOrder,
+    setOrderSearch,
+    setOrderFilter,
+    setActiveModal,
+    selectOrder,
+    setError,
+  } = useOrderLogic({ product });
 
   return (
     <motion.div
@@ -351,8 +140,9 @@ const OrderProduct = ({product}:Props) => {
       <ConfirmAction 
         isOpen={activeModal === 'ACCEPT_ORDER_CONFIRM'} 
         hasWarning
+        isActionIrreversible
         decision={'ACCEPT'} 
-        loading={loading.accepting} 
+        loading={loading} 
         onAccept={{
           handleSubmit: handleAcceptOrder
         }}
@@ -363,7 +153,7 @@ const OrderProduct = ({product}:Props) => {
         }}
         onCloseActions={() => {
           setMoreActionsOrderId(null);
-          setActiveModal(loading.accepting 
+          setActiveModal(loading 
             ? 'ACCEPT_ORDER_CONFIRM' 
             : 'ORDERS_FROM_PRODUCT');
         }} 
@@ -375,7 +165,7 @@ const OrderProduct = ({product}:Props) => {
         isOpen={activeModal === 'REJECT_ORDER_CONFIRM'} 
         hasWarning
         decision={'REJECT'} 
-        loading={loading.rejecting} 
+        loading={loading} 
         onReject={{
           handleSubmit: handleRejectOrder,
           error: error,
@@ -392,7 +182,7 @@ const OrderProduct = ({product}:Props) => {
         onCloseActions={() => {
           setError('');
           setMoreActionsOrderId(null);
-          setActiveModal(loading.rejecting 
+          setActiveModal(loading
             ? 'REJECT_ORDER_CONFIRM' 
             : 'ORDERS_FROM_PRODUCT');
         }} 
@@ -404,7 +194,7 @@ const OrderProduct = ({product}:Props) => {
         isOpen={activeModal === 'REMOVE_ORDER'} 
         hasWarning
         decision={'ACCEPT'} 
-        loading={loading.removing} 
+        loading={loading} 
         customSentence={{
           title: 'Remover pedido',
           sentence: (
@@ -418,7 +208,7 @@ const OrderProduct = ({product}:Props) => {
         }}
         onCloseActions={() => {
           setMoreActionsOrderId(null);
-          setActiveModal(loading.removing 
+          setActiveModal(loading 
             ? 'REMOVE_ORDER' 
             : 'ORDERS_FROM_PRODUCT');
         }} 
@@ -437,7 +227,7 @@ const OrderProduct = ({product}:Props) => {
         newRejectionJustify={newOrderRejectionJustify ?? ''}
         sellerRejectionJustify={selectedOrder?.orderRejectionJustify ?? ''}
         editOrderRejectionJustify={activeModal === 'EDIT_ORDER_REJECTION_JUSTIFY'}
-        loading={loading.editing}
+        loading={loading}
         onEdit={{
           onClick: () => {
             if (activeModal === 'EDIT_ORDER_REJECTION_JUSTIFY') {
@@ -478,7 +268,7 @@ const OrderProduct = ({product}:Props) => {
       <JustifyAboutOrderSituation
         isOpen={activeModal === 'PRODUCT_OUTTA_STOCK_MESSAGE'}
         error={error}
-        loading={loading.sending}
+        loading={loading}
         messageAboutSituation={messageAboutCustomerOrderSituation}
         onCloseActions={() => {
           setMessageAboutCustomerOrderSituation('');
@@ -503,7 +293,7 @@ const OrderProduct = ({product}:Props) => {
       <ResetProductStock
         isOpen={activeModal === 'RESET_PRODUCT_STOCK'}
         error={error}
-        loading={loading.reseting}
+        loading={loading}
         onCloseActions={() => {
           setActiveModal('ORDERS_FROM_PRODUCT');
           setError('');
@@ -524,7 +314,7 @@ const OrderProduct = ({product}:Props) => {
       <ConfirmAction 
         isOpen={activeModal === 'NEW_ORDER_REJECTION_JUSTIFY_CONFIRM'}
         decision={'ACCEPT'} 
-        loading={loading.editing} 
+        loading={loading} 
         customSentence={{
           title: 'Confirmar ação',
           sentence: `Tem certeza que deseja alterar sua justificativa de rejeição atual desse pedido ?`

@@ -4,11 +4,12 @@ import { buttonColorsScheme, titleColors } from '@/src/constants/systemColorsPal
 import MenuItem from './MenuItem';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/src/lib/auth-client';
-import { useUserStore } from '@/src/store/useUserStore';
+import { useUserStore } from '@/src/hooks/store/useUserStore';
 import Spinner from './Spinner';
 import { ROLE_LABEL } from '@/src/constants/generalConfigs';
 import { getNameAndSurname } from '@/src/utils/getNameAndSurname';
 import Link from 'next/link';
+import { useThemeStore } from '@/src/hooks/store/useDarkTheme';
 
 type Props = {
   menu: boolean;
@@ -20,7 +21,12 @@ const Menu = ({menu, showMenu}:Props) => {
 
   const router = useRouter();
 
+  const isDark = useThemeStore((state) => state.isDark);
+  const setDark = useThemeStore((state) => state.setDark);
+
   const handleLogout = async () => {
+    if (isDark) setDark(!isDark);
+
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {

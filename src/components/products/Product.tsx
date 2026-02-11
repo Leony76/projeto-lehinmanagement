@@ -3,28 +3,22 @@
 import Image from 'next/image'
 import { IoStar, IoStarOutline } from 'react-icons/io5';
 import Button from '../form/Button';
-import { CATEGORY_LABEL_MAP } from '@/src/constants/generalConfigs';
 import { productCardSetup } from '@/src/styles/Product/productCard.style';
 import { ProductDTO } from '@/src/types/productDTO';
 import { formatCurrency } from '@/src/utils/formatCurrency';
-import { useUserStore } from '@/src/store/useUserStore';
-import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
+import { buttonColorsScheme } from '@/src/constants/systemColorsPallet';
 import { getNameAndSurname } from '@/src/utils/getNameAndSurname';
-import { removeProduct } from '@/src/actions/productActions';
-import { useState } from 'react';
 import Modal from '../modal/Modal';
-import { useToast } from '@/src/contexts/ToastContext';
 import EditProductForm from '../form/EditProductForm';
 import OrderProduct from '../modal/OrderProduct';
-import { useLockScrollY } from '@/src/utils/useLockScrollY';
 import { FaInfo } from 'react-icons/fa6';
 import { motion } from 'framer-motion';
-import { ProductPageModals } from '@/src/types/modal';
 import ProductInfo from '../modal/Product/ProductInfo';
 import ImageExpand from '../modal/ImageExpand';
 import RemoveProductJustify from '../modal/Product/RemoveProductJustify';
 import ConfirmRemove from '../modal/Product/ConfirmRemove';
 import { productCardStyles as styles } from '@/src/styles/Product/productCard.style';
+import { useProductLogic } from '@/src/hooks/pageLogic/useProductLogic';
 
 type Props = {
   product: ProductDTO;
@@ -32,44 +26,22 @@ type Props = {
 
 const Product = ({
   product,
-}:Props) => {
+}:Props) => { 
 
-  const { showToast } = useToast();
-
-  const datePutToSale = new Date(product.createdAt).toLocaleDateString("pt-BR");
-  const category = CATEGORY_LABEL_MAP[product.category];
-
-  const [activeModal, setActiveModal] = useState<ProductPageModals | null>(null);
-
-  const [removeJustify, setRemoveJustify] = useState<string>('');
-  const [error, setError] = useState<string>('');
-
-
-  const user = useUserStore((stats) => stats.user);
-
-  const available = product.stock - product.reservedStock;
-  const canOrder = (product.sellerId !== user?.id) && (user?.role !== 'ADMIN');
-
-  const handleRemoveProduct = async() => {
-    if (!removeJustify) {
-      setError('A justificativa de remoção é obrigatória');
-      return;
-    }
-
-    try {
-      
-      await removeProduct(product.id, removeJustify);
-      
-      setRemoveJustify('');
-      showToast('Produto removido com sucesso', 'success');
-    } catch (err) {
-      showToast('Erro ao remover produto', 'error');
-    } finally {
-      setActiveModal(null);
-    }
-  };
-
-  useLockScrollY(Boolean(activeModal));  
+  const {
+    user,
+    error,
+    loading,
+    canOrder,
+    category,
+    available,
+    activeModal,
+    datePutToSale,
+    handleRemoveProduct,
+    setRemoveJustify,
+    setActiveModal,
+    setError,
+  } = useProductLogic({ product });
 
   return (
     <motion.div
@@ -187,17 +159,24 @@ const Product = ({
       {/* ⇊ MODALS ⇊ */}
 
       <ConfirmRemove
+        loading={loading}
         modal={{
           isOpen: activeModal === 'CONFIRM_REMOVE_PRODUCT',
           onCloseActions: () => setActiveModal(null),
         }}
         user={{ role: user?.role }}
         onClick={{
-          yes: () => setActiveModal('REMOVE_PRODUCT_JUSTIFY'),
+          yes: () => {
+            if (user?.role === 'ADMIN') {
+              setActiveModal('REMOVE_PRODUCT_JUSTIFY');
+              return;
+            }
+            handleRemoveProduct();
+          },
           no: () => setActiveModal(null),
         }}
       />
-
+      
       <RemoveProductJustify
         modal={{ 
           isOpen: activeModal === 'REMOVE_PRODUCT_JUSTIFY',

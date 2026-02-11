@@ -5,16 +5,10 @@ import PageTitle from "@/src/components/ui/PageTitle"
 import SectionTitle from "@/src/components/ui/SectionTitle"
 import ToggleButton from "@/src/components/ui/ToggleButton"
 import { useToast } from "@/src/contexts/ToastContext";
-import { useThemeStore } from "@/src/store/useDarkTheme";
+import { useThemeStore } from "@/src/hooks/store/useDarkTheme";
 import { FaRegMoon } from "react-icons/fa6"
 
-type Props = {
-  settings: {
-    systemTheme: boolean;
-  };
-}
-
-const Settings = ({settings}:Props) => {
+const Settings = () => {
 
   const { showToast } = useToast();
 

@@ -41,7 +41,7 @@ export async function createProduct(input: unknown) {
 
 export async function removeProduct(
   id: number, 
-  removeJustify?: string
+  removeJustify?: string 
 ) {
   if (removeJustify?.trim() !== '') {
     await prisma.product.update({

@@ -74,7 +74,10 @@ export const ordersFromProductMenu = {
   buttonSchemeContainer: "flex sm:justify-end",
   buttonsContainer: 'flex gap-5',
   decisionButtonsContainer: 'flex gap-2 sm:w-fit w-full',
-  decisionButtons: `px-5 flex-1 ${buttonColorsScheme.green}`,
+  decisionButtons: {
+    accept: `px-5 flex-1 ${buttonColorsScheme.green}`,
+    reject: `px-5 flex-1 ${buttonColorsScheme.red}`,
+  },
 
   moreActionsButton: `px-5 ${buttonColorsScheme.secondary}`,
   orderSituationBottomTag: 'flex gap-2 justify-end',

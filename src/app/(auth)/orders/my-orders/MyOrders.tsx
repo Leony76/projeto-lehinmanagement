@@ -37,7 +37,7 @@ const MyOrders = ({userOrders}:Props) => {
 
   return (
     <div>
-      <PageTitle style="my-2" title="Meus Pedidos"/>
+      <PageTitle style="my-2 mb-4" title="Meus Pedidos"/>
       <ProductOrdersGeneralStats 
         approved={ordersStats.approved} 
         pending={ordersStats.pending} 
@@ -80,7 +80,7 @@ const MyOrders = ({userOrders}:Props) => {
             ? `Nenhum resultado para "${search}"`
           : categoryFilter
             ? `Nenhum resultado para a categoria "${translatedCategoryFilter}"`
-          : `Nenhum produto no estoque no momento`
+          : `Nenhum pedido feito por você no momento`
         }
       />
     )}

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { SystemRoles } from "../constants/generalConfigs";
+import { SystemRoles } from "../../constants/generalConfigs";
 
 export type User = {
   id: string;
