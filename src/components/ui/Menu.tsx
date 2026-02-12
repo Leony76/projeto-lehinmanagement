@@ -67,15 +67,63 @@ const Menu = ({menu, showMenu}:Props) => {
         </h2>
         <nav className="flex flex-col flex-1">
           <ul className="text-[15px]">
-            <MenuItem route='/dashboard' closeMenu={showMenu} label={'Dashboard'}/>
-            <MenuItem route='/products' closeMenu={showMenu} label={'Produtos'}/>
-            {user?.role === 'SELLER' && <MenuItem route='/orders' closeMenu={showMenu} label={'Pedidos'}/>}
-            {(user?.role === 'CUSTOMER' || user?.role === 'SELLER') &&  <MenuItem route='/products/my-products' closeMenu={showMenu} label={'Meus Produtos'}/>}
-          {user?.role === 'SELLER' ? (
-            <MenuItem route='/products/sell-product' closeMenu={showMenu} label={'Vender Produto'}/>
-          ) : user?.role === 'ADMIN' ? (
-            <MenuItem style='text-[13px]' route='/products/sell-product' closeMenu={showMenu} label={'Adicionar Produto'}/>) : (<></>)}
-          {user?.role !== 'ADMIN' && <MenuItem route='/orders/my-orders' closeMenu={showMenu} label={'Meus Pedidos'}/>}
+            <MenuItem 
+              route='/dashboard' 
+              closeMenu={showMenu} 
+              label={'Dashboard'}
+            />
+
+            <MenuItem 
+              route='/products' 
+              closeMenu={showMenu} 
+              label={'Produtos'}
+            />
+
+            {user?.role === 'SELLER' && 
+              <MenuItem 
+                route='/orders' 
+                closeMenu={showMenu} 
+                label={'Pedidos'}
+              />
+            }
+
+            {(user?.role === 'CUSTOMER' || user?.role === 'SELLER') &&  
+              <MenuItem 
+                route='/products/my-products' 
+                closeMenu={showMenu} 
+                label={'Meus Produtos'}
+              />
+            }
+
+            {user?.role === 'SELLER' ? (
+              <MenuItem 
+                route='/products/sell-product' 
+                closeMenu={showMenu} 
+                label={'Vender Produto'}
+              />
+            ) : user?.role === 'ADMIN' && (
+              <>
+              <MenuItem 
+                style='text-[13px]' 
+                route='/products/sell-product' 
+                closeMenu={showMenu} 
+                label={'Adicionar Produto'}
+              />
+              <MenuItem 
+                route='/users' 
+                closeMenu={showMenu} 
+                label={'Usuários'}
+              />
+              </>
+            )} 
+              
+            {user?.role !== 'ADMIN' && 
+              <MenuItem 
+                route='/orders/my-orders' 
+                closeMenu={showMenu} 
+                label={'Meus Pedidos'}
+              />
+            }
           </ul>
           <ul className="mt-auto text-center mb-5">
             <li className={`${buttonColorsScheme.menuLi} text-secondary!`}>

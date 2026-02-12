@@ -4,6 +4,10 @@ export type GenericPageModals  =
 | 'ORDERS_FROM_PRODUCT'
 ;
 
+export type UsersPageModals = GenericPageModals
+| 'USER_INFOS'
+;
+
 export type ProductPageModals = GenericPageModals 
 | 'CONFIRM_REMOVE_PRODUCT'
 | 'REMOVE_PRODUCT_JUSTIFY'

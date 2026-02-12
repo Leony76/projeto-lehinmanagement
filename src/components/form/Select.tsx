@@ -1,15 +1,14 @@
 "use client"
 
 import { forwardRef, useState } from "react"
-import { ColorScheme, PAYMENT_OPTIONS, PRODUCT_FILTER_OPTIONS, CATEGORY_OPTIONS, SelectFilterOptions, ORDER_FILTER_OPTIONS, USER_ORDER_FILTER_OPTIONS, USER_PRODUCT_FILTER_OPTIONS, USER_PRODUCT_ORDERS_FILTER_OPTIONS } from "@/src/constants/generalConfigs"
+import { ColorScheme, PAYMENT_OPTIONS, PRODUCT_FILTER_OPTIONS, CATEGORY_OPTIONS, SelectFilterOptions, ORDER_FILTER_OPTIONS, USER_ORDER_FILTER_OPTIONS, USER_PRODUCT_FILTER_OPTIONS, USER_PRODUCT_ORDERS_FILTER_OPTIONS, USERS_FILTER_OPTIONS, USER_ROLE_FILTER_OPTIONS } from "@/src/constants/generalConfigs"
 import { textColors } from "@/src/constants/systemColorsPallet"
 import Error from "../ui/Error"
 import Button from "./Button"
 import { AnimatePresence, motion } from "framer-motion"
 import { FaFilterCircleXmark } from "react-icons/fa6"
 
-interface SelectProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {
+interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   selectSetup: SelectFilterOptions;
   colorScheme?: ColorScheme
   label?: string
@@ -50,13 +49,11 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         ? CATEGORY_OPTIONS
       : selectSetup === "USER_PRODUCT_ORDERS_FILTER"
         ? USER_PRODUCT_ORDERS_FILTER_OPTIONS
+      : selectSetup === "USERS_FILTER"
+        ? USERS_FILTER_OPTIONS
+      : selectSetup === "USERS_ROLE"
+        ? USER_ROLE_FILTER_OPTIONS
       : PAYMENT_OPTIONS
-
-    const statusClasses = error
-      ? "!border-red-400 shadow-[0px_0px_4px_red] focus:ring-red"
-      : colorScheme === "primary"
-      ? "focus:ring-primary"
-      : "focus:ring-secondary"
 
     const dropdownVariants = {
       hidden: {
@@ -162,27 +159,31 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               `}
               >
                 <button 
-                  type="button"
-                  className={`text-left flex items-center gap-2 justify-center transition duration-200 hover:text-white hover:bg-white/15 rounded-2xl p-0.5 cursor-pointer active:bg-transparent ${
-                    colorScheme === 'primary'
-                      ? 'text-red'
-                      : 'text-red'
-                  }`}
-                  onClick={() => handleSelect('')}
+                type="button"
+                className={`text-left flex items-center gap-2 justify-center transition duration-200 hover:text-white hover:bg-white/15 rounded-2xl p-0.5 cursor-pointer active:bg-transparent ${
+                  colorScheme === 'primary'
+                    ? 'text-red'
+                    : 'text-red'
+                }`}
+                onClick={() => handleSelect('')}
                 >
                   <FaFilterCircleXmark/>
                   {'Nenhum'}
                 </button>
               {options.map((option) => (
                 <button 
-                  key={option.value}
-                  type="button"
-                  className={`transition duration-200 hover:text-white hover:bg-white/15 rounded-2xl p-0.5 cursor-pointer active:bg-transparent ${
-                    colorScheme === 'primary'
-                      ? 'text-primary-ultralight'
-                      : 'text-secondary-light'
-                  }`}
-                  onClick={() => handleSelect(option.value)}
+                key={option.value}
+                type="button"
+                className={`transition duration-200 hover:text-white hover:bg-white/15 rounded-2xl p-0.5 cursor-pointer active:bg-transparent ${
+                  colorScheme === 'primary'
+                    ? 'text-primary-ultralight'
+                    : 'text-secondary-light'
+                } ${
+                  option.label.length > 10
+                    ? 'text-sm'
+                    : 'text-base'
+                }`}
+                onClick={() => handleSelect(option.value)}
                 >
                   {option.label}
                 </button>

@@ -221,7 +221,7 @@ const Product = ({
           price: product.price,
           stock: product.stock,
           publishedAt: product.createdAt,
-          updatedAt: product.updatedAt,
+          updatedAt: product.updatedAt ?? 'Sem atualização',
           salesCount: product.productSalesCount ?? 0,
           rating: product.productAverageRating ?? 'Não avaliado',
         }}
@@ -235,7 +235,7 @@ const Product = ({
           isOpen: activeModal === 'EXPAND_IMAGE',
           onCloseActions: () => setActiveModal('PRODUCT_INFO'),
         }}
-        product={{
+        image={{
           imageUrl: product.imageUrl,
           name: product.name,
         }}

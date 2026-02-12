@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image, { StaticImageData } from "next/image";
 import Modal from "./Modal";
 
 type Props = {
@@ -6,15 +6,15 @@ type Props = {
     isOpen: boolean;
     onCloseActions: () => void;
   };
-  product: {
-    imageUrl: string;
+  image: {
+    imageUrl: string | StaticImageData;
     name: string;
   };
 }
 
 const ImageExpand = ({
   modal,
-  product,
+  image,
 }:Props) => {
   return (
     <Modal 
@@ -23,8 +23,8 @@ const ImageExpand = ({
     onCloseModalActions={modal.onCloseActions}>
       <div className='relative aspect-square h-[90vh]'>
         <Image 
-          src={product.imageUrl} 
-          alt={product.name}            
+          src={image.imageUrl} 
+          alt={image.name}            
           fill
           className='object-contain aspect-square border-x-4 border-double cursor-zoom-out border-primary'
           onClick={modal.onCloseActions}

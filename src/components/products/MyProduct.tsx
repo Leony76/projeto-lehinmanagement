@@ -169,7 +169,7 @@ const MyProduct = ({
       <ImageExpand modal={{
           isOpen: activeModal === 'EXPAND_IMAGE',
           onCloseActions: () => setActiveModal('USER_PRODUCT_INFO'),
-        }} product={{
+        }} image={{
           imageUrl: userProduct.imageUrl,
           name: userProduct.name
         }}
