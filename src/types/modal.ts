@@ -9,6 +9,7 @@ export type UsersPageModals = GenericPageModals
 ;
 
 export type ProductPageModals = GenericPageModals 
+| 'EDIT_JUSTIFY'
 | 'CONFIRM_REMOVE_PRODUCT'
 | 'REMOVE_PRODUCT_JUSTIFY'
 | 'PRODUCT_INFO'

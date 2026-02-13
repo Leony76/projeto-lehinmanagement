@@ -25,11 +25,34 @@ model User {
   orders               Order[]
   costumerProducts     CostumerProduct[]
   sellerProducts       Product[]
+
+  targetUser           AdminActionHistory[] @relation("AdminTargetUser")
+  actor                AdminActionHistory[]  @relation("AdminActor")
+
   orderHistoryChanged  OrderHistory[]  @relation("OrderHistoryChangedBy")
   orderHistoryDeleted  OrderHistory[]  @relation("OrderHistoryDeletedBy")
   productReview        ProductReview[]
+  admin                ProductChangeHistory[]
 
   @@map("users")
+}
+
+model AdminActionHistory {
+  id        Int       @id @default(autoincrement())
+  action    AdminAction
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  actorId   String    @map("actor_id")
+  targetUserId String? @map("target_user_id")
+  targetProductId Int? @map("target_product_id")
+  targetOrderId Int? @map("target_order_id")
+
+  actor     User      @relation("AdminActor", fields: [actorId], references: [id])
+  targetUser User?    @relation("AdminTargetUser", fields: [targetUserId], references: [id])
+  product   Product? @relation(fields: [targetProductId], references: [id])
+  order     Order?   @relation(fields: [targetOrderId], references: [id])
+
+  @@map("admin_action_history")
 }
 
 model Session {
@@ -98,6 +121,7 @@ model Order {
   user         User           @relation(fields: [userId], references: [id])
   payments     Payment[]
   costumerProducts CostumerProduct[]
+  order AdminActionHistory[]
 
   @@map("orders")
 }
@@ -114,18 +138,34 @@ model Product {
   deletedBy      DeletedBy?   @map("deleted_by")
   category       Category
   imageUrl       String       @map("image_url")
-  removeJustify  String?      @map("remove_justify")
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime?    @updatedAt @map("updated_at")
   deletedAt      DateTime?    @map("deleted_at")
 
   orderItems     OrderItem[]
+  adminActions   AdminActionHistory[]
   seller         User         @relation(fields: [sellerId], references: [id])
   customer       CostumerProduct[]
   reviews        ProductReview[]
+  changeHistory  ProductChangeHistory[]
 
   @@map("products")
 }
+
+model ProductChangeHistory {
+  id          Int      @id @default(autoincrement())
+  productId   Int      @map("product_id")
+  adminId     String   @map("admin_id")
+  action      ProductAdminAction
+  justification String
+  createdAt   DateTime @default(now())  @map("created_at")
+
+  product     Product  @relation(fields: [productId], references: [id]) 
+  admin       User     @relation(fields: [adminId], references: [id])
+
+  @@map("product_changes_history")
+}
+
 
 model CostumerProduct {
   id Int @id @default(autoincrement())
@@ -249,3 +289,20 @@ enum PaymentMethods {
   BANK_SLIP
   PIX
 }
+
+enum AdminAction {
+  USER_DEACTIVATED
+  USER_ACTIVATED
+  PRODUCT_REMOVED
+  PRODUCT_EDITED
+  ORDER_CANCELED
+  PAYMENT_REFUNDED
+}
+
+enum ProductAdminAction {
+  EDITED
+  DELETED
+  BLOCKED
+  UNBLOCKED
+}
+

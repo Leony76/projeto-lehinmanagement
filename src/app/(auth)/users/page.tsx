@@ -1,4 +1,4 @@
-import { getUsers } from '@/src/actions/userActions';
+import { getUsers } from '@/src/services/users';
 import Users from './Users';
 
 const UsersPage = async() => {

@@ -1,7 +1,8 @@
+import { HistoryItem } from "@/src/types/historyItem";
 import { formatCurrency } from "@/src/utils/formatCurrency";
 
 type Props = {
-  action: 'Pedido' | 'Venda' | 'Pedido negado' | 'Pedido aceito';
+  action: HistoryItem;
   timeStamp: string;
   product: {
     name: string;
@@ -18,8 +19,12 @@ const UserMostRecentActionInfoCard = ({
   return (
     <div className="flex flex-col text-sm mb-2 mt-1">
       <div className="flex gap-2 items-center">
-        <h4 className={`text-primary ${action === 'Pedido aceito' || action === 'Pedido negado' 
-          ? 'text-base'
+        <h4 className={`text-primary ${
+          action === 'Pedido aceito' 
+          || action === 'Pedido negado' 
+            ? 'text-base'
+          : action === 'Pedido cancelado'
+            ? 'text-[13px]'
           : 'text-lg'
         }`}>
           {action}

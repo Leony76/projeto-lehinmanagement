@@ -1,4 +1,6 @@
-import { OrderStatus, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
+import { HistoryItem } from "./historyItem";
+import { UserActionsHistory } from "./userActionsHistory";
 
 export type UsersDTO = {
   id: string;
@@ -12,12 +14,5 @@ export type UsersDTO = {
     salesDone: number;
   };
 
-  history: {
-    type: OrderStatus;
-    date: string;
-    value: number;
-    productName: string;
-    unitsOrdered: number;
-    orderId: number;
-  }[];
+  history: UserActionsHistory[];
 }

@@ -19,6 +19,8 @@ import RemoveProductJustify from '../modal/Product/RemoveProductJustify';
 import ConfirmRemove from '../modal/Product/ConfirmRemove';
 import { productCardStyles as styles } from '@/src/styles/Product/productCard.style';
 import { useProductLogic } from '@/src/hooks/pageLogic/useProductLogic';
+import TextArea from '../form/TextArea';
+import Error from '../ui/Error';
 
 type Props = {
   product: ProductDTO;
@@ -36,10 +38,24 @@ const Product = ({
     category,
     available,
     activeModal,
+    removeJustify,
     datePutToSale,
+    editJustify,
+    productToBeEdited,
+    imageFile,
+    setImageFile,
+    fileInputRef,
+    preview,
+    setPreview,
+    imageError,
+    handleEditProduct,
+    setImageError,
+    setEditJustify,
+    setProductToBeEdited,
     handleRemoveProduct,
     setRemoveJustify,
     setActiveModal,
+    setLoading,
     setError,
   } = useProductLogic({ product });
 
@@ -144,7 +160,10 @@ const Product = ({
             type="button"
             label="Editar"
             style={`flex-1 dark:bg-yellow-500 ${buttonColorsScheme.yellow}`}
-            onClick={() => setActiveModal('EDIT_PRODUCT')}
+            onClick={() => {
+              setActiveModal('EDIT_PRODUCT');
+              setProductToBeEdited(product);
+            }}
           />
           <Button
             type="button"
@@ -191,22 +210,79 @@ const Product = ({
           cancel: () => setActiveModal(null),
         }}
         product={{ sellerName: product.sellerName ?? '[Desconhecido]' }}
-        misc={{ error }}
+        misc={{ error, loading }}
+      />
+    
+      <EditProductForm
+        isOpen={activeModal === 'EDIT_PRODUCT'}
+        productToBeEdited={productToBeEdited}
+        onCloseActions={() => {
+          setActiveModal(null)
+          setProductToBeEdited(null);
+          setPreview(null);
+        }}
+        actions={{
+          handleEditProduct,
+          setActiveModal,
+        }}
+        imageProps={{
+          imageFile,
+          fileInputRef,
+          preview,
+          imageError,
+          setImageFile,
+          setPreview,
+          setImageError,
+        }}
       />
 
-
+      
       <Modal 
-      isOpen={activeModal === 'EDIT_PRODUCT'} 
-      modalTitle={'Editar produto'}
-      onCloseModalActions={() => setActiveModal(null)}
-      hasXClose
-      style={{container: '!max-w-215'}}
-      > 
-        <EditProductForm
-          productToBeEdited={product}
-          closeModal={() => setActiveModal(null)}
+      isOpen={activeModal === 'EDIT_JUSTIFY'} 
+      modalTitle={'Justificativa de edição'} 
+      onCloseModalActions={() => {
+        setActiveModal('EDIT_PRODUCT');         
+      }}>
+        <p className='text-secondary-dark'>
+          Escreva uma breve justificativa do porquê dessa edição para o vendedor.
+        </p>
+        <TextArea 
+          style={{container: 'mb-[-8px]', input: error ? 'shadow-[0px_0px_8px_red]' : ''}}
+          placeholder={'Justificativa'}
+          onChange={(e) => {
+            setEditJustify(e.target.value);
+            setError('');
+          }}
         />
+        {error && <Error error={error}/>}
+        <div className='flex gap-3 mt-2'>
+          <Button 
+            style={`flex-1 ${buttonColorsScheme.yellow}`}
+            type={'button'}
+            label='Editar'
+            loadingLabel='Processando'
+            loading={loading}
+            onClick={() => {
+              if (!editJustify) {
+                setError('A justificativa da edição não pode ser vazia');
+                return;
+              }
+              handleEditProduct();
+            }}
+          />
+          <Button 
+            style={`flex-1 ${buttonColorsScheme.red}`}
+            type={'button'}
+            label='Voltar'
+            onClick={() => {
+              setActiveModal('EDIT_PRODUCT');
+              setError('');
+              setEditJustify('');
+            }}
+          />
+        </div>
       </Modal>
+     
 
       <ProductInfo
          modal={{

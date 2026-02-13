@@ -15,6 +15,9 @@ import LabelValue from "./LabelValue";
 import UserMostRecentActionInfoCard from "./UserMostRecentActionInfoCard";
 import ImageExpand from "../modal/ImageExpand";
 import { UsersDTO } from "@/src/types/usersDTO";
+import React from "react";
+import { formattedDate } from "@/src/utils/formattedDate";
+import { ROLE_LABEL } from "@/src/constants/generalConfigs";
 
 type Props = {
   user: UsersDTO;
@@ -42,8 +45,8 @@ const UserCard = ({user}:Props) => {
           <span className='text-cyan'>
             {getNameAndSurname(user.name)}
           </span>
-          <span className='text-yellow-dark'>
-            {user.role}
+          <span className='text-gray'>
+            {ROLE_LABEL[user.role]}
           </span>
         </div>
       </div>
@@ -102,27 +105,29 @@ const UserCard = ({user}:Props) => {
               />
             </div>
 
-            <div className="order-2 sm:order-1 dark:brightness-[1.2]">
+            <div className="order-2 space-y-2 sm:order-1 dark:brightness-[1.2]">
               <LabelValue
                 label="Nome completo"
                 value={user.name}
               />
               <LabelValue
                 label="Posição"
-                value={user.role}
+                value={ROLE_LABEL[user.role]}
               />
               <LabelValue
                 label="Criado"
-                value={user.createdAt}
+                value={formattedDate(user.createdAt)}
               />
               <LabelValue
                 label="Pedidos feitos"
                 value={user.stats.ordersDone}
               />
-              <LabelValue
-                label="Vendas feitas"
-                value={user.stats.salesDone}
-              />
+              {user.role === 'SELLER' &&
+                <LabelValue
+                  label="Vendas feitas"
+                  value={user.stats.salesDone}
+                />
+              }
               <LabelValue
                 label="Status"
                 value={user.isActive 
@@ -145,22 +150,73 @@ const UserCard = ({user}:Props) => {
                 scrollbar-active-thumb-secondary-light
                 scrollbar-thin
               ">
-              {user.history.map((item, index, array) => (
-                <React.Fragment>
-                <UserMostRecentActionInfoCard
-                  action={item.type}
-                  timeStamp={item.date}
-                  product={{
-                    name: item.productName,
-                    units: item.unitsOrdered,
-                    value: item.value,
-                  }}
-                />
-                {(index < array.length - 1) && 
-                  <div className='border my-1 w-[95%] border-secondary-dark/30'/>
+              {user.history.map((item, index, array) => {
+
+                const orderDate = formattedDate(item.date);
+
+                if (user.role === 'CUSTOMER' && item.type === 'Pedido') {
+                  return (
+                    <React.Fragment key={`${item.orderId}-${item.type}-${index}`}>
+                    <UserMostRecentActionInfoCard
+                      action={item.type}
+                      timeStamp={orderDate}
+                      product={{
+                        name: item.productName,
+                        units: item.unitsOrdered,
+                        value: item.value,
+                      }}
+                    />
+                    {(index < array.length - 1) && 
+                      <div className='border my-1 w-[95%] border-secondary-dark/30'/>
+                    }
+                    </React.Fragment>
+                  )
+                } else if (user.role === 'SELLER') {
+                  return (
+                    <React.Fragment key={`${item.orderId}-${item.type}-${index}`}>
+                    <UserMostRecentActionInfoCard
+                      action={item.type}
+                      timeStamp={orderDate}
+                      product={{
+                        name: item.productName,
+                        units: item.unitsOrdered,
+                        value: item.value,
+                      }}
+                    />
+                    {(index < array.length - 1) && 
+                      <div className='border my-1 w-[95%] border-secondary-dark/30'/>
+                    }
+                    </React.Fragment>
+                  )
+                } else if (user.role === 'ADMIN') {
+                   return (
+                    <React.Fragment key={`${item.orderId}-${item.type}-${index}`}>
+
+                    <div className="flex flex-col text-sm mb-2 mt-1">
+                      <div className="flex gap-2 items-center">
+                        <h4 className=''>
+                          {'action'}
+                        </h4>
+                        <span className="text-gray">●</span>
+                        <span className="text-yellow text-xs">
+                          {'timeStamp'}
+                        </span>
+                      </div>
+                      <span className="text-gray">
+                        Produto: <span className="text-cyan">{'name'}</span>
+                      </span>
+                      <span className="text-gray">
+                        Justificativa: <p className="text-gray">{'sad'}</p>
+                      </span>
+                    </div>
+
+                    {(index < array.length - 1) && 
+                      <div className='border my-1 w-[95%] border-secondary-dark/30'/>
+                    }
+                    </React.Fragment>
+                  )
                 }
-                </React.Fragment>
-              ))}
+              })}
               </div>
             </div>        
           </div>          

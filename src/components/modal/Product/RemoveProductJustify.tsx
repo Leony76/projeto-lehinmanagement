@@ -22,6 +22,7 @@ type Props = {
   };
   misc: {
     error: string;
+    loading: boolean;
   };
 }
 
@@ -47,6 +48,7 @@ const RemoveProductJustify = ({
       {misc.error && <Error error={misc.error}/>}
       <div className='flex gap-2 mt-2'>
         <Button 
+          loading={misc.loading}
           type={'button'}
           label='Confirmar'
           style={`flex-1 ${buttonColorsScheme.green}`}
