@@ -1,26 +1,26 @@
 'use client';
 
-import Image from 'next/image'
-import { IoStar, IoStarOutline } from 'react-icons/io5';
-import Button from '../form/Button';
-import { productCardSetup } from '@/src/styles/Product/productCard.style';
+import { motion } from 'framer-motion';
+import { FaInfo } from 'react-icons/fa6';
 import { ProductDTO } from '@/src/types/productDTO';
+import { IoStar, IoStarOutline } from 'react-icons/io5';
 import { formatCurrency } from '@/src/utils/formatCurrency';
-import { buttonColorsScheme } from '@/src/constants/systemColorsPallet';
 import { getNameAndSurname } from '@/src/utils/getNameAndSurname';
-import Modal from '../modal/Modal';
+import { useProductLogic } from '@/src/hooks/pageLogic/useProductLogic';
+import { buttonColorsScheme } from '@/src/constants/systemColorsPallet';
+import { productCardSetup } from '@/src/styles/Product/productCard.style';
+
+import { productCardStyles as styles } from '@/src/styles/Product/productCard.style';
+
+import RemoveProductJustify from '../modal/Product/RemoveProductJustify';
+import EditProductJustify from '../modal/Product/EditProductJustify';
+import ConfirmRemove from '../modal/Product/ConfirmRemove';
+import ProductInfo from '../modal/Product/ProductInfo';
 import EditProductForm from '../form/EditProductForm';
 import OrderProduct from '../modal/OrderProduct';
-import { FaInfo } from 'react-icons/fa6';
-import { motion } from 'framer-motion';
-import ProductInfo from '../modal/Product/ProductInfo';
 import ImageExpand from '../modal/ImageExpand';
-import RemoveProductJustify from '../modal/Product/RemoveProductJustify';
-import ConfirmRemove from '../modal/Product/ConfirmRemove';
-import { productCardStyles as styles } from '@/src/styles/Product/productCard.style';
-import { useProductLogic } from '@/src/hooks/pageLogic/useProductLogic';
-import TextArea from '../form/TextArea';
-import Error from '../ui/Error';
+import Button from '../form/Button';
+import Image from 'next/image'
 
 type Props = {
   product: ProductDTO;
@@ -34,28 +34,27 @@ const Product = ({
     user,
     error,
     loading,
+    preview,
     canOrder,
     category,
     available,
-    activeModal,
-    removeJustify,
-    datePutToSale,
-    editJustify,
-    productToBeEdited,
     imageFile,
-    setImageFile,
-    fileInputRef,
-    preview,
-    setPreview,
     imageError,
-    handleEditProduct,
-    setImageError,
-    setEditJustify,
+    activeModal,
+    editJustify,
+    fileInputRef,
+    datePutToSale,
+    productToBeEdited,
     setProductToBeEdited,
     handleRemoveProduct,
+    handleEditProduct,
     setRemoveJustify,
+    setEditJustify,
     setActiveModal,
-    setLoading,
+    setImageError,
+    setImageFile,
+    setFormData, 
+    setPreview,
     setError,
   } = useProductLogic({ product });
 
@@ -108,7 +107,7 @@ const Product = ({
             }
           </div>
         ) : (
-          <div className={styles.label}> 
+          <div className={'text-cyan'}> 
             Ofertado pelo sistema
           </div>
         )}
@@ -224,6 +223,7 @@ const Product = ({
         actions={{
           handleEditProduct,
           setActiveModal,
+          setFormData,
         }}
         imageProps={{
           imageFile,
@@ -236,53 +236,33 @@ const Product = ({
         }}
       />
 
-      
-      <Modal 
-      isOpen={activeModal === 'EDIT_JUSTIFY'} 
-      modalTitle={'Justificativa de edição'} 
-      onCloseModalActions={() => {
-        setActiveModal('EDIT_PRODUCT');         
-      }}>
-        <p className='text-secondary-dark'>
-          Escreva uma breve justificativa do porquê dessa edição para o vendedor.
-        </p>
-        <TextArea 
-          style={{container: 'mb-[-8px]', input: error ? 'shadow-[0px_0px_8px_red]' : ''}}
-          placeholder={'Justificativa'}
-          onChange={(e) => {
+      <EditProductJustify
+        modal={{
+          isOpen: activeModal === 'EDIT_JUSTIFY',
+          onCloseActions: () => setActiveModal('EDIT_PRODUCT'),
+        }}
+        edit={{
+          onChange: { textArea: (e) => {
             setEditJustify(e.target.value);
             setError('');
-          }}
-        />
-        {error && <Error error={error}/>}
-        <div className='flex gap-3 mt-2'>
-          <Button 
-            style={`flex-1 ${buttonColorsScheme.yellow}`}
-            type={'button'}
-            label='Editar'
-            loadingLabel='Processando'
-            loading={loading}
-            onClick={() => {
+          }},
+          onClick: {
+            toBack: () => {
+              setActiveModal('EDIT_PRODUCT');
+              setError('');
+              setEditJustify('');
+            },
+            toEdit: () => {
               if (!editJustify) {
                 setError('A justificativa da edição não pode ser vazia');
                 return;
               }
               handleEditProduct();
-            }}
-          />
-          <Button 
-            style={`flex-1 ${buttonColorsScheme.red}`}
-            type={'button'}
-            label='Voltar'
-            onClick={() => {
-              setActiveModal('EDIT_PRODUCT');
-              setError('');
-              setEditJustify('');
-            }}
-          />
-        </div>
-      </Modal>
-     
+            }
+          }
+        }}
+        misc={{ error, loading }}
+      />
 
       <ProductInfo
          modal={{

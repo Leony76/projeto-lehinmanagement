@@ -15,7 +15,7 @@ import { orderProduct } from '@/src/actions/productActions';
 import Error from '../ui/Error';
 import { useToast } from '@/src/contexts/ToastContext';
 import { ProductPageModals } from '@/src/types/modal';
-import { LuInfo } from 'react-icons/lu';
+import WarningInfo from '../ui/WarningInfo';
 
 type Props = {
   activeModal: ProductPageModals | null;
@@ -246,10 +246,9 @@ const OrderProduct = ({
       <p className={`text-sm ${textColors.secondaryMiddleDark}`}>
         Após o pedido, você terá o direito de o cancelar a qualquer momento na aba 'Meus pedidos'.
       </p>
-      <p className={`text-sm flex items-center gap-1 ${textColors.yellow}`}>
-        <LuInfo size={20}/>
-        Você não efetuou o pegamento. O seu pedido ficará em pendente até ser pago e poder ser processado.
-      </p>
+      <WarningInfo 
+        text={'Você não efetuou o pegamento. O seu pedido ficará em pendente até ser pago e poder ser processado.'}
+      />
       </>
     )}
       <div className='flex gap-2 mt-2'>

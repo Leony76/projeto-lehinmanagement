@@ -1,1 +1,0 @@
-export type AdminActionsHistory = 'Edição' | 'Remoção' | 'Desativação' | 'Ativação';

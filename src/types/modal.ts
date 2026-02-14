@@ -6,6 +6,8 @@ export type GenericPageModals  =
 
 export type UsersPageModals = GenericPageModals
 | 'USER_INFOS'
+| 'DEACTIVATE_USER'
+| 'ACTIVATE_USER'
 ;
 
 export type ProductPageModals = GenericPageModals 

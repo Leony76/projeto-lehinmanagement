@@ -10,6 +10,7 @@ import OrderRequestDate from "../../ui/OrderRequestDate";
 import OrderRequestQuantity from "../../ui/OrderRequestQuantity";
 import Modal from "../Modal";
 import { filteredProductOrders } from "@/src/utils/filters/filteredProductOrdersFromUser";
+import { primaryColorScrollBar, secondaryColorScrollBar } from "@/src/styles/scrollBar.style";
 
 type Props = {
   isOpen: boolean;
@@ -67,15 +68,7 @@ const UserProductMenu = ({
     onCloseModalActions={onCloseActions}
     >
       <div className='flex h-full max-h-[80vh]'>
-        <div className='sm:flex hidden flex-col rounded-b-2xl gap-3 pr-2 flex-1 overflow-y-auto w-full
-        hover:scrollbar-thumb-secondary-light
-        scrollbar-thumb-secondary-middledark 
-          scrollbar-track-transparent
-          hover:scrollbar-track-transparent
-          scrollbar-active-track-transparent
-          scrollbar-active-thumb-primary-light
-          scrollbar-thin
-        '>
+        <div className={`sm:flex hidden flex-col rounded-b-2xl gap-3 pr-2 flex-1 overflow-y-auto w-full ${secondaryColorScrollBar}`}>
           <div className='relative aspect-square'>
             <Image
               src={product.imageUrl}
@@ -106,15 +99,7 @@ const UserProductMenu = ({
               <label className='text-primary-middledark font-bold'>
                 Descrição
               </label>
-              <span className='h-full max-h-30 overflow-y-auto text-secondary-dark flex-col  
-              hover:scrollbar-thumb-primary-light
-              scrollbar-thumb-primary-middledark 
-                scrollbar-track-transparent
-                hover:scrollbar-track-transparent
-                scrollbar-active-track-transparent
-                scrollbar-active-thumb-primary-light
-                scrollbar-thin
-                '>
+              <span className={`h-full max-h-30 overflow-y-auto text-secondary-dark flex-col ${primaryColorScrollBar}`}>
                 {product.description}
               </span>
             </div>
@@ -130,15 +115,7 @@ const UserProductMenu = ({
             </div>
           </div>
         </div>
-        <div className='flex flex-col gap-1 overflow-y-auto flex-2 pr-2
-        hover:scrollbar-thumb-primary-light
-        scrollbar-thumb-primary-middledark 
-          scrollbar-track-transparent
-          hover:scrollbar-track-transparent
-          scrollbar-active-track-transparent
-          scrollbar-active-thumb-primary-light
-          scrollbar-thin
-        '>
+        <div className={`flex flex-col gap-1 overflow-y-auto flex-2 pr-2 ${primaryColorScrollBar}`}>
         <div className="flex flex-col md:flex-row items-center gap-3 pl-2 mb-2 mt-3">
           <Search
             style={{ input: 'py-1 w-full flex-1' }}

@@ -5,7 +5,7 @@ import { formatCurrency } from '@/src/utils/formatCurrency';
 import Button from '../../form/Button';
 import TextArea from '../../form/TextArea';
 import Error from '../../ui/Error';
-import { LuInfo } from "react-icons/lu";
+import WarningInfo from '../../ui/WarningInfo';
 
 type BaseProps = {
   isOpen: boolean;
@@ -95,10 +95,9 @@ const ConfirmAction = ({
         />
         {onReject?.error && <Error error={onReject.error}/>}
         {hasWarning && (
-          <span className='text-yellow-dark flex items-center gap-1'>
-            <LuInfo size={20}/>
-            Essa ação pode ser revertida depois
-          </span>
+          <WarningInfo
+            text='Essa ação pode ser revertida depois'
+          />
         )}
         </>
       ) : (decision === 'CANCEL') ? (
@@ -107,20 +106,24 @@ const ConfirmAction = ({
           Caso tenha já tenha efetuado o pagamento, será notificado ao vendedor que você cancelou o pedido e será estornado seu dinheiro.
         </span>
         <span className='text-yellow-dark flex items-center gap-1'>
-          <LuInfo size={20}/>
-          {hasWarning && isActionIrreversible 
-            ? 'Essa ação é irreversível'
-            : 'Essa ação pode ser revertida depois'        
-          }
+          <WarningInfo
+            text={
+              hasWarning && isActionIrreversible 
+              ? 'Essa ação é irreversível'
+              : 'Essa ação pode ser revertida depois'
+            }
+          />
         </span>
         </>
       ) : (  
         <span className='text-yellow-dark flex items-center gap-1'>
-          <LuInfo size={20}/>
-          {hasWarning && isActionIrreversible 
-            ? 'Essa ação é irreversível'
-            : 'Essa ação pode ser revertida depois'        
-          }
+          <WarningInfo
+            text={
+              hasWarning && isActionIrreversible 
+              ? 'Essa ação é irreversível'
+              : 'Essa ação pode ser revertida depois'
+            }
+          />
         </span>
       )}
       <div className='flex gap-2'>

@@ -29,9 +29,10 @@ export const useAddSellProductLogic = () => {
     handleSubmit,
     watch,
     reset,
+    control,
     formState: { errors },
   } = useForm<AddProductFormData>({
-    resolver: zodResolver(addProductSchema),
+    resolver: zodResolver(addProductSchema as any),
   })
 
   const onSubmit = async(data: AddProductFormData) => {
@@ -71,9 +72,9 @@ export const useAddSellProductLogic = () => {
 
       reset({
         name: "",
-        category: undefined,
-        price: 0,
-        stock: 0,
+        category: "" as any, 
+        price: "" as any,    
+        stock: "" as any,    
         description: "",
       });
 
@@ -104,6 +105,7 @@ export const useAddSellProductLogic = () => {
     errors,
     preview,
     loading,
+    control,
     imageFile,
     imageError,
     fileInputRef,

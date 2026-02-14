@@ -7,7 +7,6 @@ import { AddProductFormData } from "@/src/schemas/addProductSchema";
 import { ProductPageModals } from "@/src/types/modal";
 import { ProductDTO } from "@/src/types/productDTO";
 import { useRef, useState } from "react";
-import { SubmitHandler } from "react-hook-form";
 
 type Props = {
   product: ProductDTO;
@@ -16,6 +15,8 @@ type Props = {
 export const useProductLogic = ({product}:Props) => {
 
   const { showToast } = useToast();
+
+  const [formData, setFormData] = useState<AddProductFormData | null>(null); // ADICIONE ISSO
 
   const datePutToSale = new Date(product.createdAt).toLocaleDateString("pt-BR");
   const category = CATEGORY_LABEL_MAP[product.category];
@@ -67,9 +68,12 @@ export const useProductLogic = ({product}:Props) => {
     }
   };
 
-  const handleEditProduct = async():Promise<void> => {
+  const handleEditProduct = async (): Promise<void> => {
 
     if (loading) return;
+
+    const dataToSave = formData;
+
     setLoading(true);
 
     try {
@@ -91,11 +95,13 @@ export const useProductLogic = ({product}:Props) => {
       } 
 
       const payload = {
-        ...productToBeEdited,
         id: productToBeEdited.id,
-        price: Number(productToBeEdited.price),
-        stock: Number(productToBeEdited.stock),
-        ...(imageUrl ? { imageUrl } : { imageUrl: productToBeEdited.imageUrl }),
+        name: dataToSave?.name ,
+        category: dataToSave?.category,
+        description: dataToSave?.description,
+        price: Number(dataToSave?.price),
+        stock: Number(dataToSave?.stock),
+        imageUrl: imageUrl || productToBeEdited.imageUrl,
       };
 
       if (user?.role === 'ADMIN') {
@@ -110,7 +116,9 @@ export const useProductLogic = ({product}:Props) => {
     } finally {
       setLoading(false);
       setActiveModal(null);
+      setFormData(null);
     }
+
   }
 
   useLockScrollY(Boolean(activeModal)); 
@@ -119,28 +127,27 @@ export const useProductLogic = ({product}:Props) => {
     user,
     error,
     loading,
+    preview,
     canOrder,
     category,
     available,
-    activeModal,
-    removeJustify,
-    datePutToSale,
-    editJustify,
-    productToBeEdited,
     imageFile,
-    setImageFile,
-    fileInputRef,
-    preview,
-    setPreview,
     imageError,
-    handleEditProduct,
-    setImageError,
+    activeModal,
+    editJustify,
+    fileInputRef,
+    datePutToSale,
+    productToBeEdited,
     setProductToBeEdited,
-    setEditJustify,
     handleRemoveProduct,
+    handleEditProduct,
     setRemoveJustify,
+    setEditJustify,
     setActiveModal,
-    setLoading,
+    setImageError,
+    setImageFile,
+    setFormData, 
+    setPreview,
     setError,
   }
 }

@@ -1,1 +1,0 @@
-export type HistoryItem = 'Pedido' | 'Venda' | 'Pedido negado' | 'Pedido aceito' | 'Pedido cancelado';

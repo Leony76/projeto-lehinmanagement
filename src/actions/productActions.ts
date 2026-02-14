@@ -54,22 +54,24 @@ export async function removeProduct(
         },
       });
 
-      await tx.productChangeHistory.create({
-        data: {
-          action: 'DELETED',
-          justification: removeJustify ?? '',
-          adminId: user.id,
-          productId: id, 
-        }
-      });
-
-      await tx.adminActionHistory.create({
+      const adminAction = await tx.adminActionHistory.create({
         data: {
           action: 'PRODUCT_REMOVED',
           actorId: user.id,
           targetProductId: id,
         }
       });
+
+      await tx.productChangeHistory.create({
+        data: {
+          action: 'DELETED',
+          justification: removeJustify ?? '',
+          adminId: user.id,
+          productId: id, 
+          adminActionId: adminAction.id,
+        }
+      });
+
     });
 
     revalidatePath('/products');
@@ -121,22 +123,24 @@ export async function updateProduct(input: unknown, justify?: string) {
     if (user.role === 'ADMIN') {
       if (!justify?.trim()) throw new Error("Justificativa obrigatória para admins");
 
-      await tx.productChangeHistory.create({
-        data: {
-          action: 'EDITED',
-          justification: justify,
-          adminId: user.id,
-          productId: validatedData.id!,
-        }
-      });
-
-      await tx.adminActionHistory.create({
+      const adminAction = await tx.adminActionHistory.create({
         data: {
           action: 'PRODUCT_EDITED',
           actorId: user.id,
           targetProductId: validatedData.id!,
         }
       });
+
+      await tx.productChangeHistory.create({
+        data: {
+          action: 'EDITED',
+          justification: justify,
+          adminId: user.id,
+          productId: validatedData.id!,
+          adminActionId: adminAction.id,
+        }
+      });
+
     }
   });
 

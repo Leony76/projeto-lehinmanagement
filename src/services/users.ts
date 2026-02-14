@@ -3,8 +3,13 @@
 import { headers } from "next/headers";
 import { auth } from "../lib/auth";
 import prisma from "../lib/prisma";
-import { Role } from "@prisma/client";
-import { UserActionsHistory } from "../types/userActionsHistory";
+import { AdminDTO, CustomerDTO, SellerDTO } from "../types/usersDTO";
+
+type UsersGroupedDTO = {
+  customers: CustomerDTO[];
+  sellers: SellerDTO[];
+  admins: AdminDTO[];
+};
 
 export async function getUsersRoleCount() {
   const stats = await prisma.user.groupBy({
@@ -51,67 +56,53 @@ export async function getUserSystemTheme() {
     : false;
 }
 
-export async function getUsers() {
+export async function getCustomers(): Promise<CustomerDTO[]> {
   const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      role: true,
-      createdAt: true,
-      isActive: true,
-
+    where: { role: 'CUSTOMER' },
+    include: {
       orders: {
-        select: {
-          id: true,
-          total: true,
-          createdAt: true,
-          status: true,
-
+        include: {
           orderItems: {
-            select: {
-              quantity: true,
-              price: true,
-              product: {
-                select: {
-                  name: true,
-                  sellerId: true,
-                },
-              },
-            },
-          },
-
-          orderHistory: {
-            select: {
-              status: true,
-              createdAt: true,
-              changedById: true,
-            },
+            include: { product: true },
           },
         },
       },
+    },
+  });
 
+  return users.map<CustomerDTO>((user) => ({
+    id: user.id,
+    name: user.name ?? '',
+    role: 'CUSTOMER',
+    createdAt: user.createdAt?.toISOString() ?? '',
+    isActive: user.isActive,
+    ordersDone: user.orders.length,
+
+    history: user.orders.map((order) => ({
+      type: 'Pedido',
+      date: order.createdAt?.toISOString() ?? '',
+      value: Number(order.total),
+      productName: order.orderItems[0]?.product.name ?? '',
+      unitsOrdered: order.orderItems.reduce(
+        (sum, item) => sum + item.quantity,
+        0
+      ),
+      orderId: order.id,
+    })),
+  }));
+}
+
+export async function getSellers(): Promise<SellerDTO[]> {
+  const sellers = await prisma.user.findMany({
+    where: { role: 'SELLER' },
+    include: {
       sellerProducts: {
-        select: {
+        include: {
           orderItems: {
-            select: {
-              quantity: true,
-              price: true, 
-              product: {   
-                select: {
-                  name: true,
-                },
-              },
+            include: {
               order: {
-                select: {
-                  id: true,
-                  status: true,
-                  orderHistory: {
-                    select: {
-                      status: true,
-                      createdAt: true,
-                      changedById: true,
-                    },
-                  },
+                include: {
+                  orderItems: true, 
                 },
               },
             },
@@ -121,89 +112,108 @@ export async function getUsers() {
     },
   });
 
-  return users.map((user) => {
-    const customerHistory: UserActionsHistory[] = user.orders.flatMap(order =>
-      order.orderHistory.map(h => ({
+  return sellers.map<SellerDTO>((seller) => {
+    const orders = seller.sellerProducts.flatMap(
+      (p) => p.orderItems.map((i) => i.order)
+    );
+
+    return {
+      id: seller.id,
+      name: seller.name ?? '',
+      role: 'SELLER',
+      createdAt: seller.createdAt?.toISOString() ?? '',
+      isActive: seller.isActive,
+
+      stats: {
+        ordersDone: orders.length,
+        salesDone: orders.filter(o => o.status === 'APPROVED').length,
+      },
+
+      history: orders.map((order) => ({
         type:
-          h.status === 'APPROVED'
+          order.status === 'APPROVED'
             ? 'Pedido aceito'
-          : h.status === 'REJECTED'
+            : order.status === 'REJECTED'
             ? 'Pedido negado'
-          : h.status === 'CANCELED'
+            : order.status === 'CANCELED'
             ? 'Pedido cancelado'
             : 'Pedido',
-
-        date: h.createdAt.toISOString(),
+        date: order.createdAt?.toISOString() ?? '',
         value: Number(order.total),
-        productName: order.orderItems[0].product.name,
+        productName: order.orderItems[0]?.productId
+          ? 'Produto vendido'
+          : null,
         unitsOrdered: order.orderItems.reduce(
-          (sum, item) => sum + item.quantity,
+          (sum, i) => sum + i.quantity,
           0
         ),
         orderId: order.id,
-      }))
-    );
+      })),
+    };
+  });
+}
 
-  const sellerHistory: UserActionsHistory[] = Object.values(
-    user.sellerProducts
-      .flatMap(p => p.orderItems)
-      .reduce<Record<string, UserActionsHistory>>((acc, item) => {
-        const order = item.order;
+export async function getAdmins(): Promise<AdminDTO[]> {
+  const admins = await prisma.user.findMany({
+    where: { role: 'ADMIN' },
+    include: {
+      actor: {
+        include: {
+          targetUser: true,
+          product: true,
+          productChange: {
+            select: {
+              justification: true,
+            }
+          }
+        },
+      },
+    },
+  });
 
-        order.orderHistory.forEach(h => {
-          const key = `${order.id}-${h.status}`;
+  return admins.map<AdminDTO>((admin) => ({
+    id: admin.id,
+    name: admin.name ?? '',
+    role: 'ADMIN',
+    createdAt: admin.createdAt?.toISOString() ?? '',
+    isActive: admin.isActive,
 
-          acc[key] ??= {
-            type:
-              h.status === 'APPROVED'
-                ? 'Venda'
-                : h.status === 'REJECTED'
-                ? 'Pedido negado'
-                : h.status === 'CANCELED'
-                ? 'Pedido cancelado'
-                : 'Pedido',
+    history: admin.actor.map((action) => {
+      if (action.targetUser) {
+        return {
+          target: 'USER',
+          type:
+            action.action === 'USER_ACTIVATED'
+              ? 'Ativação'
+              : 'Desativação',
+          date: action.createdAt.toISOString(),
+          username: action.targetUser.name,
+          justification: action.productChange?.justification ?? 'Ação administrativa',
+        };
+      }
 
-            date: h.createdAt.toISOString(),
-            value: Number(item.price) * item.quantity,
-            productName: item.product.name,
-            unitsOrdered: item.quantity,
-            orderId: order.id,
-          };
-        });
+      return {
+        target: 'PRODUCT',
+        type:
+          action.action === 'PRODUCT_EDITED'
+            ? 'Edição'
+            : 'Remoção',
+        date: action.createdAt.toISOString(),
+        productName: action.product?.name ?? null,
+        justification: action.productChange?.justification ?? 'Ação administrativa',
+      };
+    }),
+  }));
+}
 
-        return acc;
-      }, {})
-  );
-
-
-  const history: UserActionsHistory[] = [...customerHistory, ...sellerHistory]
-  .sort((a, b) => +new Date(b.date) - +new Date(a.date));
-
-
-  const salesDone = user.sellerProducts.reduce((total, product) => {
-    const approvedSales = product.orderItems.filter(
-      item => item.order.status === 'APPROVED'
-    );
-
-    return total + approvedSales.reduce(
-      (sum, item) => sum + item.quantity,
-      0
-    );
-  }, 0);
+export async function getUsers(): Promise<UsersGroupedDTO> {
+  const customers = await getCustomers();
+  const sellers = await getSellers();
+  const admins = await getAdmins();
 
   return {
-    id: user.id,
-    name: user.name ?? '[desconhecido]',
-    role: user.role ?? 'CUSTOMER' as Role,
-    createdAt: user.createdAt?.toISOString() ?? '??/??/??',
-    isActive: user.isActive,
-
-    stats: {
-      ordersDone: user.orders.length,
-      salesDone, 
-    },
-
-    history,
+    customers,
+    sellers,
+    admins,
   };
-})}
-
+}

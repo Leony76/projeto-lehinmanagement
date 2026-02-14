@@ -14,22 +14,50 @@ import { getNameAndSurname } from "@/src/utils/getNameAndSurname";
 import LabelValue from "./LabelValue";
 import UserMostRecentActionInfoCard from "./UserMostRecentActionInfoCard";
 import ImageExpand from "../modal/ImageExpand";
-import { UsersDTO } from "@/src/types/usersDTO";
-import React from "react";
+import { isAdminAction, isCustomerAction, isSellerAction, UsersDTO } from "@/src/types/usersDTO";
 import { formattedDate } from "@/src/utils/formattedDate";
 import { ROLE_LABEL } from "@/src/constants/generalConfigs";
+import { secondaryColorScrollBar } from "@/src/styles/scrollBar.style";
+import UserInfoMenu from "../modal/Users/UserInfoMenu";
+import TextArea from "../form/TextArea";
+import WarningInfo from "./WarningInfo";
+import Error from "./Error";
+import { useToast } from "@/src/contexts/ToastContext";
 
 type Props = {
   user: UsersDTO;
+  isDivided: boolean;
 }
 
-const UserCard = ({user}:Props) => {
+const UserCard = ({
+  user,
+  isDivided,
+}:Props) => {
 
   const [activeModal, setActiveModal] = useState<UsersPageModals | null>(null);
+  const [error, setError] = useState<string>('');
+  const [accoutDeactivation, setAccoutDeactivation] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
   useLockScrollY(Boolean(activeModal));
 
+  const { showToast } = useToast();
+
+  const handleDeactivateUserAccount = async():Promise<void> => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+
+    } catch (err:unknown) {
+      showToast('Houve um erro:' + err, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
+    <>
     <div className='flex p-2'>
       <div className='flex items-center gap-2 flex-1'>
         <div className='border-2 border-primary aspect-square rounded-full p-1'>
@@ -73,153 +101,76 @@ const UserCard = ({user}:Props) => {
 
       {/* ⇊ MODALS ⇊ */}
 
+      <UserInfoMenu
+        modal={{
+          isOpen: activeModal === 'USER_INFOS',
+          onCloseActions: () => setActiveModal(null),
+          setActiveModal,
+        }}
+        user={user}
+        onClick={{ onAvatarImage: () =>  setActiveModal('EXPAND_IMAGE')}}
+      />
+
       <Modal 
-      isOpen={activeModal === 'USER_INFOS'} 
-      modalTitle={
-        <>
-        <div className="sm:block hidden">Informações do usuário</div>
-        <div className="sm:hidden block text-2xl">Info. do usuário</div>
-        </>
-      } 
+      isOpen={activeModal === 'DEACTIVATE_USER'} 
       hasXClose
+      modalTitle={'Desativar usuário'} 
       onCloseModalActions={() => {
-        setActiveModal(null);
-      }}
-      >
-        <div className="max-h-[70dvh] overflow-y-auto h-full">
-          <div className="
-            grid gap-6
-            grid-cols-1
-            sm:grid-cols-2
-            lg:grid-cols-3
-          ">
-
-            <div className="order-1 self-center hover:scale-[1.025] cursor-zoom-in hover:brightness-[1.2] hover:shadow-[0px_0px_15px_orange] transition duration-200 sm:order-2 h-fit w-fit mx-auto border-2 rounded-full p-2 my-2 border-primary">
-              <Image
-                src={PlaceHolder}
-                alt={"placeholder"}
-                height={270}
-                width={270}
-                className="rounded-full aspect-square object-cover"
-                onClick={() => setActiveModal('EXPAND_IMAGE')}
-              />
-            </div>
-
-            <div className="order-2 space-y-2 sm:order-1 dark:brightness-[1.2]">
-              <LabelValue
-                label="Nome completo"
-                value={user.name}
-              />
-              <LabelValue
-                label="Posição"
-                value={ROLE_LABEL[user.role]}
-              />
-              <LabelValue
-                label="Criado"
-                value={formattedDate(user.createdAt)}
-              />
-              <LabelValue
-                label="Pedidos feitos"
-                value={user.stats.ordersDone}
-              />
-              {user.role === 'SELLER' &&
-                <LabelValue
-                  label="Vendas feitas"
-                  value={user.stats.salesDone}
-                />
+        setActiveModal('USER_INFOS');
+        setAccoutDeactivation('');
+        setError('');
+      }}>
+        <p className="text-secondary-middledark">
+          Tenha certeza que deseja desativar <span className="text-cyan">{user.name}</span> do sistema ?
+        </p>
+        <p className="text-primary">
+          Cite a justificativa da desativação
+        </p>
+        <TextArea
+          placeholder={"Justificativa"}
+          value={accoutDeactivation}
+          style={{
+            input: error 
+              ? 'shadow-[0px_0px_7px_red]' 
+              : '',
+            container: 'mb-[-7px]'
+          }}
+          onChange={(e) => {
+            setAccoutDeactivation(e.target.value);
+            setError('');
+          }}
+        />
+        {error && <Error error={error}/>}
+        <div className="mt-2"/>    
+        <WarningInfo 
+          text={"Todos os ativos do usuário desativado permanecerão intocáveis. O mesmo também será informado."}
+        />
+        <div className="flex gap-3">
+          <Button 
+            style={`flex-1 ${buttonColorsScheme.red}`}
+            type={"button"}
+            label="Desativar"
+            onClick={() => {
+              if (accoutDeactivation.length < 100 && accoutDeactivation.length > 0) {
+                setError('Não é possível desativar a conta do usuário sem uma justificativa de até 100 caractéres');
+                return;
+              } else if (accoutDeactivation.length === 0) {
+                setError('Não é possível desativar a conta do usuário sem uma justificativa');
+                return;
               }
-              <LabelValue
-                label="Status"
-                value={user.isActive 
-                  ? 'Ativo'
-                  : 'Inativo'
-                }
-              />
-            </div>
-
-            <div className="order-3 lg:col-span-1 sm:col-span-2">
-              <h3 className="text-secondary-middledark mb-1 text-xl">
-                Ações recentes
-              </h3>
-              <div className="border-y max-h-76 overflow-y-auto border-secondary-dark
-              hover:scrollbar-thumb-secondary-light
-              scrollbar-thumb-secondary-middledark 
-                scrollbar-track-secondary-light/0
-                hover:scrollbar-track-transparent
-                scrollbar-active-track-transparent
-                scrollbar-active-thumb-secondary-light
-                scrollbar-thin
-              ">
-              {user.history.map((item, index, array) => {
-
-                const orderDate = formattedDate(item.date);
-
-                if (user.role === 'CUSTOMER' && item.type === 'Pedido') {
-                  return (
-                    <React.Fragment key={`${item.orderId}-${item.type}-${index}`}>
-                    <UserMostRecentActionInfoCard
-                      action={item.type}
-                      timeStamp={orderDate}
-                      product={{
-                        name: item.productName,
-                        units: item.unitsOrdered,
-                        value: item.value,
-                      }}
-                    />
-                    {(index < array.length - 1) && 
-                      <div className='border my-1 w-[95%] border-secondary-dark/30'/>
-                    }
-                    </React.Fragment>
-                  )
-                } else if (user.role === 'SELLER') {
-                  return (
-                    <React.Fragment key={`${item.orderId}-${item.type}-${index}`}>
-                    <UserMostRecentActionInfoCard
-                      action={item.type}
-                      timeStamp={orderDate}
-                      product={{
-                        name: item.productName,
-                        units: item.unitsOrdered,
-                        value: item.value,
-                      }}
-                    />
-                    {(index < array.length - 1) && 
-                      <div className='border my-1 w-[95%] border-secondary-dark/30'/>
-                    }
-                    </React.Fragment>
-                  )
-                } else if (user.role === 'ADMIN') {
-                   return (
-                    <React.Fragment key={`${item.orderId}-${item.type}-${index}`}>
-
-                    <div className="flex flex-col text-sm mb-2 mt-1">
-                      <div className="flex gap-2 items-center">
-                        <h4 className=''>
-                          {'action'}
-                        </h4>
-                        <span className="text-gray">●</span>
-                        <span className="text-yellow text-xs">
-                          {'timeStamp'}
-                        </span>
-                      </div>
-                      <span className="text-gray">
-                        Produto: <span className="text-cyan">{'name'}</span>
-                      </span>
-                      <span className="text-gray">
-                        Justificativa: <p className="text-gray">{'sad'}</p>
-                      </span>
-                    </div>
-
-                    {(index < array.length - 1) && 
-                      <div className='border my-1 w-[95%] border-secondary-dark/30'/>
-                    }
-                    </React.Fragment>
-                  )
-                }
-              })}
-              </div>
-            </div>        
-          </div>          
+              handleDeactivateUserAccount();
+            }}  
+          />
+          <Button 
+            style={`flex-1 ${buttonColorsScheme.yellow}`}
+            type={"button"}
+            label="Cancelar"
+            onClick={() => {
+              setActiveModal('USER_INFOS');
+              setAccoutDeactivation('');
+              setError('');
+            }}
+          />
         </div>
       </Modal>
 
@@ -234,6 +185,11 @@ const UserCard = ({user}:Props) => {
         }}
       />
     </div>
+
+    {isDivided && (
+      <div className='border mx-2 my-1 border-secondary dark:border-secondary-dark' />
+    )}
+    </>
   )
 }
 

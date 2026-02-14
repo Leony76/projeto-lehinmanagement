@@ -1,11 +1,10 @@
 import React, { ChangeEvent } from 'react'
 import Modal from '../Modal';
 import { textColors } from '@/src/constants/systemColorsPallet';
-import { LuInfo } from 'react-icons/lu';
-import { productCardStyles as style } from '@/src/styles/Product/productCard.style';
 import Button from '../../form/Button';
 import TextArea from '../../form/TextArea';
 import Error from '../../ui/Error';
+import WarningInfo from '../../ui/WarningInfo';
 
 type Props = {
   isOpen: boolean;
@@ -41,10 +40,9 @@ const ProductComment = ({
         onChange={onChange.textArea}
       />
       {hasReview && !misc.error && 
-        <p className={style.warningMessage}>
-          <LuInfo size={20}/>
-          Você já comentou sobre esse produto. Um novo comentário sobrescreverá o seu último.
-        </p>
+        <WarningInfo 
+          text={'Você já comentou sobre esse produto. Um novo comentário sobrescreverá o seu último.'}
+        />
       }
       {misc.error && 
         <Error error={misc.error}/>

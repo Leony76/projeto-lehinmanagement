@@ -1,20 +1,20 @@
 'use client'
 
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form'
+import { Controller } from "react-hook-form";
+import { ProductDTO } from '@/src/types/productDTO'
+import { ProductPageModals } from '@/src/types/modal'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { AddProductFormData, addProductSchema } from '@/src/schemas/addProductSchema'
+import { editProductFormStyle as style } from '@/src/styles/Product/editProductForm.style'
+
+import TextArea from '@/src/components/form/TextArea'
+import Select from '@/src/components/form/Select'
 import Button from '@/src/components/form/Button'
 import Input from '@/src/components/form/Input'
-import Select from '@/src/components/form/Select'
-import TextArea from '@/src/components/form/TextArea'
-
-import { useEffect } from 'react';
-import { AddProductFormData, addProductSchema } from '@/src/schemas/addProductSchema'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { SubmitHandler, useForm } from 'react-hook-form'
-import Error from '../ui/Error'
-import { ProductDTO } from '@/src/types/productDTO'
-import { editProductFormStyle as style } from '@/src/styles/Product/editProductForm.style'
 import Modal from '../modal/Modal'
-import { ProductPageModals } from '@/src/types/modal'
-import { CategoryValue } from '@/src/constants/generalConfigs'
+import Error from '../ui/Error'
 
 type Props = {
   productToBeEdited: ProductDTO | null,
@@ -22,16 +22,9 @@ type Props = {
   isOpen: boolean;
   actions: {
     setActiveModal: React.Dispatch<React.SetStateAction<ProductPageModals | null>>;
-    handleEditProduct: SubmitHandler<{
-      name: string;
-      category: CategoryValue;
-      price: number;
-      stock: number;
-      id?: number | undefined;
-      imageUrl?: string | undefined;
-      description?: string | undefined;
-    }>
-  }
+    setFormData: (data: AddProductFormData) => void;
+    handleEditProduct: () => Promise<void>;
+  };
   imageProps: {
     imageFile: File | null,
     fileInputRef: React.RefObject<HTMLInputElement | null>,
@@ -55,15 +48,16 @@ const EditProductForm = ({
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<AddProductFormData>({
-    resolver: zodResolver(addProductSchema),
+    resolver: zodResolver(addProductSchema) as any,
     defaultValues: {
       name: productToBeEdited?.name || "",
       category: productToBeEdited?.category,
       description: productToBeEdited?.description || "",
-      price: productToBeEdited?.price,
-      stock: productToBeEdited?.stock,
+      price: productToBeEdited?.price || 0,
+      stock: productToBeEdited?.stock || 0,
     }
   })
 
@@ -89,7 +83,10 @@ const EditProductForm = ({
     > 
       <form
       className={style.mainContainer}
-      onSubmit={handleSubmit(actions.handleEditProduct)}
+      onSubmit={handleSubmit((data) => {
+        actions.setFormData(data as AddProductFormData); 
+        actions.setActiveModal('EDIT_JUSTIFY');
+      })}
       >
         <input
           type="file"
@@ -139,14 +136,20 @@ const EditProductForm = ({
             error={errors.name?.message}
           />
 
-          <Select
-            hasTopLabel
-            selectSetup="CATEGORY"
-            colorScheme="secondary"
-            label="Categoria"
-            style={{container: 'sm:mt-1'}}
-            {...register('category')}
-            error={errors.category?.message}
+          <Controller
+            control={control} 
+            name="category"
+            render={({ field }) => (
+              <Select
+                {...field}
+                hasTopLabel
+                selectSetup="CATEGORY"
+                colorScheme="secondary"
+                label="Categoria"
+                style={{container: 'sm:mt-1'}}
+                error={errors.category?.message}
+              />
+            )}
           />
 
           <TextArea
@@ -167,7 +170,7 @@ const EditProductForm = ({
                 container: style.price_stock.container 
               }}
               type="number"
-              {...register("price")}
+              {...register("price", { valueAsNumber: true })}
               error={errors.price?.message}
             />
 
@@ -179,7 +182,7 @@ const EditProductForm = ({
                 input: style.price_stock.input,
                 container: style.price_stock.container
               }}
-              {...register("stock")}
+              {...register("stock", { valueAsNumber: true })}
               error={errors.stock?.message}
             />
           </div>
@@ -187,10 +190,7 @@ const EditProductForm = ({
           <Button
             style={style.editButton}
             label="Prosseguir"
-            type="button"
-            onClick={() => {
-              actions.setActiveModal('EDIT_JUSTIFY');             
-            }}
+            type="submit"
           />
         </div>
         <div className={style.imageContainerForMobile}>

@@ -1,6 +1,6 @@
 "use client"
 
-import { forwardRef, useState } from "react"
+import { forwardRef, useEffect, useState } from "react"
 import { ColorScheme, PAYMENT_OPTIONS, PRODUCT_FILTER_OPTIONS, CATEGORY_OPTIONS, SelectFilterOptions, ORDER_FILTER_OPTIONS, USER_ORDER_FILTER_OPTIONS, USER_PRODUCT_FILTER_OPTIONS, USER_PRODUCT_ORDERS_FILTER_OPTIONS, USERS_FILTER_OPTIONS, USER_ROLE_FILTER_OPTIONS } from "@/src/constants/generalConfigs"
 import { textColors } from "@/src/constants/systemColorsPallet"
 import Error from "../ui/Error"
@@ -95,7 +95,16 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     };
 
     const [selectOptions, showSelectOptions] = useState<boolean>(false);
-    const [value, setValue] = useState<string>('');
+    const [value, setValue] = useState<string>((props.value as string) || (props.defaultValue as string) || '');
+
+    useEffect(() => {
+      const externalValue = (props.value as string) || (props.defaultValue as string) || '';
+      if (externalValue !== value) {
+        setValue(externalValue);
+      }
+    }, [props.value, props.defaultValue]);
+
+
     const selectedOption = options.find(opt => opt.value === value);
 
     return (
@@ -142,7 +151,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             {selectOptions && (
               <motion.div
               key="select-options"
-              variants={dropdownVariants}
+              variants={dropdownVariants as any}
               initial="hidden"
               animate="visible"
               exit="exit"

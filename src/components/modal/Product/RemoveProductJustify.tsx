@@ -49,6 +49,7 @@ const RemoveProductJustify = ({
       <div className='flex gap-2 mt-2'>
         <Button 
           loading={misc.loading}
+          loadingLabel='Processando'
           type={'button'}
           label='Confirmar'
           style={`flex-1 ${buttonColorsScheme.green}`}

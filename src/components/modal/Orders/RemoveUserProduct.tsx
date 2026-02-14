@@ -1,8 +1,7 @@
 import { buttonColorsScheme } from '@/src/constants/systemColorsPallet';
-import React from 'react'
-import { LuInfo } from 'react-icons/lu';
 import Button from '../../form/Button';
 import Modal from '../Modal';
+import WarningInfo from '../../ui/WarningInfo';
 
 type Props = {
   isOpen: boolean;
@@ -29,10 +28,9 @@ const RemoveUserProduct = ({
       <p className='text-secondary-dark'>
         Tem certeza que deseja excluir esse produto ?
       </p>
-      <p className='text-yellow-dark flex items-center gap-1'>
-        <LuInfo size={20}/> 
-        Essa ação é inrreversível
-      </p>
+      <WarningInfo 
+        text={'Essa ação é inrreversível'}
+      />
       <div className='flex gap-3 text-lg'>
         <Button 
           type={'submit'}

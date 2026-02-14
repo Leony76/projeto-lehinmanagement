@@ -4,6 +4,7 @@ import { forwardRef } from "react"
 import { ColorScheme } from "@/src/constants/generalConfigs"
 import { textColors, inputColorScheme } from "@/src/constants/systemColorsPallet"
 import Error from "../ui/Error"
+import { primaryColorScrollBar, secondaryColorScrollBar } from "@/src/styles/scrollBar.style"
 
 interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   style?: {
@@ -53,26 +54,8 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
             rounded-xl
             ${style?.input ?? ""}
             ${colorScheme === "primary"
-              ? inputColorScheme.primary + 
-                `
-              hover:scrollbar-thumb-primary-light
-              scrollbar-thumb-primary-middledark 
-                scrollbar-track-transparent
-                hover:scrollbar-track-transparent
-                scrollbar-active-track-transparent
-                scrollbar-active-thumb-primary-light
-                scrollbar-thin
-                `
-              : inputColorScheme.secondary + 
-                `
-              hover:scrollbar-thumb-secondary-light
-              scrollbar-thumb-secondary-middledark 
-              scrollbar-track-secondary-light/20
-                hover:scrollbar-track-transparent
-                scrollbar-active-track-transparent
-                scrollbar-active-thumb-secondary-light
-                scrollbar-thin
-                `
+              ? inputColorScheme.primary + primaryColorScrollBar 
+              : inputColorScheme.secondary + secondaryColorScrollBar
             }
             ${statusClasses}
             mb-1.5

@@ -4,26 +4,18 @@ import Button from '@/src/components/form/Button'
 import Input from '@/src/components/form/Input'
 import Select from '@/src/components/form/Select'
 import TextArea from '@/src/components/form/TextArea'
-import { buttonColorsScheme } from '@/src/constants/systemColorsPallet'
 import { FaImage } from 'react-icons/fa'
-
-import { useEffect, useRef, useState } from "react"
-import { AddProductFormData, addProductSchema } from '@/src/schemas/addProductSchema'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { useToast } from '@/src/contexts/ToastContext'
-import { useUserStore } from '@/src/hooks/store/useUserStore'
 import Error from '../ui/Error'
-import { useAddProductFormStore } from '@/src/hooks/store/useAddProductFormStore'
-import { createProduct } from '@/src/actions/productActions';
 import { editProductFormStyle as style } from '@/src/styles/Product/editProductForm.style'
 import { useAddSellProductLogic } from '@/src/hooks/pageLogic/useAddSellProductLogic'
+import { Controller } from 'react-hook-form';
 
 const AddSellProductForm = () => {
   
   const {
     preview,
     loading,
+    control,
     imageFile,
     imageError,
     errors,
@@ -106,14 +98,20 @@ const AddSellProductForm = () => {
           error={errors.name?.message}
         />
 
-        <Select
-          hasTopLabel
-          selectSetup="CATEGORY"
-          colorScheme="secondary"
-          label="Categoria"
-          style={{container: 'sm:mt-1'}}
-          {...register('category')}
-          error={errors.category?.message}
+        <Controller
+        name="category"
+        control={control} 
+        render={({ field }) => (
+          <Select
+            {...field}
+            hasTopLabel
+            selectSetup="CATEGORY"
+            colorScheme="secondary"
+            label="Categoria"
+            style={{container: 'sm:mt-1'}}
+            error={errors.category?.message}
+          />
+          )}
         />
 
         <TextArea

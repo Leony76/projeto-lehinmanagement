@@ -1,3 +1,4 @@
+import { AddProductFormData } from "@/src/schemas/addProductSchema";
 import { Category } from "@prisma/client";
 import { RefObject, useEffect, useRef } from "react";
 import { UseFormReset, UseFormWatch } from "react-hook-form";
@@ -12,8 +13,8 @@ type FormData = {
 };
 
 type Props = {
-  watch: UseFormWatch<FormData>;
-  reset: UseFormReset<FormData>;
+  watch: UseFormWatch<AddProductFormData>;
+  reset: UseFormReset<AddProductFormData>;
   FORM_STORAGE_KEY: string | null;
   shouldPersistRef: RefObject<boolean>
 };
@@ -28,6 +29,8 @@ export const useAddProductFormStore = ({
   const didHydrateRef = useRef(false);
 
   useEffect(() => {
+    
+
     if (!FORM_STORAGE_KEY) return;
 
     const subscription = watch((value) => {
