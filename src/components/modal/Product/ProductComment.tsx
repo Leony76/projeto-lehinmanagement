@@ -38,6 +38,7 @@ const ProductComment = ({
         colorScheme='primary' 
         placeholder={'Deixe seu comentário...'}
         onChange={onChange.textArea}
+        maxLength={1000}
       />
       {hasReview && !misc.error && 
         <WarningInfo 

@@ -4,7 +4,6 @@ import { DashboardDTO } from "@/src/types/dashboardDTO";
 import AdminDashboard from "@/src/components/ui/AdminDashboard";
 import CustomerDashboard from "@/src/components/ui/CustomerDashboard";
 import SellerDashboard from "@/src/components/ui/SellerDashboard";
-import { useThemeApplier } from "@/src/utils/useThemeApplier";
 
 type Props = {
   dashboardStats: DashboardDTO;

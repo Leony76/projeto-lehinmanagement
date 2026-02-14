@@ -59,7 +59,7 @@ export async function getUserSystemTheme() {
 export async function getCustomers(): Promise<CustomerDTO[]> {
   const users = await prisma.user.findMany({
     where: { role: 'CUSTOMER' },
-    include: {
+    include: { 
       orders: {
         include: {
           orderItems: {
@@ -161,11 +161,9 @@ export async function getAdmins(): Promise<AdminDTO[]> {
         include: {
           targetUser: true,
           product: true,
-          productChange: {
-            select: {
-              justification: true,
-            }
-          }
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       },
     },
@@ -179,28 +177,22 @@ export async function getAdmins(): Promise<AdminDTO[]> {
     isActive: admin.isActive,
 
     history: admin.actor.map((action) => {
-      if (action.targetUser) {
+      if (action.targetUserId && action.targetUser) {
         return {
           target: 'USER',
-          type:
-            action.action === 'USER_ACTIVATED'
-              ? 'Ativação'
-              : 'Desativação',
+          type: action.action === 'USER_ACTIVATED' ? 'Ativação' : 'Desativação',
           date: action.createdAt.toISOString(),
-          username: action.targetUser.name,
-          justification: action.productChange?.justification ?? 'Ação administrativa',
+          username: action.targetUser.name ?? 'Usuário sem nome',
+          justification: action.justification,
         };
       }
 
       return {
         target: 'PRODUCT',
-        type:
-          action.action === 'PRODUCT_EDITED'
-            ? 'Edição'
-            : 'Remoção',
+        type: action.action === 'PRODUCT_EDITED' ? 'Edição' : 'Remoção',
         date: action.createdAt.toISOString(),
-        productName: action.product?.name ?? null,
-        justification: action.productChange?.justification ?? 'Ação administrativa',
+        productName: action.product?.name ?? 'Produto não encontrado',
+        justification: action.justification, 
       };
     }),
   }));

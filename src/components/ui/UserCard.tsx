@@ -23,6 +23,8 @@ import TextArea from "../form/TextArea";
 import WarningInfo from "./WarningInfo";
 import Error from "./Error";
 import { useToast } from "@/src/contexts/ToastContext";
+import { activateUserAccount, deactivateUserAccount } from "@/src/actions/userActions";
+import ActiveDeactiveUserAccount from "../modal/Users/ActiveDeactiveUserAccount";
 
 type Props = {
   user: UsersDTO;
@@ -36,25 +38,37 @@ const UserCard = ({
 
   const [activeModal, setActiveModal] = useState<UsersPageModals | null>(null);
   const [error, setError] = useState<string>('');
-  const [accoutDeactivation, setAccoutDeactivation] = useState<string>('');
+  const [accountDeactivationJustify, setAccountDeactivationJustify] = useState<string>('');
+  const [accountActivationJustify, setAccountActivationJustify] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  
 
   useLockScrollY(Boolean(activeModal));
 
   const { showToast } = useToast();
 
-  const handleDeactivateUserAccount = async():Promise<void> => {
+  const handleActivateDeactivateUserAccount = async (actionType: 'ACTIVATE' | 'DEACTIVATE'): Promise<void> => {
     if (loading) return;
     setLoading(true);
 
     try {
-
-    } catch (err:unknown) {
-      showToast('Houve um erro:' + err, 'error');
+      if (actionType === 'ACTIVATE') {
+        await activateUserAccount(user.id, accountActivationJustify);
+        showToast('Usuário ativado com sucesso', 'success');
+      } else {
+        await deactivateUserAccount(user.id, accountDeactivationJustify);
+        showToast('Usuário desativado com sucesso', 'success');
+      }
+      
+    } catch (err: any) {
+      showToast(err.message || 'Ocorreu um erro', 'error');
     } finally {
+      setAccountActivationJustify('');
+      setAccountDeactivationJustify('');
+      setActiveModal(null); 
       setLoading(false);
     }
-  }
+  };
 
   return (
     <>
@@ -79,7 +93,11 @@ const UserCard = ({
         </div>
       </div>
       <div className='flex flex-col gap-2'>
-        <div className='rounded-2xl dark:brightness-[1.1] bg-green/20 border-2 border-green-500 tracking-wide px-3 text-green-500'>
+        <div className={`rounded-2xl dark:brightness-[1.1] tracking-wide px-3 border-2 
+          ${user.isActive
+            ? 'border-green-500 text-green-500 bg-green/20'
+            : 'border-red-500 text-red-500 bg-red/20'
+          }`}>
           {user.isActive  
             ? 'Ativo' 
             : 'Inativo'
@@ -111,68 +129,32 @@ const UserCard = ({
         onClick={{ onAvatarImage: () =>  setActiveModal('EXPAND_IMAGE')}}
       />
 
-      <Modal 
-      isOpen={activeModal === 'DEACTIVATE_USER'} 
-      hasXClose
-      modalTitle={'Desativar usuário'} 
-      onCloseModalActions={() => {
-        setActiveModal('USER_INFOS');
-        setAccoutDeactivation('');
-        setError('');
-      }}>
-        <p className="text-secondary-middledark">
-          Tenha certeza que deseja desativar <span className="text-cyan">{user.name}</span> do sistema ?
-        </p>
-        <p className="text-primary">
-          Cite a justificativa da desativação
-        </p>
-        <TextArea
-          placeholder={"Justificativa"}
-          value={accoutDeactivation}
-          style={{
-            input: error 
-              ? 'shadow-[0px_0px_7px_red]' 
-              : '',
-            container: 'mb-[-7px]'
-          }}
-          onChange={(e) => {
-            setAccoutDeactivation(e.target.value);
+      <ActiveDeactiveUserAccount
+        modal={{
+          activeModal,
+          setActiveModal,
+          onCloseActions: () => {
+            setActiveModal('USER_INFOS');
             setError('');
-          }}
-        />
-        {error && <Error error={error}/>}
-        <div className="mt-2"/>    
-        <WarningInfo 
-          text={"Todos os ativos do usuário desativado permanecerão intocáveis. O mesmo também será informado."}
-        />
-        <div className="flex gap-3">
-          <Button 
-            style={`flex-1 ${buttonColorsScheme.red}`}
-            type={"button"}
-            label="Desativar"
-            onClick={() => {
-              if (accoutDeactivation.length < 100 && accoutDeactivation.length > 0) {
-                setError('Não é possível desativar a conta do usuário sem uma justificativa de até 100 caractéres');
-                return;
-              } else if (accoutDeactivation.length === 0) {
-                setError('Não é possível desativar a conta do usuário sem uma justificativa');
-                return;
-              }
-              handleDeactivateUserAccount();
-            }}  
-          />
-          <Button 
-            style={`flex-1 ${buttonColorsScheme.yellow}`}
-            type={"button"}
-            label="Cancelar"
-            onClick={() => {
-              setActiveModal('USER_INFOS');
-              setAccoutDeactivation('');
-              setError('');
-            }}
-          />
-        </div>
-      </Modal>
+            setAccountActivationJustify('');
+            setAccountDeactivationJustify('');
+          }
+        }}
+        user={user}
+        handles={{
+          handleActivateUserAccount: () => handleActivateDeactivateUserAccount('ACTIVATE'),
+          handleDeactivateUserAccount: () => handleActivateDeactivateUserAccount('DEACTIVATE'),
+        }}
+        onChange={{
+          setAccountActivationJustify,
+          setAccountDeactivationJustify,      
+        }}
+        textArea={{
+          accountActivationJustify,
+          accountDeactivationJustify,
+        }}
+        misc={{ error, loading, setError }}
+      />
 
       <ImageExpand 
         modal={{

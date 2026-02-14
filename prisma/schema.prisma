@@ -32,7 +32,6 @@ model User {
   orderHistoryChanged  OrderHistory[]  @relation("OrderHistoryChangedBy")
   orderHistoryDeleted  OrderHistory[]  @relation("OrderHistoryDeletedBy")
   productReview        ProductReview[]
-  admin                ProductChangeHistory[]
 
   @@map("users")
 }
@@ -46,13 +45,12 @@ model AdminActionHistory {
   targetUserId String? @map("target_user_id")
   targetProductId Int? @map("target_product_id")
   targetOrderId Int? @map("target_order_id")
+  justification String
 
   actor     User      @relation("AdminActor", fields: [actorId], references: [id])
   targetUser User?    @relation("AdminTargetUser", fields: [targetUserId], references: [id])
   product   Product? @relation(fields: [targetProductId], references: [id])
   order     Order?   @relation(fields: [targetOrderId], references: [id])
-
-  productChange ProductChangeHistory?
 
   @@map("admin_action_history")
 }
@@ -149,28 +147,9 @@ model Product {
   seller         User         @relation(fields: [sellerId], references: [id])
   customer       CostumerProduct[]
   reviews        ProductReview[]
-  changeHistory  ProductChangeHistory[]
 
   @@map("products")
 }
-
-model ProductChangeHistory {
-  id            Int      @id @default(autoincrement())
-  adminActionId Int      @unique @map("admin_action_id")
-
-  productId     Int
-  adminId       String
-  action        ProductAdminAction
-  justification String
-  createdAt     DateTime @default(now()) @map("created_at")
-
-  adminAction   AdminActionHistory @relation(fields: [adminActionId], references: [id])
-  product       Product  @relation(fields: [productId], references: [id])
-  admin         User     @relation(fields: [adminId], references: [id])
-
-  @@map("product_changes_history")
-}
-
 
 model CostumerProduct {
   id Int @id @default(autoincrement())
@@ -302,12 +281,10 @@ enum AdminAction {
   PRODUCT_EDITED
   ORDER_CANCELED
   PAYMENT_REFUNDED
-}
-
-enum ProductAdminAction {
   EDITED
   DELETED
   BLOCKED
   UNBLOCKED
 }
+
 

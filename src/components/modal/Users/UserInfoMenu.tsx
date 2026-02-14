@@ -1,3 +1,5 @@
+'use client';
+
 import { ROLE_LABEL } from '@/src/constants/generalConfigs';
 import { buttonColorsScheme } from '@/src/constants/systemColorsPallet';
 import { secondaryColorScrollBar } from '@/src/styles/scrollBar.style';
@@ -10,6 +12,8 @@ import Modal from '../Modal';
 import Image from 'next/image';
 import PlaceHolder from '@/public/my-interpretation-of-the-torque-twister-before-picture-on-v0-2p6oyytw55691.jpg'
 import { UsersPageModals } from '@/src/types/modal';
+import NoContentFoundMessage from '../../ui/NoContentFoundMessage';
+import { useState } from 'react';
 
 type Props = {
   user: UsersDTO;
@@ -28,6 +32,9 @@ const UserInfoMenu = ({
   user,
   onClick,
 }:Props) => {
+
+  const [openCardId, setOpenCardId] = useState<string | null>(null);
+
   return (
     <Modal 
     isOpen={modal.isOpen} 
@@ -102,12 +109,21 @@ const UserInfoMenu = ({
             />
 
             {user.role !== 'ADMIN' &&
-              <Button 
-                type={"submit"}
-                label="Desativar conta"
-                style={`px-5 ${buttonColorsScheme.red} w-fit h-fit`}        
-                onClick={() => modal.setActiveModal('DEACTIVATE_USER')}    
-              />
+              user.isActive ? (
+                <Button 
+                  type={"submit"}
+                  label="Desativar conta"
+                  style={`px-5 ${buttonColorsScheme.red} w-fit h-fit`}        
+                  onClick={() => modal.setActiveModal('DEACTIVATE_USER')}    
+                />
+              ) : (
+                <Button 
+                  type={"submit"}
+                  label="Ativar conta"
+                  style={`px-5 ${buttonColorsScheme.green} w-fit h-fit`}        
+                  onClick={() => modal.setActiveModal('ACTIVATE_USER')}    
+                />
+              )
             }
           </div>
 
@@ -115,66 +131,74 @@ const UserInfoMenu = ({
             <h3 className="text-secondary-middledark mb-1 text-xl">
               Ações recentes
             </h3>
-            <div className={`border-y max-h-76 overflow-y-auto border-secondary-dark ${secondaryColorScrollBar}`}>
+            <div className={`border-y max-h-67 overflow-y-auto border-secondary-dark ${secondaryColorScrollBar}`}>
 
-            {user.history.map((item, index, array) => {
-
-              const orderDate = formattedDate(item.date);
-
-              if (user.role === 'CUSTOMER' && isCustomerAction(item)) {
-                return (
-                  <UserMostRecentActionInfoCard
-                    key={`${item.orderId}-${item.type}-${index}`}
-                    userRole="CUSTOMER"
-                    action={item.type}
-                    timeStamp={orderDate}
-                    product={{
-                      name: item.productName ?? '',
-                      units: item.unitsOrdered,
-                      value: item.value,
-                    }}
-                    showDivider={index < array.length - 1}
-                  />
-                )
-              } else if (user.role === 'SELLER' && isSellerAction(item)) {
-                return (
-                  <UserMostRecentActionInfoCard
-                    key={`${item.date}-${item.type}-${index}`}
-                    userRole="SELLER"
-                    action={item.type}
-                    timeStamp={orderDate}
-                    product={{
-                      name: item.productName ?? '',
-                      units: item.unitsOrdered,
-                      value: item.value,
-                    }}
-                    showDivider={index < array.length - 1}
-                  />
-                )
-              } else if (user.role === 'ADMIN' && isAdminAction(item)) {
-                return (
-                  <UserMostRecentActionInfoCard
-                    key={`${item.date}-${item.type}-${index}`}
-                    userRole="ADMIN"
-                    action={item.type}
-                    timeStamp={orderDate}
-                    justification={item.justification}
-                    target={
-                      item.target === 'USER'
-                      ? {
-                        type: 'USER',
-                        username: item.username ?? '',
+            {user.history.length > 0 ? (
+              user.history.map((item, index, array) => {
+  
+                const orderDate = formattedDate(item.date);
+                if (user.role === 'CUSTOMER' && isCustomerAction(item)) {
+                  return (
+                    <UserMostRecentActionInfoCard
+                      key={`${item.orderId}-${item.type}-${index}`}
+                      userRole="CUSTOMER"
+                      action={item.type}
+                      timeStamp={orderDate}
+                      product={{
+                        name: item.productName ?? '',
+                        units: item.unitsOrdered,
+                        value: item.value,
+                      }}
+                      showDivider={index < array.length - 1}
+                    />
+                  )
+                } else if (user.role === 'SELLER' && isSellerAction(item)) {
+                  return (
+                    <UserMostRecentActionInfoCard
+                      key={`${item.date}-${item.type}-${index}`}
+                      userRole="SELLER"
+                      action={item.type}
+                      timeStamp={orderDate}
+                      product={{
+                        name: item.productName ?? '',
+                        units: item.unitsOrdered,
+                        value: item.value,
+                      }}
+                      showDivider={index < array.length - 1}
+                    />
+                  )
+                } else if (user.role === 'ADMIN' && isAdminAction(item)) {
+                  return (
+                    <UserMostRecentActionInfoCard
+                      key={`${item.date}-${item.type}-${index}`}
+                      userRole="ADMIN"
+                      action={item.type}
+                      timeStamp={orderDate}
+                      id={index}
+                      justification={item.justification}
+                      isOpen={openCardId === `${item.date}-${item.type}-${index}`} 
+                      onToggle={() => setOpenCardId(openCardId === `${item.date}-${item.type}-${index}` ? null : `${item.date}-${item.type}-${index}`)}
+                      target={
+                        item.target === 'USER'
+                        ? {
+                          type: 'USER',
+                          username: item.username ?? '',
+                        }
+                        : {
+                          type: 'PRODUCT',
+                          productName: item.productName ?? '',
+                        }
                       }
-                      : {
-                        type: 'PRODUCT',
-                        productName: item.productName ?? '',
-                      }
-                    }
-                    showDivider={index < array.length - 1}
-                  />
-                )
-              }
-            })}
+                      showDivider={index < array.length - 1}
+                    />
+                  )
+                }
+              })
+            ) : (
+              <NoContentFoundMessage 
+                text={'Nenhum ação realizada'}
+              />
+            )}
             </div>
           </div>        
         </div>          

@@ -41,9 +41,12 @@ const RemoveProductJustify = ({
     >
       <p className={textColors.secondaryDark}>Cite a justificativa para a remoção desse produto ofertado por {product.sellerName}</p>
       <TextArea 
-        style={{input: `h-20 mb-[-3px] ${misc.error ? 'shadow-[0px_0px_8px_red]' : ''}`}}
+        style={{
+          input: `h-30 mb-[-3px] ${misc.error ? 'shadow-[0px_0px_8px_red]' : ''}`
+        }}
         placeholder='Justificativa...'
         onChange={onChange.textarea}
+        maxLength={500}
       />
       {misc.error && <Error error={misc.error}/>}
       <div className='flex gap-2 mt-2'>

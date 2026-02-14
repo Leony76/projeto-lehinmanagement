@@ -22,6 +22,9 @@ type SellerProps = BaseProps & {
 };
 
 type AdminProps = {
+  isOpen?: boolean;     // <--- Adicionado
+  onToggle?: () => void; // <--- Adicionado
+  id: number;            // Certifique-se de passar um ID único
   showDivider?: boolean;
   userRole: 'ADMIN';
   action: AdminHistoryTag;
@@ -35,6 +38,11 @@ type AdminProps = {
 type Props = CustomerProps | SellerProps | AdminProps;
 
 const UserMostRecentActionInfoCard = (props:Props) => {
+
+  const MAX_JUSTIFY_LENGTH = 86;
+
+  const isExpanded = props.userRole === 'ADMIN' ? props.isOpen : false;
+
   switch (props.userRole) {
     case 'CUSTOMER':
     case "SELLER":
@@ -96,8 +104,28 @@ const UserMostRecentActionInfoCard = (props:Props) => {
             </span>
           )}
           <span className="text-secondary">
-            Justificativa: <p className="text-gray">{props.justification}</p>
+            Justificativa <p className={`text-gray overflow-hidden
+              ${!isExpanded
+                ? 'max-h-20'
+                : ''
+              }
+            `}>
+              {props.justification.length > MAX_JUSTIFY_LENGTH && !isExpanded
+                ? props.justification.slice(0, MAX_JUSTIFY_LENGTH) + '...'
+                : props.justification
+              }
+            </p>
           </span>
+          <button 
+          className="text-gray-500 hover:text-gray-400 text-left w-fit cursor-pointer"
+          onClick={props.onToggle}
+          hidden={props.justification.length < MAX_JUSTIFY_LENGTH}
+          >
+            {isExpanded 
+              ? 'Ler menos'
+              : 'Ler mais'
+            }
+          </button>
         </div>
 
         {props.showDivider && (

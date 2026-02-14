@@ -8,6 +8,7 @@ export type User = {
   email: string;
   image?: string | null;
   role?: SystemRoles; 
+  isActive: boolean;
   emailVerified: boolean;
   createdAt: string | Date;
   updatedAt: string | Date;

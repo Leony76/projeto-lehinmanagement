@@ -39,9 +39,15 @@ const EditProductJustify = ({
         Escreva uma breve justificativa do porquê dessa edição para o vendedor.
       </p>
       <TextArea 
-        style={{container: 'mb-[-8px]', input: misc.error ? 'shadow-[0px_0px_8px_red]' : ''}}
+        style={{
+          container: 'mb-[-8px]',
+          input: `${misc.error 
+            ? 'shadow-[0px_0px_7px_red]' 
+            : ''} h-30`,
+        }}
         placeholder={'Justificativa'}
         onChange={edit.onChange.textArea}
+        maxLength={500}
       />
       {misc.error && <Error error={misc.error}/>}
       <div className='flex gap-3 mt-2'>

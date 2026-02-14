@@ -48,6 +48,7 @@ const RejectionJustify = ({
     {editRejection ? (
       <>
       <TextArea 
+        maxLength={500}
         placeholder={'Justificativa'}
         style={{input: 'mb-[-3px]'}}
         label='Justificativa'
