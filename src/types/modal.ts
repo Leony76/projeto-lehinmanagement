@@ -8,6 +8,8 @@ export type UsersPageModals = GenericPageModals
 | 'USER_INFOS'
 | 'DEACTIVATE_USER'
 | 'ACTIVATE_USER'
+| 'USER_SUPPORT_MESSAGES'
+| 'REPLY_MESSAGE'
 ;
 
 export type ProductPageModals = GenericPageModals 

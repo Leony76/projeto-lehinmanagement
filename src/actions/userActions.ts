@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import prisma from "../lib/prisma";
 import { getRequiredSession } from "../lib/get-session-user";
+import { SupportMessageType, UserSituation } from "@prisma/client";
 
 export async function toggleDarkTheme(darkTheme: boolean) {
   const session = await getRequiredSession();
@@ -91,5 +92,31 @@ export async function activateUserAccount(
   });
 
   revalidatePath('/users');
+}
+
+export async function sendMessageToSupport(
+  userData: {
+    id: string;
+    situation: UserSituation;
+  },
+  data: {
+    subject?: string;
+    message: string;
+    type: SupportMessageType;
+  },
+) {
+  await prisma.supportMessage.create({
+    data: {
+      subject: data.subject ?? null,
+      message: data.message,
+      type: data.type,
+      
+      userId: userData.id,
+      situation: 'UNRESOLVED',
+      userSituation: userData.situation,
+    },
+  });
+
+  revalidatePath('/dashboard');
 }
 

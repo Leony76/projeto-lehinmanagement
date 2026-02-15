@@ -14,6 +14,7 @@ import PlaceHolder from '@/public/my-interpretation-of-the-torque-twister-before
 import { UsersPageModals } from '@/src/types/modal';
 import NoContentFoundMessage from '../../ui/NoContentFoundMessage';
 import { useState } from 'react';
+import { ACTION_DEVTOOLS_PANEL_POSITION } from 'next/dist/next-devtools/dev-overlay/shared';
 
 type Props = {
   user: UsersDTO;
@@ -66,7 +67,7 @@ const UserInfoMenu = ({
             />
           </div>
 
-          <div className="order-2 space-y-2 sm:order-1 dark:brightness-[1.2]">
+          <div className="order-2 space-y-2 sm:order-1 dark:brightness-[1.2] flex flex-col h-full">
             <LabelValue
               label="Nome completo"
               value={user.name}
@@ -107,31 +108,42 @@ const UserInfoMenu = ({
                 : 'Inativo'
               }
             />
+            
+            <div className='flex gap-2 w-fit h-fit mt-auto'>
+              {user.role !== 'ADMIN' &&
+                user.isActive ? (
+                  <Button 
+                    type={"button"}
+                    label="Desativar conta"
+                    style={`px-5 ${buttonColorsScheme.red} w-fit h-fit`}        
+                    onClick={() => modal.setActiveModal('DEACTIVATE_USER')}    
+                  />
+                ) : !user.isActive && (
+                  <Button 
+                    type={"button"}
+                    label="Ativar conta"
+                    style={`px-5 ${buttonColorsScheme.green} w-fit h-fit mt-auto`}        
+                    onClick={() => modal.setActiveModal('ACTIVATE_USER')}    
+                  />
+                )
+              }
 
-            {user.role !== 'ADMIN' &&
-              user.isActive ? (
+              {(user.role !== 'ADMIN' && user.messages.length > 0) &&
                 <Button 
-                  type={"submit"}
-                  label="Desativar conta"
-                  style={`px-5 ${buttonColorsScheme.red} w-fit h-fit`}        
-                  onClick={() => modal.setActiveModal('DEACTIVATE_USER')}    
+                  type={"button"}
+                  label="Mensagens"
+                  style={`px-5 ${buttonColorsScheme.yellow}`}        
+                  onClick={() => modal.setActiveModal('USER_SUPPORT_MESSAGES')}    
                 />
-              ) : (
-                <Button 
-                  type={"submit"}
-                  label="Ativar conta"
-                  style={`px-5 ${buttonColorsScheme.green} w-fit h-fit`}        
-                  onClick={() => modal.setActiveModal('ACTIVATE_USER')}    
-                />
-              )
-            }
+              }
+            </div>
           </div>
 
-          <div className="order-3 lg:col-span-1 sm:col-span-2">
+          <div className="order-3 lg:col-span-1 max-h-90 overflow-y-hidden sm:col-span-2">
             <h3 className="text-secondary-middledark mb-1 text-xl">
               Ações recentes
             </h3>
-            <div className={`border-y max-h-67 overflow-y-auto border-secondary-dark ${secondaryColorScrollBar}`}>
+            <div className={`border-y max-h-82 overflow-y-auto border-secondary-dark ${secondaryColorScrollBar}`}>
 
             {user.history.length > 0 ? (
               user.history.map((item, index, array) => {

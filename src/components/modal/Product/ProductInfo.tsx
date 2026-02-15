@@ -93,7 +93,7 @@ const ProductInfo = ({
             />
           
             <LabelValue
-              label='Publicado'
+              label='Atualizado'
               value={updatedAt}
             />
             

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { auth } from "../lib/auth";
 import prisma from "../lib/prisma";
 import { AdminDTO, CustomerDTO, SellerDTO } from "../types/usersDTO";
+import { UserDeactivatedReason } from "../types/UserDeactivatedReasonDTO";
 
 type UsersGroupedDTO = {
   customers: CustomerDTO[];
@@ -60,6 +61,7 @@ export async function getCustomers(): Promise<CustomerDTO[]> {
   const users = await prisma.user.findMany({
     where: { role: 'CUSTOMER' },
     include: { 
+      userSupportMessage: true,
       orders: {
         include: {
           orderItems: {
@@ -77,6 +79,14 @@ export async function getCustomers(): Promise<CustomerDTO[]> {
     createdAt: user.createdAt?.toISOString() ?? '',
     isActive: user.isActive,
     ordersDone: user.orders.length,
+
+    messages: user.userSupportMessage.map((item) => ({
+      id: item.id,
+      sentDate: item.createdAt.toISOString(),
+      type: item.type,
+      message: item.message,
+      subject: item.subject,
+    })),
 
     history: user.orders.map((order) => ({
       type: 'Pedido',
@@ -96,6 +106,7 @@ export async function getSellers(): Promise<SellerDTO[]> {
   const sellers = await prisma.user.findMany({
     where: { role: 'SELLER' },
     include: {
+      userSupportMessage: true,
       sellerProducts: {
         include: {
           orderItems: {
@@ -117,6 +128,14 @@ export async function getSellers(): Promise<SellerDTO[]> {
       (p) => p.orderItems.map((i) => i.order)
     );
 
+    const uniqueOrders = Array.from(
+      new Map(
+        seller.sellerProducts
+          .flatMap((p) => p.orderItems.map((i) => i.order))
+          .map((o) => [o.id, o])
+      ).values()
+    );
+
     return {
       id: seller.id,
       name: seller.name ?? '',
@@ -129,7 +148,15 @@ export async function getSellers(): Promise<SellerDTO[]> {
         salesDone: orders.filter(o => o.status === 'APPROVED').length,
       },
 
-      history: orders.map((order) => ({
+      messages: seller.userSupportMessage.map((item) => ({
+        id: item.id,
+        sentDate: item.createdAt.toISOString(),
+        type: item.type,
+        message: item.message,
+        subject: item.subject,
+      })),
+
+      history: uniqueOrders.map((order) => ({
         type:
           order.status === 'APPROVED'
             ? 'Pedido aceito'
@@ -208,4 +235,25 @@ export async function getUsers(): Promise<UsersGroupedDTO> {
     sellers,
     admins,
   };
+}
+
+export async function getDeactivatedUserReason(
+  userId: string,
+): Promise<UserDeactivatedReason> {
+  const deactivation = await prisma.adminActionHistory.findFirst({
+    where: {
+      targetUserId: userId,
+      action: 'USER_DEACTIVATED',
+    },
+    select: {
+      justification: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return {
+    reason: deactivation?.justification ?? '[Não foi possível carregar o motivo. Tente mais tarde!]',
+    deactivationDate: deactivation?.createdAt.toISOString() ?? '[??/??/??]',
+  }
 }

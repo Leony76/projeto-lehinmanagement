@@ -33,7 +33,34 @@ model User {
   orderHistoryDeleted  OrderHistory[]  @relation("OrderHistoryDeletedBy")
   productReview        ProductReview[]
 
+  userSupportMessage   SupportMessage[] @relation("user_message")
+  adminReplyMessage    SupportMessage[] @relation("admin_message")     
+
   @@map("users")
+}
+
+model SupportMessage {
+  id   Int   @id @default(autoincrement())
+
+  userId     String  @map("user_id")
+  replierId  String?  @map("replier_id")
+
+  type SupportMessageType 
+
+  subject    String?
+  message    String @db.Text
+  reply      String?
+
+  createdAt  DateTime  @default(now())  @map("created_at")
+  repliedAt  DateTime?  @map("replied_at")
+
+  situation SupportMessageSituation @default(UNRESOLVED)
+  userSituation UserSituation @map("user_situation")
+
+  user User @relation("user_message", fields: [userId], references: [id])
+  replier User? @relation("admin_message", fields: [replierId], references: [id])
+
+  @@map("support_messages")
 }
 
 model AdminActionHistory {
@@ -285,6 +312,22 @@ enum AdminAction {
   DELETED
   BLOCKED
   UNBLOCKED
+}
+
+enum UserSituation {
+  ACTIVATED
+  DEACTIVATED
+}
+
+enum SupportMessageSituation {
+  RESOLVED
+  UNRESOLVED
+}
+
+enum SupportMessageType {
+  APPEAL
+  QUESTION
+  SUGGESTION
 }
 
 

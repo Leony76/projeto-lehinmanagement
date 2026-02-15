@@ -1,3 +1,5 @@
+import { SupportMessageType } from "@prisma/client";
+
 export type AdminHistoryTag = 
 | 'Edição' 
 | 'Remoção' 
@@ -16,6 +18,14 @@ export type SellerHistoryTag =
 export type CustomerHistoryTag = 
 | 'Pedido' 
 ;
+
+export type UserSupportMessage = {
+  id: number;
+  sentDate: string;
+  type: SupportMessageType;
+  subject: string | null;
+  message: string;
+}
 
 export type CustomerActionHistory = {
   type: CustomerHistoryTag;
@@ -63,11 +73,13 @@ export type UsersDTO = | (BaseProps & {
     salesDone: number;
   };
 
+  messages: UserSupportMessage[];
   history: SellerActionHistory[];
 }) | (BaseProps & {
   role: 'CUSTOMER';
   ordersDone: number;
 
+  messages: UserSupportMessage[];
   history: CustomerActionHistory[];
 }) | (BaseProps & {
   role: 'ADMIN';

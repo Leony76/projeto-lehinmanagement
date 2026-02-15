@@ -8,6 +8,7 @@ import Menu from "@/src/components/ui/Menu";
 import { useLockScrollY } from "@/src/hooks/useLockScrollY";
 import { useHideHeaderOnScrollDown } from "@/src/hooks/useHideHeaderOnScrollDown";
 import { useUserStore } from "@/src/hooks/store/useUserStore";
+import { useRouter } from "next/navigation";
 
 type Props = {
   children: React.ReactNode;
@@ -19,14 +20,20 @@ export default function AuthLayout({ children }: Props) {
   const [mounted, setMounted] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
 
+  const navigate = useRouter();
+
   useLockScrollY(menu);
   const { showHeader } = useHideHeaderOnScrollDown();
 
   useEffect(() => {
     setMounted(true);
+    if (user && user.isActive === false) {
+      navigate.push('/dashboard');
+    }
+
     const timer = setTimeout(() => setShowOverlay(false), 500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [user]);
 
   return (
     <div className="relative min-h-screen">

@@ -14,17 +14,14 @@ import { getNameAndSurname } from "@/src/utils/getNameAndSurname";
 import LabelValue from "./LabelValue";
 import UserMostRecentActionInfoCard from "./UserMostRecentActionInfoCard";
 import ImageExpand from "../modal/ImageExpand";
-import { isAdminAction, isCustomerAction, isSellerAction, UsersDTO } from "@/src/types/usersDTO";
+import { isAdminAction, isCustomerAction, isSellerAction, UsersDTO, UserSupportMessage } from "@/src/types/usersDTO";
 import { formattedDate } from "@/src/utils/formattedDate";
 import { ROLE_LABEL } from "@/src/constants/generalConfigs";
-import { secondaryColorScrollBar } from "@/src/styles/scrollBar.style";
 import UserInfoMenu from "../modal/Users/UserInfoMenu";
-import TextArea from "../form/TextArea";
-import WarningInfo from "./WarningInfo";
-import Error from "./Error";
 import { useToast } from "@/src/contexts/ToastContext";
 import { activateUserAccount, deactivateUserAccount } from "@/src/actions/userActions";
 import ActiveDeactiveUserAccount from "../modal/Users/ActiveDeactiveUserAccount";
+import { secondaryColorScrollBar } from "@/src/styles/scrollBar.style"; 
 
 type Props = {
   user: UsersDTO;
@@ -37,11 +34,16 @@ const UserCard = ({
 }:Props) => {
 
   const [activeModal, setActiveModal] = useState<UsersPageModals | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<UserSupportMessage | null>(null);
+
   const [error, setError] = useState<string>('');
   const [accountDeactivationJustify, setAccountDeactivationJustify] = useState<string>('');
   const [accountActivationJustify, setAccountActivationJustify] = useState<string>('');
+
   const [loading, setLoading] = useState<boolean>(false);
-  
+  const [readMore, setReadMore] = useState<boolean>(false);
+
+  const MAX_MESSAGE_LENGTH = 120;
 
   useLockScrollY(Boolean(activeModal));
 
@@ -166,6 +168,80 @@ const UserCard = ({
           name: 'placeholder'
         }}
       />
+
+      <Modal 
+      isOpen={activeModal === 'USER_SUPPORT_MESSAGES'} 
+      modalTitle={
+        <>
+          <h4 className="sm:block hidden">Mensagens do usuário</h4>
+          <h4 className="sm:hidden block">Mensagens</h4>
+        </>
+      } 
+      hasXClose
+      onCloseModalActions={() => setActiveModal('USER_INFOS')}
+      >
+        <div className={`flex flex-col gap-3 max-h-[50vh] pr-3 overflow-y-auto ${secondaryColorScrollBar}`}>
+          {user.role !== 'ADMIN' && user.messages.map((message) => {
+            const type = message.type === 'APPEAL'
+              ? 'Apelo'
+            : message.type === 'QUESTION'
+              ? 'Pergunta'
+            : 'Sugestão'
+
+            return (
+              <div className="flex flex-col bg-gray-100/10 p-2 rounded-xl">
+                <span className="text-gray text-xs">
+                  Código da messagem: {message.id} 
+                </span>
+                <h4 className="text-cyan mt-1">
+                  {message.subject}
+                </h4>
+                <span className="text-yellow text-sm">
+                  {formattedDate(message.sentDate)}
+                </span>
+                <span className="text-gray">
+                  Tipo de mensagem: <span className="text-secondary-middledark">{type}</span>
+                </span>
+                <p className="text-secondary-light border-t border-primary mt-1 pt-1">
+                  {message.message.length > MAX_MESSAGE_LENGTH && !readMore
+                    ? message.message.slice(0, MAX_MESSAGE_LENGTH) + '...'
+                    : message.message
+                  }
+                </p>
+                <div className="flex justify-between mt-1">
+                  <button
+                  onClick={() => setReadMore(prev => !prev)}
+                  className="text-gray text-left w-fit cursor-pointer"
+                  >
+                    {readMore
+                      ? 'Ler menos'
+                      : 'Ler mais'
+                    }             
+                  </button>
+                  <Button 
+                    type={"button"}
+                    label="Responder"
+                    style="px-5"
+                    onClick={() => {
+                      setActiveModal('REPLY_MESSAGE');
+                      setSelectedMessage(message);
+                    }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </Modal>
+
+      <Modal
+      isOpen={activeModal === 'REPLY_MESSAGE'} 
+      modalTitle={'Responder mensagem'} 
+      hasXClose
+      onCloseModalActions={() => setActiveModal('USER_SUPPORT_MESSAGES')}
+      >
+        <p className="text-gray">Responder a mensagem {selectedMessage?.id}</p>
+      </Modal>
     </div>
 
     {isDivided && (
