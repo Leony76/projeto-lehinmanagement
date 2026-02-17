@@ -1,4 +1,5 @@
-export type UserDeactivatedReason = {
+
+export type UserDeactivatedDTO = {
   reason: string;
   deactivationDate: string;
 }

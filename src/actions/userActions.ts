@@ -120,3 +120,35 @@ export async function sendMessageToSupport(
   revalidatePath('/dashboard');
 }
 
+export async function sendReplyMessage(
+  messageId: number,
+  userId: string,
+  replyMessage: string,
+) {
+  const replier = (await getRequiredSession()).user;
+
+  if (replier.role !== 'ADMIN') throw new Error('Não autorizado');
+  
+  await prisma.$transaction(async (tx) => {
+    await tx.supportMessage.update({
+      where: { id: messageId },
+      data: {
+        repliedAt: new Date(),
+        reply: replyMessage,
+        replierId: replier.id,
+      },
+    }),
+
+    await tx.adminActionHistory.create({
+      data: {
+        action: 'MESSAGE_REPLY',
+        actorId: replier.id,
+        justification: '[Respondida ao apelo de um usuário do sistema]',
+        targetUserId: userId,
+      }
+    });
+  });
+
+  revalidatePath('/users');
+}
+

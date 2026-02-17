@@ -19,9 +19,10 @@ import { formattedDate } from "@/src/utils/formattedDate";
 import { ROLE_LABEL } from "@/src/constants/generalConfigs";
 import UserInfoMenu from "../modal/Users/UserInfoMenu";
 import { useToast } from "@/src/contexts/ToastContext";
-import { activateUserAccount, deactivateUserAccount } from "@/src/actions/userActions";
+import { activateUserAccount, deactivateUserAccount, sendReplyMessage } from "@/src/actions/userActions";
 import ActiveDeactiveUserAccount from "../modal/Users/ActiveDeactiveUserAccount";
 import { secondaryColorScrollBar } from "@/src/styles/scrollBar.style"; 
+import UserMessage from "../modal/Users/UserMessage";
 
 type Props = {
   user: UsersDTO;
@@ -35,21 +36,19 @@ const UserCard = ({
 
   const [activeModal, setActiveModal] = useState<UsersPageModals | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<UserSupportMessage | null>(null);
+  const [replyMessage, setReplyMessage] = useState<string>('');
 
   const [error, setError] = useState<string>('');
   const [accountDeactivationJustify, setAccountDeactivationJustify] = useState<string>('');
   const [accountActivationJustify, setAccountActivationJustify] = useState<string>('');
 
   const [loading, setLoading] = useState<boolean>(false);
-  const [readMore, setReadMore] = useState<boolean>(false);
-
-  const MAX_MESSAGE_LENGTH = 120;
 
   useLockScrollY(Boolean(activeModal));
 
   const { showToast } = useToast();
 
-  const handleActivateDeactivateUserAccount = async (actionType: 'ACTIVATE' | 'DEACTIVATE'): Promise<void> => {
+  const handleActivateDeactivateUserAccount = async(actionType: 'ACTIVATE' | 'DEACTIVATE'): Promise<void> => {
     if (loading) return;
     setLoading(true);
 
@@ -71,6 +70,30 @@ const UserCard = ({
       setLoading(false);
     }
   };
+
+  const handleSendReplyMessageToUser = async() => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      if (!selectedMessage) throw new Error('Mensagem não computada');
+
+      await sendReplyMessage(
+        selectedMessage.id,
+        user.id,
+        replyMessage
+      );
+
+      showToast(`Sua mensagem foi mandada para ${user.name} com sucesso`, 'success');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally {
+      setLoading(false);
+      setActiveModal('USER_SUPPORT_MESSAGES');
+      setSelectedMessage(null);
+      setReplyMessage('');
+    }
+  }
 
   return (
     <>
@@ -173,76 +196,92 @@ const UserCard = ({
       isOpen={activeModal === 'USER_SUPPORT_MESSAGES'} 
       modalTitle={
         <>
-          <h4 className="sm:block hidden">Mensagens do usuário</h4>
-          <h4 className="sm:hidden block">Mensagens</h4>
+          <div className="sm:block hidden">Mensagens do usuário</div>
+          <div className="sm:hidden block">Mensagens</div>
         </>
       } 
       hasXClose
-      onCloseModalActions={() => setActiveModal('USER_INFOS')}
+      onCloseModalActions={() => {
+        setActiveModal('USER_INFOS');
+        setSelectedMessage(null);
+      }}
       >
         <div className={`flex flex-col gap-3 max-h-[50vh] pr-3 overflow-y-auto ${secondaryColorScrollBar}`}>
-          {user.role !== 'ADMIN' && user.messages.map((message) => {
-            const type = message.type === 'APPEAL'
-              ? 'Apelo'
-            : message.type === 'QUESTION'
-              ? 'Pergunta'
-            : 'Sugestão'
-
-            return (
-              <div className="flex flex-col bg-gray-100/10 p-2 rounded-xl">
-                <span className="text-gray text-xs">
-                  Código da messagem: {message.id} 
-                </span>
-                <h4 className="text-cyan mt-1">
-                  {message.subject}
-                </h4>
-                <span className="text-yellow text-sm">
-                  {formattedDate(message.sentDate)}
-                </span>
-                <span className="text-gray">
-                  Tipo de mensagem: <span className="text-secondary-middledark">{type}</span>
-                </span>
-                <p className="text-secondary-light border-t border-primary mt-1 pt-1">
-                  {message.message.length > MAX_MESSAGE_LENGTH && !readMore
-                    ? message.message.slice(0, MAX_MESSAGE_LENGTH) + '...'
-                    : message.message
-                  }
-                </p>
-                <div className="flex justify-between mt-1">
-                  <button
-                  onClick={() => setReadMore(prev => !prev)}
-                  className="text-gray text-left w-fit cursor-pointer"
-                  >
-                    {readMore
-                      ? 'Ler menos'
-                      : 'Ler mais'
-                    }             
-                  </button>
-                  <Button 
-                    type={"button"}
-                    label="Responder"
-                    style="px-5"
-                    onClick={() => {
-                      setActiveModal('REPLY_MESSAGE');
-                      setSelectedMessage(message);
-                    }}
-                  />
-                </div>
-              </div>
-            )
-          })}
+          {user.role !== 'ADMIN' && user.messages.map((message) => (
+            <UserMessage
+              key={message.id}
+              type="MESSAGE_FROM_USER"
+              message={message}
+              setActiveModal={setActiveModal}
+              setSelectedMessage={setSelectedMessage}
+              reply={{
+                message: message.reply.message,
+                at: message.reply.at
+              }}
+            />
+          ))}
         </div>
       </Modal>
 
       <Modal
       isOpen={activeModal === 'REPLY_MESSAGE'} 
-      modalTitle={'Responder mensagem'} 
+      modalTitle={
+        <>
+          <div className="sm:hidden block">Responder</div>
+          <div className="sm:block hidden ">Responder mensagem</div>
+        </>
+      } 
       hasXClose
-      onCloseModalActions={() => setActiveModal('USER_SUPPORT_MESSAGES')}
+      onCloseModalActions={() => {
+        setActiveModal('USER_SUPPORT_MESSAGES');
+        setSelectedMessage(null);
+        setError('')
+        setReplyMessage('');
+      }}
       >
-        <p className="text-gray">Responder a mensagem {selectedMessage?.id}</p>
+        <UserMessage
+          type="MESSAGE_REPLY"
+          replyMessage={replyMessage}
+          message={selectedMessage}
+          setReplyMessage={setReplyMessage}
+          setActiveModal={setActiveModal}
+          error={error}
+          setError={setError}
+        />
       </Modal>
     </div>
+
+    <Modal
+    isOpen={activeModal === 'REPLY_MESSAGE_CONFIRM'} 
+    modalTitle={
+      <>
+        <div className="sm:hidden block">Confirmar</div>
+        <div className="sm:block hidden ">Confirmar ação</div>
+      </>
+    } 
+    hasXClose
+    onCloseModalActions={() => setActiveModal('REPLY_MESSAGE')}
+    >
+      <p className="text-secondary-middledark">
+        Tem certeza em mandar sua mensagem à <span className="text-cyan">{user.name}</span> ?
+      </p>
+      <div className="flex gap-3 mt-1">
+        <Button 
+          style={`flex-1 ${buttonColorsScheme.green}`}
+          type={"submit"}
+          label="Sim"
+          loading={loading}
+          loadingLabel="Processando"
+          onClick={handleSendReplyMessageToUser}
+        />
+        <Button 
+          style={`flex-1 ${buttonColorsScheme.red}`}
+          type={"submit"}
+          label="Não"
+          onClick={() => setActiveModal('REPLY_MESSAGE')}
+        />
+      </div>
+    </Modal>
 
     {isDivided && (
       <div className='border mx-2 my-1 border-secondary dark:border-secondary-dark' />

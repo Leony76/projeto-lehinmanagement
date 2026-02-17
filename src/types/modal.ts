@@ -10,6 +10,7 @@ export type UsersPageModals = GenericPageModals
 | 'ACTIVATE_USER'
 | 'USER_SUPPORT_MESSAGES'
 | 'REPLY_MESSAGE'
+| 'REPLY_MESSAGE_CONFIRM'
 ;
 
 export type ProductPageModals = GenericPageModals 

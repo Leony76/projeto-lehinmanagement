@@ -25,6 +25,10 @@ export type UserSupportMessage = {
   type: SupportMessageType;
   subject: string | null;
   message: string;
+  reply: {
+    message: string | null;
+    at: string | null;
+  }
 }
 
 export type CustomerActionHistory = {

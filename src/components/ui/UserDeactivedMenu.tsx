@@ -13,30 +13,37 @@ import Error from './Error';
 import { useToast } from '@/src/contexts/ToastContext';
 import { sendMessageToSupport } from '@/src/actions/userActions';
 import { useUserStore } from '@/src/hooks/store/useUserStore';
-import { getRequiredSession } from '@/src/lib/get-session-user';
 import { SupportMessageType, UserSituation } from '@prisma/client';
+import { UserDeactivatedDTO } from '@/src/types/UserDeactivatedReasonDTO';
+import { formattedDate } from '@/src/utils/formattedDate';
+import { UserAndSupportConversationDTO } from '@/src/types/UserAndSupportConversationDTO';
+import UserMessage from '../modal/Users/UserMessage';
 
 type Props = {
-  deactivation: {
-    date: string;
-    reason: string;
-  }
+  deactivation: UserDeactivatedDTO;
+  conversations: UserAndSupportConversationDTO[];
 }
 
 const UserDeactivedMenu = ({
-  deactivation
+  deactivation,
+  conversations,
 }:Props) => {
 
   const { showToast } = useToast();
 
   const user = useUserStore((s) => s.user);
 
+  const [selectedConversation, setSelectedConversation] = useState<UserAndSupportConversationDTO | null>(null);
+
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [supportMessage, setSupportMessage] = useState<string>('');
+  const [replySupportMessage, setReplySupportMessage] = useState<string>('');
   const [activeModal, setActiveModal] = useState<
   | 'CONTACT_SUPPORT' 
   | 'CONFIRM_SEND_MESSAGE' 
+  | 'LAST_SUPPORT_MESSAGES'
+  | 'REPLY_SUPPORT_MESSAGE'
   | null
   >(null);
 
@@ -85,7 +92,7 @@ const UserDeactivedMenu = ({
           Conta desativada
         </h1>
         <span className="text-yellow">
-          {deactivation.date}
+          {formattedDate(deactivation.deactivationDate)}
         </span>
         <p className="text-primary text-center text-sm">
           Nossos administradores apuraram circunstância que inferiram na desativação de sua conta por tempo indeterminado
@@ -94,12 +101,12 @@ const UserDeactivedMenu = ({
           <label className="text-secondary">
             Razão
           </label>
-          <p className="text-gray text-sm sm:max-h-30 overflow-y-auto">
+          <p className="text-gray text-sm max-h-30 overflow-y-auto">
             {deactivation.reason}
           </p>
         </div>
         <div className="w-full flex flex-col sm:flex-row sm:gap-4 gap-2 mt-4">
-          <Logout className={buttonColorsScheme.red + ' text-center flex-1'}>
+          <Logout className={buttonColorsScheme.red + ' text-center flex-[.5]'}>
             Sair
           </Logout>
           <Button
@@ -108,8 +115,19 @@ const UserDeactivedMenu = ({
             style={`flex-1 ${buttonColorsScheme.yellow}`} 
             onClick={() => setActiveModal('CONTACT_SUPPORT')}
           />
+          {conversations.length > 0 && 
+            <Button
+              type='button'
+              label='Últimas mensagens'
+              style={`flex-1`} 
+              onClick={() => setActiveModal('LAST_SUPPORT_MESSAGES')}
+            />
+          }
         </div>
       </div>
+
+
+
 
       <Modal 
       isOpen={activeModal === 'CONTACT_SUPPORT'} 
@@ -169,6 +187,9 @@ const UserDeactivedMenu = ({
         </div>
       </Modal>
 
+
+
+
       <Modal
       isOpen={activeModal === 'CONFIRM_SEND_MESSAGE'} 
       modalTitle={'Confirmar ação'} 
@@ -197,6 +218,43 @@ const UserDeactivedMenu = ({
             onClick={() => setActiveModal('CONTACT_SUPPORT')}
           />
         </div>
+      </Modal>
+
+
+      <Modal 
+      isOpen={activeModal === 'LAST_SUPPORT_MESSAGES'} 
+      modalTitle={'Suas mensagens'} 
+      hasXClose
+      onCloseModalActions={() => {setActiveModal(null)}}
+      >
+        <UserMessage
+          type={'USER_MESSAGE'}
+          conversations={conversations}
+          setActiveModal={setActiveModal}
+          setSelectedConversation={setSelectedConversation}    
+        />
+      </Modal>
+
+
+      <Modal 
+      isOpen={activeModal === 'REPLY_SUPPORT_MESSAGE'} 
+      modalTitle={'Responder'} 
+      hasXClose
+      onCloseModalActions={() => {
+        setActiveModal(null); 
+        setError('');
+      }}
+      >
+        <UserMessage
+          type={'USER_REPLY'}
+          conversations={conversations}
+          setActiveModal={setActiveModal}
+          error={error} 
+          replySupportMessage={replySupportMessage}
+          selectedConversation={selectedConversation}
+          setError={setError}
+          setReplySupportMessage={setReplySupportMessage}
+        />
       </Modal>
     </div>
   )

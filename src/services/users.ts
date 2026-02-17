@@ -4,7 +4,8 @@ import { headers } from "next/headers";
 import { auth } from "../lib/auth";
 import prisma from "../lib/prisma";
 import { AdminDTO, CustomerDTO, SellerDTO } from "../types/usersDTO";
-import { UserDeactivatedReason } from "../types/UserDeactivatedReasonDTO";
+import { UserDeactivatedDTO } from "../types/UserDeactivatedReasonDTO";
+import { UserAndSupportConversationDTO } from "../types/UserAndSupportConversationDTO";
 
 type UsersGroupedDTO = {
   customers: CustomerDTO[];
@@ -86,6 +87,10 @@ export async function getCustomers(): Promise<CustomerDTO[]> {
       type: item.type,
       message: item.message,
       subject: item.subject,
+      reply: {
+        message: item.reply,
+        at: item.repliedAt?.toISOString() ?? ''
+      },
     })),
 
     history: user.orders.map((order) => ({
@@ -154,6 +159,10 @@ export async function getSellers(): Promise<SellerDTO[]> {
         type: item.type,
         message: item.message,
         subject: item.subject,
+        reply: {
+          message: item.reply,
+          at: item.repliedAt?.toISOString() ?? ''
+        },
       })),
 
       history: uniqueOrders.map((order) => ({
@@ -239,7 +248,7 @@ export async function getUsers(): Promise<UsersGroupedDTO> {
 
 export async function getDeactivatedUserReason(
   userId: string,
-): Promise<UserDeactivatedReason> {
+): Promise<UserDeactivatedDTO> {
   const deactivation = await prisma.adminActionHistory.findFirst({
     where: {
       targetUserId: userId,
@@ -257,3 +266,37 @@ export async function getDeactivatedUserReason(
     deactivationDate: deactivation?.createdAt.toISOString() ?? '[??/??/??]',
   }
 }
+
+export async function getUserAndSupportConversation(
+  userId: string,
+): Promise<UserAndSupportConversationDTO[]> {
+  const conversation = await prisma.supportMessage.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      message: true,
+      createdAt: true,
+      replier: { select: {
+        name: true,
+      }},
+      repliedAt: true,
+      subject: true,
+      reply: true,
+    },
+  });
+
+  return conversation.map((item) => ({
+    conversationId: item.id,
+    replier: {
+      name: item.replier?.name,
+      repliedAt: item.repliedAt?.toISOString(),
+      reply: item.reply
+    },
+    sender: {
+      message: item.message,
+      sentAt: item.createdAt?.toISOString(),
+      subject: item.subject,
+    }
+  }));
+}
+
