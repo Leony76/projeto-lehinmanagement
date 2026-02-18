@@ -3,23 +3,19 @@
 import Image from 'next/image'
 import { IoStar, IoStarOutline } from 'react-icons/io5';
 import Button from '../form/Button';
-import { CATEGORY_LABEL_MAP, OrderFilterValue, UserProductOrdersFilterValue } from '@/src/constants/generalConfigs';
+import { UserProductOrdersFilterValue } from '@/src/constants/generalConfigs';
 import { AiOutlineMessage } from 'react-icons/ai';
-import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
-import { useEffect, useState } from 'react';
-import Modal from '../modal/Modal';
-import TextArea from '../form/TextArea';
+import { buttonColorsScheme } from '@/src/constants/systemColorsPallet';
 import { UserProductDTO } from '@/src/types/userProductDTO';
-import { useLockScrollY } from '@/src/utils/useLockScrollY';
 import Rating from '../ui/Rating';
-import { useToast } from '@/src/contexts/ToastContext';
-import { rateCommentProduct, removeProduct } from '@/src/actions/productActions';
-import Error from '../ui/Error';
 import { FaRegTrashCan } from 'react-icons/fa6';
 import { motion } from 'framer-motion';
 import UserProductMenu from '../modal/Orders/UserProductMenu';
-import { UserProductPageModals } from '@/src/types/modal';
 import { productCardStyles as style } from '@/src/styles/Product/productCard.style';
+import ImageExpand from '../modal/ImageExpand';
+import RemoveUserProduct from '../modal/Orders/RemoveUserProduct';
+import ProductComment from '../modal/Product/ProductComment';
+import { useUserProductLogic } from '@/src/hooks/pageLogic/useUserProductLogic';
 
 type Props = {
   userProduct: UserProductDTO;
@@ -29,64 +25,26 @@ const MyProduct = ({
   userProduct,
 }:Props) => {
 
-  const { showToast } = useToast();
-
-  const [activeModal, setActiveModal] = useState<UserProductPageModals | null>(null);
-
-  const [orderSearch, setOrderSearch] = useState('');
-  const [orderFilter, setOrderFilter] = useState<UserProductOrdersFilterValue | null>(null);
-
-  const [error, setError] = useState<string>('');
-
-  const [productComment, setProductComment] = useState<string>('');
-
-  const [rating, setRating] = useState<number>(userProduct.productRating);
-
-  const datePutToSale = new Date(userProduct.createdAt).toLocaleDateString("pt-BR");
-
-  const category =  CATEGORY_LABEL_MAP[userProduct.category] ?? 'Categoria não definida';
-
-  useLockScrollY(Boolean(activeModal));
-
-  const handleCommentRatingProduct = async() => {
-    if (!rating) return;
-
-    try {
-      await rateCommentProduct(
-        userProduct.id,
-        rating,
-        productComment,
-      );
-
-      if (rating !== userProduct.productRating) {
-        showToast('Produto avaliado', 'info');
-      } if (productComment) {
-        showToast('Seu comentário sobre o produto foi ao ar', 'info');
-        setProductComment('');
-      }
-    } catch (err:unknown) { 
-      showToast('Houve um erro: ' + err, 'error');
-    } 
-  }
-
-  const handleRemoveUserProduct = async() => {
-    try {
-      await removeProduct(
-        userProduct.id,
-        ''
-      );
-
-      showToast('Produto removido com sucesso', 'success');
-    } catch (err:unknown) {
-      showToast('Erro: ' + err, 'error');
-    } finally {
-      setActiveModal(null);
-    }
-  }
-
-  useEffect(() => {
-    handleCommentRatingProduct();
-  },[rating]);
+  const {
+    error,
+    rating,
+    loading,
+    category,
+    activeModal,
+    orderSearch,
+    orderFilter,
+    datePutToSale,
+    productComment,
+    handleCommentRatingProduct,
+    handleRemoveUserProduct,
+    setProductComment,
+    setOrderSearch,
+    setActiveModal,
+    setOrderFilter,
+    setLoading,
+    setRating,
+    setError,
+  } = useUserProductLogic({ userProduct });
 
   return (
     <motion.div
@@ -124,16 +82,15 @@ const MyProduct = ({
             {userProduct.productAverageRating ?? 'Não avaliado'}
           </div>
         </div>
-        <div className="flex justify-between items-center">
+        <div className={style.rating_commentContainer}>
           <Rating 
             value={rating}
             onChange={setRating}
           />
-          <div className={`transition-all duration-300 ease-out
-            ${rating !== 0 
-              ? 'opacity-100 translate-x-0 pointer-events-auto' 
-              : 'opacity-0 translate-x-3 pointer-events-none'}
-          `}>
+          <div className={rating !== 0 
+            ? style.rate.rated 
+            : style.rate.notRated
+          }>
             <Button
               type="button"
               onClick={() => setActiveModal('COMMENT')}
@@ -145,12 +102,12 @@ const MyProduct = ({
         <div className='flex mt-2 gap-2'>
           <Button 
             type='button' 
-            style='text-lg flex-5' 
+            style={style.moreInfosButton} 
             label={"Mais Informações"} 
             onClick={() => setActiveModal('USER_PRODUCT_INFO')}
           />
           <Button 
-            style={`flex-1 ${buttonColorsScheme.red}`}
+            style={style.removeProductButton}
             type={'submit'}            
             icon={FaRegTrashCan}
             onClick={() => setActiveModal('REMOVE_PRODUCT_CONFIRM')}
@@ -160,119 +117,74 @@ const MyProduct = ({
 
     {/* ⇊ MODALS ⇊ */}
 
-    <UserProductMenu
-      isOpen={activeModal === 'USER_PRODUCT_INFO'}
-      onCloseActions={() => setActiveModal(null)}
-      onImageClick={() => setActiveModal('EXPAND_IMAGE')}
-      product={{
-        imageUrl: userProduct.imageUrl,
-        name: userProduct.name,
-        category: userProduct.category,
-        description: userProduct.description ?? '[Sem descrição]',
-        price: userProduct.price,
-      }}
-      orders={userProduct.orders.map(order => ({
-        id: order.id,
-        orderedAmount: order.items.reduce((sum, item) => sum + item.quantity, 0),
-        orderDate: order.acceptedAt ?? '',
-        orderTotalPrice: order.total,
-      }))}
-      search={{
-        order: orderSearch,
-        filter: orderFilter ?? 'most_recent',
-        onSearch: (e) => setOrderSearch(e.target.value),
-        onFilter: (e) => setOrderFilter(e.target.value as UserProductOrdersFilterValue),
-        onClearSearch: () => setOrderSearch(''),
-      }}
-    />
-
-
-    <Modal 
-    isOpen={activeModal === 'COMMENT'}
-    modalTitle={"Comentar produto"} 
-    onCloseModalActions={() => {
-      setActiveModal(null);
-      setError('');
-    }}
-    hasXClose
-    >
-      <p className={`text-[15px] ${textColors.secondaryDark}`}>
-        Deixe um comentário público acerca do que você achou do produto que pediu!
-      </p>
-      <TextArea 
-        style={{input: `h-30 ${error ? 'shadow-[0px_0px_5px_red] mb-[-1px]' : ''}`}} 
-        colorScheme='primary' 
-        placeholder={'Deixe seu comentário...'}
-        onChange={(e) => {
-          setProductComment(e.target.value);
-          setError('');
+      <UserProductMenu
+        isOpen={activeModal === 'USER_PRODUCT_INFO'}
+        onCloseActions={() => setActiveModal(null)}
+        onImageClick={() => setActiveModal('EXPAND_IMAGE')}
+        product={{
+          imageUrl: userProduct.imageUrl,
+          name: userProduct.name,
+          category: userProduct.category,
+          description: userProduct.description ?? '[Sem descrição]',
+          price: userProduct.price,
+        }}
+        orders={userProduct.orders.map(order => ({
+          id: order.id,
+          orderedAmount: order.items.reduce((sum, item) => sum + item.quantity, 0),
+          orderDate: order.acceptedAt ?? '',
+          orderTotalPrice: order.total,
+        }))}
+        search={{
+          order: orderSearch,
+          filter: orderFilter ?? 'most_recent',
+          onSearch: (e) => setOrderSearch(e.target.value),
+          onFilter: (e) => setOrderFilter(e.target.value as UserProductOrdersFilterValue),
+          onClearSearch: () => setOrderSearch(''),
         }}
       />
-      {userProduct.hasReview && !error && 
-        <p className='text-sm text-yellow-dark -mt-2'>
-          (!) Você já teçou um comentário a esse produto. O novo que você der sobrescreverá o seu atual.
-        </p>
-      }
-      {error && 
-        <Error error={error}/>
-      }
-      <Button 
-        type='button'
-        style='mt-1 text-xl' 
-        colorScheme='secondary' 
-        label='Comentar'
-        onClick={() => {
+
+      <ProductComment
+        isOpen={activeModal === 'COMMENT'}
+        onCloseActions={() => {
+          setActiveModal(null);
+          setError('');
+        }}
+        onChange={{ textArea: (e) =>  {
+          setProductComment(e.target.value);
+          setError('');
+        }}}
+        onClick={{ comment: () =>  {
           if (!productComment) {
             setError('Não se pode mandar um comentário vazio');
           } else {
             handleCommentRatingProduct();
             setActiveModal(null);
           }
+        }}}
+        hasReview={userProduct.hasReview}
+        misc={{ error }}
+
+      />
+
+      <ImageExpand modal={{
+          isOpen: activeModal === 'EXPAND_IMAGE',
+          onCloseActions: () => setActiveModal('USER_PRODUCT_INFO'),
+        }} image={{
+          imageUrl: userProduct.imageUrl,
+          name: userProduct.name
         }}
       />
-    </Modal>
 
-      <Modal 
-      isOpen={activeModal === 'EXPAND_IMAGE'} 
-      modalTitle={''} 
-      onCloseModalActions={() => setActiveModal('USER_PRODUCT_INFO')}>
-        <div className='relative aspect-square h-[90vh]'>
-          <Image 
-            src={userProduct.imageUrl} 
-            alt={userProduct.name}            
-            fill
-            className='object-contain aspect-square border-x-4 border-double cursor-zoom-out border-primary'
-            onClick={() => setActiveModal('USER_PRODUCT_INFO')}
-          />
-        </div>
-      </Modal>
+      <RemoveUserProduct
+        isOpen={activeModal === 'REMOVE_PRODUCT_CONFIRM'}
+        onCloseActions={() => setActiveModal(null)}
+        loading={loading}
+        onClick={{
+          yes: () => handleRemoveUserProduct(),
+          no: () => setActiveModal(null),
+        }}
+      />
 
-      <Modal 
-      isOpen={activeModal === 'REMOVE_PRODUCT_CONFIRM'} 
-      modalTitle={'Excluir produto'} 
-      onCloseModalActions={() => setActiveModal(null)}
-      >
-        <p className='text-secondary-dark'>
-          Tem certeza que deseja excluir esse produto ?
-        </p>
-        <p className='text-yellow-dark'> 
-          (!) Essa ação é inrreversível
-        </p>
-        <div className='flex gap-3 text-lg'>
-          <Button 
-            type={'submit'}
-            label='Sim'
-            style={`${buttonColorsScheme.green} flex-1`}
-            onClick={handleRemoveUserProduct}
-          />
-          <Button 
-            type={'submit'}
-            label='Não'
-            style={`${buttonColorsScheme.red} flex-1`}
-            onClick={() => setActiveModal(null)}
-          />
-        </div>
-      </Modal>
     </motion.div>
   )
 }

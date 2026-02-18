@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { authClient } from "@/src/lib/auth-client"; 
-import { useUserStore } from "@/src/store/useUserStore";
+import { useUserStore } from "@/src/hooks/store/useUserStore";
 
 export function AuthInitializer({ children }: { children: React.ReactNode }) {
   const setUser = useUserStore((state) => state.setUser);

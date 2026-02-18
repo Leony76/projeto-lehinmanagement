@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginFormData } from '@/src/schemas/loginSchema'; 
 import { useRouter } from 'next/navigation';
 import Error from '@/src/components/ui/Error';
+import { loginStyle as style } from '@/src/styles/login.style';
 
 const Login = () => {
 
@@ -54,14 +55,26 @@ const Login = () => {
   }
 
   return (
-    <main className='flex flex-col justify-center min-h-dvh bg-linear-to-bl from-secondary-light via-white to-primary-ultralight'>
-      <div className='flex flex-col items-center justify-center'>
-        <div className='flex flex-col justify-center  items-center transition-all duration-776 hover:scale-[1.1] hover:bg-radial from-primary/50 to-70%'>
-          <Image  src={LRC}  alt={'Lericoria'} height={67} width={76}/>
-          <h2 className={titleColors.primary}>Lehinmanagment'</h2>
+    <main className={style.mainContainer}>
+      <div className={style.innerContainer}>
+        <div className={style.logo_siteContainer}>
+          <Image  
+            src={LRC}  
+            alt={'Lericoria'} 
+            height={67} 
+            width={76}
+          />
+          <h2 className={titleColors.primary}>
+            Lehinmanagment'
+          </h2>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col max-w-62.5 w-full'>
-          <h1 className={`${titleColors.secondary} text-3xl text-center`}>Entrar</h1>
+        <form 
+        onSubmit={handleSubmit(onSubmit)} 
+        className={style.formContainer}
+        >
+          <h1 className={style.title}>
+            Entrar
+          </h1>
 
           <Input
             label={'E-mail'}
@@ -93,14 +106,12 @@ const Login = () => {
             type='submit'
           />
 
-          <Link 
-            className={`${textColors.secondaryMiddleDark} mt-2 text-xs m-auto`} 
-            href={'/register'}>
-              Ainda não tem conta? 
-              <span className={`${textColors.primary} ml-1 hover:underline`}> 
-                Cadastre-se!
-              </span>
-          </Link>
+          <span className={style.signupContainer}>
+            Ainda não tem conta? 
+            <Link className={style.signup} href={'/register'}>
+              Cadastre-se!
+            </Link>
+          </span>
         </form>
       </div>
     </main>

@@ -1,20 +1,17 @@
 import { getUserProducts } from "@/src/services/products";
 import MyProducts from "./MyProducts";
-import { auth } from "@/src/lib/auth";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getRequiredSession } from "@/src/lib/get-session-user";
 
 export default async function MyProductsPage() {
 
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    redirect('/login');
+  const user = (await getRequiredSession()).user;
+    
+  if (user.role === 'ADMIN') {
+    redirect('/products');
   }
 
-  const myProducts = await getUserProducts(session.user.id);
+  const myProducts = await getUserProducts(user.id);
 
   return (
     <MyProducts

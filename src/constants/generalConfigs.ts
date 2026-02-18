@@ -1,4 +1,5 @@
 import { Category } from "@prisma/client";
+import { number } from "zod";
 
 export type InputTypes = 'text' | 'number' | 'email' | 'password';
 export type ToastType = "success" | "error" | "alert" | "info";
@@ -16,6 +17,8 @@ export type SelectFilterOptions =
 | "USER_ORDER_FILTER" 
 | "CATEGORY" 
 | "PAYMENT"
+| "USERS_ROLE"
+| "USERS_FILTER"
 ;
 
 export const ROLE_LABEL: Record<SystemRoles, string> = {
@@ -23,6 +26,33 @@ export const ROLE_LABEL: Record<SystemRoles, string> = {
   SELLER: 'Vendedor(a)',
   ADMIN: 'Administrador(a)',
 }
+
+export const USER_ROLE_FILTER_OPTIONS = [
+  { value: 'CUSTOMER', label: 'Cliente' },
+  { value: 'SELLER', label: 'Vendedor(a)' },
+  { value: 'ADMIN', label: 'Administrador(a)' },
+] as const;
+
+export type UserRoleFilterValue = typeof USER_ROLE_FILTER_OPTIONS[number]['value'];
+
+export const USERS_FILTER_OPTIONS = [
+  { value: 'more_sold', label: 'Mais vendas' },
+  { value: 'least_sold', label: 'Menos vendas' },
+  { value: 'more_orders_done', label: 'Mais pedidos feitos' },
+  { value: 'least_orders_done', label: 'Menos pedidos feitos' },
+  { value: 'actived_account', label: 'Ativos' },
+  { value: 'deactived_account', label: 'Desativos' },
+] as const;
+
+export type UsersFilterValue = typeof USERS_FILTER_OPTIONS[number]['value'];
+
+export const MESSAGE_TYPE_LABELS: Record<string, string> = {
+  SUPPORT_QUESTION: 'Pergunta do suporte',
+  QUESTION: 'Pergunta do usuário',
+  APPEAL: 'Apelação',
+  SUGGESTION: 'Sugestão',
+  SUPPORT_ANSWER: 'Resposta do suporte',
+};
 
 export const PRODUCT_FILTER_OPTIONS = [
   { value: 'price_desc', label: 'Maior preço' },
@@ -80,12 +110,16 @@ export const USER_PRODUCT_ORDERS_FILTER_OPTIONS = [
   { value: 'least_units_ordered', label: 'Menos unidades pedidas'},
 ] as const;
 
+export type UserProductOrdersFilterValue = typeof USER_PRODUCT_ORDERS_FILTER_OPTIONS[number]['value']
+
 export const PAYMENT_OPTIONS = [
   { value: 'PIX' , label: 'Pix'},
   { value: 'CREDIT_CARD' , label: 'Cartão de crédito'},
   { value: 'DEBIT_CARD' , label: 'Cartão de débito'},
   { value: 'BANK_SLIP' , label: 'Boleto bancário'},
 ] as const;
+
+export type PaymentOptions = typeof PAYMENT_OPTIONS[number]['label']
 
 export const CATEGORY_OPTIONS = [
   { value: 'TOY', label: 'Brinquedo' },
@@ -115,6 +149,8 @@ export const USER_PRODUCT_FILTER_LABEL_MAP: Record<
   not_rated: 'Não avaliados',
 };
 
+export type UserProductFilterValue = typeof USER_PRODUCT_FILTER_OPTIONS[number]['value'];
+
 export const ORDER_FILTER_LABEL_MAP: Record<
   OrderFilterValue,
   string
@@ -132,6 +168,8 @@ export const ORDER_FILTER_LABEL_MAP: Record<
   paid: 'Pagos',
 };
 
+export type OrderFilterValue = typeof ORDER_FILTER_OPTIONS[number]['value'];
+
 export const USER_ORDER_FILTER_LABEL_MAP: Record<
   UserOrderFilterValue,
   string
@@ -147,6 +185,8 @@ export const USER_ORDER_FILTER_LABEL_MAP: Record<
   approved: 'Aprovados',
   paid: 'Pagos',
 };
+
+export type UserOrderFilterValue = typeof USER_ORDER_FILTER_OPTIONS[number]['value'];
 
 export const PRODUCT_FILTER_LABEL_MAP: Record<
   ProductFilterValue,
@@ -164,6 +204,8 @@ export const PRODUCT_FILTER_LABEL_MAP: Record<
   rating_desc: "Mais bem avaliado",
   rating_asc: "Menos bem avaliado",
 };
+
+export type ProductFilterValue = typeof PRODUCT_FILTER_OPTIONS[number]['value'];
 
 export const CATEGORY_LABEL_MAP: Record<
   Category,
@@ -192,12 +234,6 @@ export const CATEGORY_LABEL_MAP: Record<
   HANDMADE: "Artesanal",
 };
 
-export type PaymentOptions = typeof PAYMENT_OPTIONS[number]['label']
 export type CategoryValue = typeof CATEGORY_OPTIONS[number]['value'];
 export type CategoryTranslatedValue = typeof CATEGORY_OPTIONS[number]['label'];
 
-export type ProductFilterValue = typeof PRODUCT_FILTER_OPTIONS[number]['value'];
-export type UserProductFilterValue = typeof USER_PRODUCT_FILTER_OPTIONS[number]['value'];
-export type OrderFilterValue = typeof ORDER_FILTER_OPTIONS[number]['value'];
-export type UserProductOrdersFilterValue = typeof USER_PRODUCT_ORDERS_FILTER_OPTIONS[number]['value']
-export type UserOrderFilterValue = typeof USER_ORDER_FILTER_OPTIONS[number]['value'];

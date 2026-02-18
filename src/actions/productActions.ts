@@ -41,15 +41,28 @@ export async function createProduct(input: unknown) {
 
 export async function removeProduct(
   id: number, 
-  removeJustify?: string
+  removeJustify?: string 
 ) {
-  if (removeJustify?.trim() !== '') {
-    await prisma.product.update({
-      where: { id },
-      data: { 
-        isActive: false,
-        removeJustify
-      },
+  const user = (await getRequiredSession()).user;
+
+  if (user.role === 'ADMIN') {
+    await prisma.$transaction(async (tx) => {
+      await tx.product.update({
+        where: { id },
+        data: { 
+          isActive: false,
+        },
+      });
+
+      await tx.adminActionHistory.create({
+        data: {
+          action: 'DELETED',
+          justification: removeJustify ?? '',
+          actorId: user.id,
+          targetProductId: id, 
+        }
+      });
+
     });
 
     revalidatePath('/products');
@@ -70,18 +83,46 @@ export async function removeProduct(
   }
 }
 
-export async function updateProduct(input: unknown) {
-  const data = addProductSchema.parse(input)
+export async function updateProduct(input: unknown, justify?: string) {
+  const session = await getRequiredSession();
+  const user = session.user;
+  const validatedData = addProductSchema.parse(input);
 
-  await prisma.product.update({
-    where: { id: data.id! },
-    data: {
-      name: data.name,
-      category: data.category,
-      description: data.description,
-      price: data.price,
-      stock: data.stock,
-      imageUrl: data.imageUrl,
+  const existingProduct = await prisma.product.findUnique({
+    where: { id: validatedData.id }
+  });
+
+  if (!existingProduct) throw new Error("Produto não encontrado");
+  
+  if (user.role !== 'ADMIN' && existingProduct.sellerId !== user.id) {
+    throw new Error("Acesso negado");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.product.update({
+      where: { id: validatedData.id },
+      data: {
+        name: validatedData.name,
+        category: validatedData.category,
+        description: validatedData.description,
+        price: validatedData.price,
+        stock: validatedData.stock,
+        imageUrl: validatedData.imageUrl,
+      }
+    });
+
+    if (user.role === 'ADMIN') {
+      if (!justify?.trim()) throw new Error("Justificativa obrigatória para admins");
+
+      await tx.adminActionHistory.create({
+        data: {
+          action: 'EDITED',
+          justification: justify,
+          actorId: user.id,
+          targetProductId: validatedData.id!,
+        }
+      });
+
     }
   });
 

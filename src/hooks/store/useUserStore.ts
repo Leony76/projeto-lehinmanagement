@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { SystemRoles } from "../constants/generalConfigs";
+import { SystemRoles } from "../../constants/generalConfigs";
 
 export type User = {
   id: string;
@@ -8,6 +8,7 @@ export type User = {
   email: string;
   image?: string | null;
   role?: SystemRoles; 
+  isActive: boolean;
   emailVerified: boolean;
   createdAt: string | Date;
   updatedAt: string | Date;

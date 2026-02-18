@@ -16,19 +16,75 @@ model User {
   createdAt      DateTime?  @default(now()) @map("created_at")
   updatedAt      DateTime?  @updatedAt @map("updated_at")
 
-  darkTheme              Boolean   @default(false) @map("dark_theme")
-  role Role? @default(CUSTOMER)
+  darkTheme      Boolean   @default(false) @map("dark_theme")
+  role Role?     @default(CUSTOMER)
+  isActive       Boolean    @default(true)
 
   accounts             Account[]
   sessions             Session[]
   orders               Order[]
   costumerProducts     CostumerProduct[]
   sellerProducts       Product[]
+
+  targetUser           AdminActionHistory[] @relation("AdminTargetUser")
+  actor                AdminActionHistory[]  @relation("AdminActor")
+
   orderHistoryChanged  OrderHistory[]  @relation("OrderHistoryChangedBy")
   orderHistoryDeleted  OrderHistory[]  @relation("OrderHistoryDeletedBy")
   productReview        ProductReview[]
 
+  senderSupportMessage   SupportMessage[]  @relation("user_message")
+  recieverSupportMessage    SupportMessage[] @relation("receiver_message")     
+  replierSupportMessage    SupportMessage[] @relation("replier_message")
+
   @@map("users")
+}
+
+model SupportMessage {
+  id   Int   @id @default(autoincrement())
+
+  senderId     String  @map("sender_id")
+  receiverId   String? @map("receiver_id")
+  replierId  String?  @map("replier_id")
+
+  type SupportMessageType 
+
+  subject    String?
+  message    String @db.Text
+  reply      String?
+
+  createdAt  DateTime  @default(now())  @map("created_at")
+  repliedAt  DateTime?  @map("replied_at")
+
+  sentBy SupportMessageSentBy @map("sent_by")
+
+  situation SupportMessageSituation @default(UNRESOLVED)
+  userSituation UserSituation @map("user_situation")
+
+  sender User @relation("user_message", fields: [senderId], references: [id])
+  receiver User? @relation("receiver_message", fields: [receiverId], references: [id])
+  replier User? @relation("replier_message", fields: [replierId], references: [id])
+
+  @@map("support_messages")
+}
+
+model AdminActionHistory {
+  id        Int       @id @default(autoincrement())
+  action    AdminAction
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  actorId   String    @map("actor_id")
+  targetUserId String? @map("target_user_id")
+  targetProductId Int? @map("target_product_id")
+  targetOrderId Int? @map("target_order_id")
+  justification String
+
+  actor     User      @relation("AdminActor", fields: [actorId], references: [id])
+  targetUser User?    @relation("AdminTargetUser", fields: [targetUserId], references: [id])
+  product   Product? @relation(fields: [targetProductId], references: [id])
+  order     Order?   @relation(fields: [targetOrderId], references: [id])
+
+  @@map("admin_action_history")
 }
 
 model Session {
@@ -97,6 +153,7 @@ model Order {
   user         User           @relation(fields: [userId], references: [id])
   payments     Payment[]
   costumerProducts CostumerProduct[]
+  order AdminActionHistory[]
 
   @@map("orders")
 }
@@ -113,12 +170,12 @@ model Product {
   deletedBy      DeletedBy?   @map("deleted_by")
   category       Category
   imageUrl       String       @map("image_url")
-  removeJustify  String?      @map("remove_justify")
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime?    @updatedAt @map("updated_at")
   deletedAt      DateTime?    @map("deleted_at")
 
   orderItems     OrderItem[]
+  adminActions   AdminActionHistory[]
   seller         User         @relation(fields: [sellerId], references: [id])
   customer       CostumerProduct[]
   reviews        ProductReview[]
@@ -247,4 +304,42 @@ enum PaymentMethods {
   DEBIT_CARD
   BANK_SLIP
   PIX
+}
+
+enum AdminAction {
+  USER_DEACTIVATED
+  USER_ACTIVATED
+  PRODUCT_REMOVED
+  PRODUCT_EDITED
+  ORDER_CANCELED
+  PAYMENT_REFUNDED
+  MESSAGE_REPLY
+  MESSAGE_TO_USER
+  EDITED
+  DELETED
+  BLOCKED
+  UNBLOCKED
+}
+
+enum UserSituation {
+  ACTIVATED
+  DEACTIVATED
+}
+
+enum SupportMessageSituation {
+  RESOLVED
+  UNRESOLVED
+}
+
+enum SupportMessageType {
+  APPEAL
+  QUESTION
+  SUGGESTION
+  SUPPORT_ANSWER
+  SUPPORT_QUESTION
+}
+
+enum SupportMessageSentBy {
+  SUPPORT
+  USER
 }

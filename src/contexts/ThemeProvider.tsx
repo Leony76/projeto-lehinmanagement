@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useThemeStore } from "@/src/store/useDarkTheme";
+import { useThemeStore } from "@/src/hooks/store/useDarkTheme";
 
 type Props = {
   initialDark: boolean;

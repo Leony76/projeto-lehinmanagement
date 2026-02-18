@@ -16,11 +16,12 @@ import { registerSchema, RegisterFormData } from '@/src/schemas/registerSchema';
 import { signUp } from '@/src/lib/auth-client';
 import { authErrorsPtBr } from '@/src/lib/auth-errors';
 import { titleColors, textColors } from '@/src/constants/systemColorsPallet';
-import { useUserStore } from '@/src/store/useUserStore';
+import { useUserStore } from '@/src/hooks/store/useUserStore';
+import { registerStyle as style } from '@/src/styles/register.style';
 
 const Register = () => {
   const router = useRouter();
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const {
@@ -33,7 +34,7 @@ const Register = () => {
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    setApiError(null);
+    setError(null);
     setLoading(true);
 
     await signUp.email({
@@ -51,22 +52,32 @@ const Register = () => {
       onError: (ctx) => {
         const errorCode = ctx.error.code as keyof typeof authErrorsPtBr;
         const message = authErrorsPtBr[errorCode] || ctx.error.message || "Erro inesperado";
-        setApiError(message);
+        setError(message);
         setLoading(false);
       }
     });
   };
 
   return (
-    <main className='flex flex-col justify-center min-h-dvh bg-linear-to-tr from-secondary-light via-white to-primary-ultralight'>
-      <div className='flex flex-col items-center justify-center'>
-        <div className='flex flex-col justify-center items-center transition-all duration-776 hover:scale-[1.1] hover:bg-radial from-primary/50 to-70%'>
-          <Image src={LRC} alt={'Lericoria'} height={67} width={76} />
-          <h2 className={titleColors.primary}>Lehinmanagment'</h2>
+    <main className={style.mainContainer}>
+      <div className={style.innerContainer}>
+        <div className={style.logo_siteContainer}>
+          <Image 
+            src={LRC} 
+            alt={'Lericoria'} 
+            height={67}
+            width={76} 
+           />
+          <h2 className={titleColors.primary}>
+            Lehinmanagment'
+          </h2>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col max-w-62.5 w-full'>
-          <h1 className={`${titleColors.secondary} text-3xl text-center`}>Cadastro</h1>
+        <form 
+        onSubmit={handleSubmit(onSubmit)} 
+        className={style.formContainer}
+        >
+          <h1 className={style.title}>Cadastro</h1>
 
           <Input
             label="Nome"
@@ -107,9 +118,10 @@ const Register = () => {
             error={errors.confirmPassword?.message}
           />
 
-          {apiError && <Error error={apiError} />}
+          {error && <Error error={error} />}
 
           <Button
+            type='submit'
             style='mt-4'
             loading={loading}
             loadingLabel='Cadastrando'
@@ -117,9 +129,12 @@ const Register = () => {
             colorScheme='primary'
           />
 
-          <Link className={`${textColors.primary} mt-2 text-xs m-auto`} href={'/login'}>
-            Já possui cadastro? <span className={`${textColors.secondaryMiddleDark} hover:underline`}>Entre!</span>
-          </Link>
+          <span className={style.loginContainer}>
+            Já possui cadastro?
+            <Link className={style.login} href={'/login'}>
+              Entre!
+            </Link>
+          </span>
         </form>
       </div>
     </main>

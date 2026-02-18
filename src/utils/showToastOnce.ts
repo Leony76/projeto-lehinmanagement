@@ -3,7 +3,7 @@
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useToast } from "../contexts/ToastContext";
-import { useUserStore } from "../store/useUserStore";
+import { useUserStore } from "../hooks/store/useUserStore";
 
 export function ToastHandler() {
   const user = useUserStore((stats) => stats.user);

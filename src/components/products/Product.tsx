@@ -1,30 +1,26 @@
 'use client';
 
-import Image from 'next/image'
-import { IoStar, IoStarOutline } from 'react-icons/io5';
-import Button from '../form/Button';
-import { CATEGORY_LABEL_MAP } from '@/src/constants/generalConfigs';
-import { productCardSetup } from '@/src/styles/Product/productCard.style';
+import { motion } from 'framer-motion';
+import { FaInfo } from 'react-icons/fa6';
 import { ProductDTO } from '@/src/types/productDTO';
+import { IoStar, IoStarOutline } from 'react-icons/io5';
 import { formatCurrency } from '@/src/utils/formatCurrency';
-import { useUserStore } from '@/src/store/useUserStore';
-import { buttonColorsScheme, textColors } from '@/src/constants/systemColorsPallet';
 import { getNameAndSurname } from '@/src/utils/getNameAndSurname';
-import { removeProduct } from '@/src/actions/productActions';
-import { useState } from 'react';
-import Modal from '../modal/Modal';
-import { useToast } from '@/src/contexts/ToastContext';
+import { useProductLogic } from '@/src/hooks/pageLogic/useProductLogic';
+import { buttonColorsScheme } from '@/src/constants/systemColorsPallet';
+import { productCardSetup } from '@/src/styles/Product/productCard.style';
+
+import { productCardStyles as styles } from '@/src/styles/Product/productCard.style';
+
+import RemoveProductJustify from '../modal/Product/RemoveProductJustify';
+import EditProductJustify from '../modal/Product/EditProductJustify';
+import ConfirmRemove from '../modal/Product/ConfirmRemove';
+import ProductInfo from '../modal/Product/ProductInfo';
 import EditProductForm from '../form/EditProductForm';
 import OrderProduct from '../modal/OrderProduct';
-import { useLockScrollY } from '@/src/utils/useLockScrollY';
-import { FaInfo } from 'react-icons/fa6';
-import { motion } from 'framer-motion';
-import { ProductPageModals } from '@/src/types/modal';
-import ProductInfo from '../modal/Product/ProductInfo';
 import ImageExpand from '../modal/ImageExpand';
-import RemoveProductJustify from '../modal/Product/RemoveProductJustify';
-import ConfirmRemove from '../modal/Product/ConfirmRemove';
-import { productCardStyles as styles } from '@/src/styles/Product/productCard.style';
+import Button from '../form/Button';
+import Image from 'next/image'
 
 type Props = {
   product: ProductDTO;
@@ -32,44 +28,35 @@ type Props = {
 
 const Product = ({
   product,
-}:Props) => {
+}:Props) => { 
 
-  const { showToast } = useToast();
-
-  const datePutToSale = new Date(product.createdAt).toLocaleDateString("pt-BR");
-  const category = CATEGORY_LABEL_MAP[product.category];
-
-  const [activeModal, setActiveModal] = useState<ProductPageModals | null>(null);
-
-  const [removeJustify, setRemoveJustify] = useState<string>('');
-  const [error, setError] = useState<string>('');
-
-
-  const user = useUserStore((stats) => stats.user);
-
-  const available = product.stock - product.reservedStock;
-  const canOrder = (product.sellerId !== user?.id) && (user?.role !== 'ADMIN');
-
-  const handleRemoveProduct = async() => {
-    if (!removeJustify) {
-      setError('A justificativa de remoção é obrigatória');
-      return;
-    }
-
-    try {
-      
-      await removeProduct(product.id, removeJustify);
-      
-      setRemoveJustify('');
-      showToast('Produto removido com sucesso', 'success');
-    } catch (err) {
-      showToast('Erro ao remover produto', 'error');
-    } finally {
-      setActiveModal(null);
-    }
-  };
-
-  useLockScrollY(Boolean(activeModal));  
+  const {
+    user,
+    error,
+    loading,
+    preview,
+    canOrder,
+    category,
+    available,
+    imageFile,
+    imageError,
+    activeModal,
+    editJustify,
+    fileInputRef,
+    datePutToSale,
+    productToBeEdited,
+    setProductToBeEdited,
+    handleRemoveProduct,
+    handleEditProduct,
+    setRemoveJustify,
+    setEditJustify,
+    setActiveModal,
+    setImageError,
+    setImageFile,
+    setFormData, 
+    setPreview,
+    setError,
+  } = useProductLogic({ product });
 
   return (
     <motion.div
@@ -120,7 +107,7 @@ const Product = ({
             }
           </div>
         ) : (
-          <div className={styles.label}> 
+          <div className={'text-cyan'}> 
             Ofertado pelo sistema
           </div>
         )}
@@ -172,7 +159,10 @@ const Product = ({
             type="button"
             label="Editar"
             style={`flex-1 dark:bg-yellow-500 ${buttonColorsScheme.yellow}`}
-            onClick={() => setActiveModal('EDIT_PRODUCT')}
+            onClick={() => {
+              setActiveModal('EDIT_PRODUCT');
+              setProductToBeEdited(product);
+            }}
           />
           <Button
             type="button"
@@ -187,17 +177,24 @@ const Product = ({
       {/* ⇊ MODALS ⇊ */}
 
       <ConfirmRemove
+        loading={loading}
         modal={{
           isOpen: activeModal === 'CONFIRM_REMOVE_PRODUCT',
           onCloseActions: () => setActiveModal(null),
         }}
         user={{ role: user?.role }}
         onClick={{
-          yes: () => setActiveModal('REMOVE_PRODUCT_JUSTIFY'),
+          yes: () => {
+            if (user?.role === 'ADMIN') {
+              setActiveModal('REMOVE_PRODUCT_JUSTIFY');
+              return;
+            }
+            handleRemoveProduct();
+          },
           no: () => setActiveModal(null),
         }}
       />
-
+      
       <RemoveProductJustify
         modal={{ 
           isOpen: activeModal === 'REMOVE_PRODUCT_JUSTIFY',
@@ -212,22 +209,60 @@ const Product = ({
           cancel: () => setActiveModal(null),
         }}
         product={{ sellerName: product.sellerName ?? '[Desconhecido]' }}
-        misc={{ error }}
+        misc={{ error, loading }}
+      />
+    
+      <EditProductForm
+        isOpen={activeModal === 'EDIT_PRODUCT'}
+        productToBeEdited={productToBeEdited}
+        onCloseActions={() => {
+          setActiveModal(null)
+          setProductToBeEdited(null);
+          setPreview(null);
+        }}
+        actions={{
+          handleEditProduct,
+          setActiveModal,
+          setFormData,
+        }}
+        imageProps={{
+          imageFile,
+          fileInputRef,
+          preview,
+          imageError,
+          setImageFile,
+          setPreview,
+          setImageError,
+        }}
       />
 
-
-      <Modal 
-      isOpen={activeModal === 'EDIT_PRODUCT'} 
-      modalTitle={'Editar produto'}
-      onCloseModalActions={() => setActiveModal(null)}
-      hasXClose
-      style={{container: '!max-w-215'}}
-      > 
-        <EditProductForm
-          productToBeEdited={product}
-          closeModal={() => setActiveModal(null)}
-        />
-      </Modal>
+      <EditProductJustify
+        modal={{
+          isOpen: activeModal === 'EDIT_JUSTIFY',
+          onCloseActions: () => setActiveModal('EDIT_PRODUCT'),
+        }}
+        edit={{
+          onChange: { textArea: (e) => {
+            setEditJustify(e.target.value);
+            setError('');
+          }},
+          onClick: {
+            toBack: () => {
+              setActiveModal('EDIT_PRODUCT');
+              setError('');
+              setEditJustify('');
+            },
+            toEdit: () => {
+              if (!editJustify) {
+                setError('A justificativa da edição não pode ser vazia');
+                return;
+              }
+              handleEditProduct();
+            }
+          }
+        }}
+        misc={{ error, loading }}
+      />
 
       <ProductInfo
          modal={{
@@ -242,7 +277,7 @@ const Product = ({
           price: product.price,
           stock: product.stock,
           publishedAt: product.createdAt,
-          updatedAt: product.updatedAt,
+          updatedAt: product.updatedAt ?? 'Sem atualização',
           salesCount: product.productSalesCount ?? 0,
           rating: product.productAverageRating ?? 'Não avaliado',
         }}
@@ -256,7 +291,7 @@ const Product = ({
           isOpen: activeModal === 'EXPAND_IMAGE',
           onCloseActions: () => setActiveModal('PRODUCT_INFO'),
         }}
-        product={{
+        image={{
           imageUrl: product.imageUrl,
           name: product.name,
         }}

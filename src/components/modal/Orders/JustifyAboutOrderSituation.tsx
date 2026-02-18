@@ -34,6 +34,7 @@ const JustifyAboutOrderSituation = ({
         Deixe para o cliente uma justificativa a cerca da situação atual de seu pedido.
       </p>
       <TextArea 
+        maxLength={1000}
         placeholder={'Justificativa'}
         style={{input: `mb-[-3px] ${error ? 'shadow-[0px_0px_5px_red]' : ''}`}}
         label='Justificativa'

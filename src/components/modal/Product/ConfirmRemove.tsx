@@ -5,6 +5,7 @@ import Button from '../../form/Button';
 import { SystemRoles } from '@/src/constants/generalConfigs';
 
 type Props = {
+  loading: boolean;
   modal: {
     isOpen: boolean;
     onCloseActions: () => void;
@@ -22,11 +23,12 @@ const ConfirmRemove = ({
   modal,
   user,
   onClick,
+  loading,
 }:Props) => {
   return (
     <Modal 
     isOpen={modal.isOpen} 
-    modalTitle={'Confirmar remoção'}
+    modalTitle={'Remover produto'}
     onCloseModalActions={modal.onCloseActions}
     >
       <p className={textColors.secondaryDark}>Tem certeza que deseja tirar esse produto de venda ?</p>
@@ -36,6 +38,8 @@ const ConfirmRemove = ({
         <Button 
           type={'button'}
           label='Sim'
+          loading={loading}
+          loadingLabel='Removendo'
           style={`flex-1 ${buttonColorsScheme.green}`}
           onClick={onClick.yes}
           />

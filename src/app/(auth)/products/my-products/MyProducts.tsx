@@ -88,7 +88,7 @@ const MyProducts = ({myProducts}:Props) => {
             ? `Nenhum resultado para a categoria "${translatedCategoryFilter}"`
           : advancedFilter
             ? `Nenhum resultado para o filtro avançado "${translatedAdvandedFilter}"`
-          : `Nenhum produto no estoque no momento`
+          : `Nenhum produto adiquirido por você no momento`
         }
       />
     )}

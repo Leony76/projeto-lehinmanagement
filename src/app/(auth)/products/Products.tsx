@@ -93,7 +93,7 @@ const Products = ({
             ? `Nenhum resultado para a categoria "${translatedCategoryFilter}"`
           : advancedFilter
             ? `Nenhum resultado para o filtro avançado "${translatedAdvandedFilter}"`
-          : `Nenhum produto no estoque no momento`
+          : `Nenhum produto disponível no momento`
         }
       />
     )}

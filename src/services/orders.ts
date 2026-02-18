@@ -1,6 +1,6 @@
 "use server"
 
-import { OrderStatus, SystemRoles } from "../constants/generalConfigs";
+import { OrderStatus, PaymentStatus, SystemRoles } from "../constants/generalConfigs";
 import prisma from "../lib/prisma";
 import { orderStats } from "../utils/orderStats";
 import { timeAgo } from "../utils/timeAgo";
@@ -272,7 +272,7 @@ export const getSellerOrders = async() => {
       orderComission: item.order.total.toNumber(),
       orderCustomerName: item.order.user.name,
       orderStatus: item.order.status,
-      orderPaymentStatus: item.order.payments.at(-1)?.status ?? 'PENDING',
+      orderPaymentStatus: (item.order.payments.at(-1)?.status ?? 'PENDING') as PaymentStatus,
       orderRejectionJustify:
         item.order.orderHistory.at(-1)?.rejectionJustify ?? null,
       orderDeletedByCustomer:
@@ -367,7 +367,7 @@ export const getOrdersFromUser = async () => {
       orderedAmount: item.quantity,
       orderTotalPrice: item.order.total.toNumber(),
       orderStatus: item.order.status,
-      orderPaymentStatus: item.order.payments.at(-1)?.status ?? 'PENDING',
+      orderPaymentStatus: (item.order.payments.at(-1)?.status ?? 'PENDING') as PaymentStatus,
       sellerName: item.order.orderItems.at(-1)?.product.seller.name ?? '[Desconhecido]',
       messageSentAt: item.order.orderHistory.at(-1)?.createdAt?.toISOString() ?? null,
       orderRejectionJustify: item.order.orderHistory.at(-1)?.rejectionJustify ?? null,
