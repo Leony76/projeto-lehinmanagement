@@ -104,7 +104,7 @@ const UserMostRecentActionInfoCard = (props:Props) => {
             </span>
           )}
           <span className="text-secondary">
-            Justificativa <p className={`text-gray overflow-hidden
+            Justificativa <p className={`text-gray wrap-break-word overflow-hidden
               ${!isExpanded
                 ? 'max-h-20'
                 : ''

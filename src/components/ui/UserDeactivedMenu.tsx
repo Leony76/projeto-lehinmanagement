@@ -11,13 +11,14 @@ import TextArea from '../form/TextArea';
 import WarningInfo from './WarningInfo';
 import Error from './Error';
 import { useToast } from '@/src/contexts/ToastContext';
-import { sendMessageToSupport } from '@/src/actions/userActions';
+import { sendMessageToSupport, sendReplyMessage } from '@/src/actions/userActions';
 import { useUserStore } from '@/src/hooks/store/useUserStore';
-import { SupportMessageType, UserSituation } from '@prisma/client';
+import { SupportMessageSentBy, SupportMessageType, UserSituation } from '@prisma/client';
 import { UserDeactivatedDTO } from '@/src/types/UserDeactivatedReasonDTO';
 import { formattedDate } from '@/src/utils/formattedDate';
 import { UserAndSupportConversationDTO } from '@/src/types/UserAndSupportConversationDTO';
 import UserMessage from '../modal/Users/UserMessage';
+import { UserDeactivatedMenuModals } from '@/src/types/modal';
 
 type Props = {
   deactivation: UserDeactivatedDTO;
@@ -38,14 +39,7 @@ const UserDeactivedMenu = ({
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [supportMessage, setSupportMessage] = useState<string>('');
-  const [replySupportMessage, setReplySupportMessage] = useState<string>('');
-  const [activeModal, setActiveModal] = useState<
-  | 'CONTACT_SUPPORT' 
-  | 'CONFIRM_SEND_MESSAGE' 
-  | 'LAST_SUPPORT_MESSAGES'
-  | 'REPLY_SUPPORT_MESSAGE'
-  | null
-  >(null);
+  const [activeModal, setActiveModal] = useState<UserDeactivatedMenuModals | null>(null);
 
   const handleSendMessageToSupport = async() => {
     if (loading) return;
@@ -61,12 +55,13 @@ const UserDeactivedMenu = ({
     const data = {
       message: supportMessage,
       type: 'APPEAL' as SupportMessageType,
+      sentBy: 'USER' as SupportMessageSentBy,
     }
 
     try {
       await sendMessageToSupport(
         userData,
-        data,
+        data,        
       );
 
       showToast('Seu apelo foi enviado ao suporte', 'info');
@@ -75,6 +70,30 @@ const UserDeactivedMenu = ({
     } finally {
       setLoading(false);
       setActiveModal(null);
+      setSupportMessage('');
+    }
+  }
+
+  const handleSendReplyMessageToSupport = async() => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      if (!selectedConversation) return;
+
+      await sendReplyMessage(
+        selectedConversation.id,
+        user?.id!,
+        supportMessage,
+      );
+
+      showToast(`Sua mensagem foi mandada para ${user?.name} com sucesso`, 'success');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally {
+      setLoading(false);
+      setActiveModal('LAST_SUPPORT_MESSAGES');
+      setSelectedConversation(null);
       setSupportMessage('');
     }
   }
@@ -97,7 +116,7 @@ const UserDeactivedMenu = ({
         <p className="text-primary text-center text-sm">
           Nossos administradores apuraram circunstância que inferiram na desativação de sua conta por tempo indeterminado
         </p>
-        <div className="">
+        <div className="mb-4">
           <label className="text-secondary">
             Razão
           </label>
@@ -105,16 +124,21 @@ const UserDeactivedMenu = ({
             {deactivation.reason}
           </p>
         </div>
+
+        <WarningInfo text='OBSERVAÇÃO: Seus ativos produtos já comprados no site não foram descartados do seu histórico, assim como seus pedidos já feitos. Pedidos que esjavam pedentes foram cancelados e pedidos com pagamento já reazliado foram cancelados e o pagamento extornado para seu bolso. '/>
+
         <div className="w-full flex flex-col sm:flex-row sm:gap-4 gap-2 mt-4">
           <Logout className={buttonColorsScheme.red + ' text-center flex-[.5]'}>
             Sair
           </Logout>
+          
           <Button
             type='button'
-            label='Entra em contato com suporte'
+            label='Entrar em contato com suporte'
             style={`flex-1 ${buttonColorsScheme.yellow}`} 
             onClick={() => setActiveModal('CONTACT_SUPPORT')}
           />
+
           {conversations.length > 0 && 
             <Button
               type='button'
@@ -187,9 +211,6 @@ const UserDeactivedMenu = ({
         </div>
       </Modal>
 
-
-
-
       <Modal
       isOpen={activeModal === 'CONFIRM_SEND_MESSAGE'} 
       modalTitle={'Confirmar ação'} 
@@ -221,6 +242,9 @@ const UserDeactivedMenu = ({
       </Modal>
 
 
+
+
+
       <Modal 
       isOpen={activeModal === 'LAST_SUPPORT_MESSAGES'} 
       modalTitle={'Suas mensagens'} 
@@ -236,12 +260,17 @@ const UserDeactivedMenu = ({
       </Modal>
 
 
+
+
+
+
       <Modal 
       isOpen={activeModal === 'REPLY_SUPPORT_MESSAGE'} 
       modalTitle={'Responder'} 
       hasXClose
       onCloseModalActions={() => {
-        setActiveModal(null); 
+        setActiveModal('LAST_SUPPORT_MESSAGES'); 
+        setSupportMessage('');
         setError('');
       }}
       >
@@ -250,11 +279,46 @@ const UserDeactivedMenu = ({
           conversations={conversations}
           setActiveModal={setActiveModal}
           error={error} 
-          replySupportMessage={replySupportMessage}
+          replySupportMessage={supportMessage}
           selectedConversation={selectedConversation}
           setError={setError}
-          setReplySupportMessage={setReplySupportMessage}
+          setReplySupportMessage={setSupportMessage}
         />
+      </Modal>
+
+      <Modal 
+      isOpen={activeModal === 'SEND_REPLY_CONFIRM'} 
+      modalTitle={'Responder'} 
+      hasXClose
+      onCloseModalActions={() => {
+        setActiveModal('REPLY_SUPPORT_MESSAGE'); 
+        setError('');
+      }}
+      >
+        <p className='text-secondary-middledark mb-2'>
+          Tem certeza que deseja enviar essa nova mensagem como argumento para nossa equipe avaliar a possibilidade de reativação de sua conta novamente ?
+        </p>
+        <WarningInfo 
+          text='Nossa equipe responderá sua apelação em até 24 horas úteis de segunda a sexta-feira. Caso precissemos de mais informações sobre sua apelação, se demonstrá-se válida, comunicaremos de volta nessa tela para processeguir com o processo de reativação de sua conta no sistema.'
+        />
+        <div className='flex gap-3'>
+          <Button 
+            type={'submit'}
+            label='Mandar'
+            loading={loading}
+            loadingLabel='Processando'
+            style={`flex-1 ${buttonColorsScheme.yellow}`}
+            onClick={handleSendReplyMessageToSupport}
+          />
+          <Button 
+            type={'submit'}
+            label='Cancelar'
+            style={`flex-1 ${buttonColorsScheme.red}`}
+            onClick={() => {
+              setActiveModal('REPLY_SUPPORT_MESSAGE');              
+            }}
+          />
+        </div>
       </Modal>
     </div>
   )

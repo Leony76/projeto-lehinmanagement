@@ -46,6 +46,14 @@ export const USERS_FILTER_OPTIONS = [
 
 export type UsersFilterValue = typeof USERS_FILTER_OPTIONS[number]['value'];
 
+export const MESSAGE_TYPE_LABELS: Record<string, string> = {
+  SUPPORT_QUESTION: 'Pergunta do suporte',
+  QUESTION: 'Pergunta do usuário',
+  APPEAL: 'Apelação',
+  SUGGESTION: 'Sugestão',
+  SUPPORT_ANSWER: 'Resposta do suporte',
+};
+
 export const PRODUCT_FILTER_OPTIONS = [
   { value: 'price_desc', label: 'Maior preço' },
   { value: 'price_asc', label: 'Menor preço' },

@@ -11,18 +11,18 @@ import { useState } from "react";
 import { Tooltip } from "./Tooltip";
 import { useLockScrollY } from "@/src/hooks/useLockScrollY";
 import { getNameAndSurname } from "@/src/utils/getNameAndSurname";
-import LabelValue from "./LabelValue";
-import UserMostRecentActionInfoCard from "./UserMostRecentActionInfoCard";
 import ImageExpand from "../modal/ImageExpand";
-import { isAdminAction, isCustomerAction, isSellerAction, UsersDTO, UserSupportMessage } from "@/src/types/usersDTO";
-import { formattedDate } from "@/src/utils/formattedDate";
+import { UsersDTO } from "@/src/types/usersDTO";
 import { ROLE_LABEL } from "@/src/constants/generalConfigs";
 import UserInfoMenu from "../modal/Users/UserInfoMenu";
 import { useToast } from "@/src/contexts/ToastContext";
-import { activateUserAccount, deactivateUserAccount, sendReplyMessage } from "@/src/actions/userActions";
+import { activateUserAccount, deactivateUserAccount, sendMessageToSupport, sendReplyMessage } from "@/src/actions/userActions";
 import ActiveDeactiveUserAccount from "../modal/Users/ActiveDeactiveUserAccount";
 import { secondaryColorScrollBar } from "@/src/styles/scrollBar.style"; 
 import UserMessage from "../modal/Users/UserMessage";
+import { UserSituation, SupportMessageType, SupportMessageSentBy } from "@prisma/client";
+import { useUserStore } from "@/src/hooks/store/useUserStore";
+import { UserAndSupportConversationDTO } from "@/src/types/UserAndSupportConversationDTO";
 
 type Props = {
   user: UsersDTO;
@@ -34,9 +34,12 @@ const UserCard = ({
   isDivided,
 }:Props) => {
 
+  const admin = useUserStore((s) => s.user);
+
   const [activeModal, setActiveModal] = useState<UsersPageModals | null>(null);
-  const [selectedMessage, setSelectedMessage] = useState<UserSupportMessage | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<UserAndSupportConversationDTO | null>(null);
   const [replyMessage, setReplyMessage] = useState<string>('');
+  const [sendMessage, setSendMessage] = useState<string>('');
 
   const [error, setError] = useState<string>('');
   const [accountDeactivationJustify, setAccountDeactivationJustify] = useState<string>('');
@@ -92,6 +95,40 @@ const UserCard = ({
       setActiveModal('USER_SUPPORT_MESSAGES');
       setSelectedMessage(null);
       setReplyMessage('');
+    }
+  }
+
+  const handleSendMessageToUser = async() => {
+    if (loading) return;
+    setLoading(true);
+
+    const userData = {
+      id: admin?.id ?? '',
+      situation: admin?.isActive
+        ? "ACTIVATED" 
+        : "DEACTIVATED" as UserSituation
+    };
+
+    const data = {
+      message: sendMessage,
+      type: 'SUPPORT_QUESTION' as SupportMessageType,
+      sentBy: 'SUPPORT' as SupportMessageSentBy,
+      receiverId: user.id,
+    }
+
+    try {
+      await sendMessageToSupport(
+        userData,
+        data,        
+      );
+
+      showToast(`Mensagem enviada a ${user.name} com sucesso`, 'success');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally {
+      setLoading(false);
+      setActiveModal('USER_SUPPORT_MESSAGES');
+      setSendMessage('');
     }
   }
 
@@ -206,22 +243,27 @@ const UserCard = ({
         setSelectedMessage(null);
       }}
       >
+        <Button 
+          type={"button"}
+          label="Mandar mensagem"
+          onClick={() => setActiveModal('SUPPORT_MESSAGE_TO_USER')}
+        />
+
         <div className={`flex flex-col gap-3 max-h-[50vh] pr-3 overflow-y-auto ${secondaryColorScrollBar}`}>
-          {user.role !== 'ADMIN' && user.messages.map((message) => (
+          {user.messages.map((message) => (
             <UserMessage
               key={message.id}
               type="MESSAGE_FROM_USER"
               message={message}
               setActiveModal={setActiveModal}
               setSelectedMessage={setSelectedMessage}
-              reply={{
-                message: message.reply.message,
-                at: message.reply.at
-              }}
             />
           ))}
         </div>
       </Modal>
+
+
+
 
       <Modal
       isOpen={activeModal === 'REPLY_MESSAGE'} 
@@ -279,6 +321,61 @@ const UserCard = ({
           type={"submit"}
           label="Não"
           onClick={() => setActiveModal('REPLY_MESSAGE')}
+        />
+      </div>
+    </Modal>
+    
+
+
+
+
+
+    <Modal 
+    isOpen={activeModal === 'SUPPORT_MESSAGE_TO_USER'}
+    modalTitle={'Mensagem'} 
+    hasXClose
+    onCloseModalActions={() => {
+      setActiveModal('USER_SUPPORT_MESSAGES');
+      setSendMessage('');
+    }}>
+      <UserMessage
+        type="SEND_MESSAGE_TO_USER"
+        sendMessage={sendMessage}
+        setSendMessage={setSendMessage}
+        setActiveModal={setActiveModal}
+        error={error}
+        setError={setError}
+      />
+    </Modal>
+
+    <Modal
+    isOpen={activeModal === 'SUPPORT_MESSAGE_TO_USER_CONFIRM'} 
+    modalTitle={
+      <>
+        <div className="sm:hidden block">Confirmar</div>
+        <div className="sm:block hidden ">Confirmar ação</div>
+      </>
+    } 
+    hasXClose
+    onCloseModalActions={() => setActiveModal('SUPPORT_MESSAGE_TO_USER')}
+    >
+      <p className="text-secondary-middledark">
+        Tem certeza em mandar sua mensagem à <span className="text-cyan">{user.name}</span> ?
+      </p>
+      <div className="flex gap-3 mt-1">
+        <Button 
+          style={`flex-1 ${buttonColorsScheme.green}`}
+          type={"submit"}
+          label="Sim"
+          loading={loading}
+          loadingLabel="Processando"
+          onClick={handleSendMessageToUser}
+        />
+        <Button 
+          style={`flex-1 ${buttonColorsScheme.red}`}
+          type={"submit"}
+          label="Não"
+          onClick={() => setActiveModal('SUPPORT_MESSAGE_TO_USER')}
         />
       </div>
     </Modal>

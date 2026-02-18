@@ -14,7 +14,6 @@ import PlaceHolder from '@/public/my-interpretation-of-the-torque-twister-before
 import { UsersPageModals } from '@/src/types/modal';
 import NoContentFoundMessage from '../../ui/NoContentFoundMessage';
 import { useState } from 'react';
-import { ACTION_DEVTOOLS_PANEL_POSITION } from 'next/dist/next-devtools/dev-overlay/shared';
 
 type Props = {
   user: UsersDTO;
@@ -128,7 +127,7 @@ const UserInfoMenu = ({
                 )
               }
 
-              {(user.role !== 'ADMIN' && user.messages.length > 0) &&
+              {(user.role !== 'ADMIN' && user.hasMessages) &&
                 <Button 
                   type={"button"}
                   label="Mensagens"

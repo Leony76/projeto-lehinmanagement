@@ -9,7 +9,7 @@ import { UserRoleFilterValue, UsersFilterValue } from '@/src/constants/generalCo
 import { secondaryColorScrollBar } from '@/src/styles/scrollBar.style';
 import { UsersDTO } from '@/src/types/usersDTO'
 import { filteredUsersList } from '@/src/utils/filters/filteredUserList';
-import React, { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 type Props = {
   users: UsersDTO[];

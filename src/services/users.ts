@@ -62,7 +62,24 @@ export async function getCustomers(): Promise<CustomerDTO[]> {
   const users = await prisma.user.findMany({
     where: { role: 'CUSTOMER' },
     include: { 
-      userSupportMessage: true,
+      senderSupportMessage: {
+        include: {
+          sender: true,
+          replier: true,
+        },
+      },
+      recieverSupportMessage: {
+        include: { 
+          sender: true, 
+          replier: true 
+        }
+      },
+      _count: {
+        select: { 
+          senderSupportMessage: true,
+          recieverSupportMessage: true, 
+        }
+      },
       orders: {
         include: {
           orderItems: {
@@ -73,45 +90,82 @@ export async function getCustomers(): Promise<CustomerDTO[]> {
     },
   });
 
-  return users.map<CustomerDTO>((user) => ({
-    id: user.id,
-    name: user.name ?? '',
-    role: 'CUSTOMER',
-    createdAt: user.createdAt?.toISOString() ?? '',
-    isActive: user.isActive,
-    ordersDone: user.orders.length,
+  
+  return users.map<CustomerDTO>((user) => {
 
-    messages: user.userSupportMessage.map((item) => ({
-      id: item.id,
-      sentDate: item.createdAt.toISOString(),
-      type: item.type,
-      message: item.message,
-      subject: item.subject,
-      reply: {
-        message: item.reply,
-        at: item.repliedAt?.toISOString() ?? ''
-      },
-    })),
+    const allMessages = [
+      ...user.senderSupportMessage,
+      ...user.recieverSupportMessage
+    ].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()); 
 
-    history: user.orders.map((order) => ({
-      type: 'Pedido',
-      date: order.createdAt?.toISOString() ?? '',
-      value: Number(order.total),
-      productName: order.orderItems[0]?.product.name ?? '',
-      unitsOrdered: order.orderItems.reduce(
-        (sum, item) => sum + item.quantity,
-        0
-      ),
-      orderId: order.id,
-    })),
-  }));
+    return {
+      id: user.id,
+      name: user.name ?? '',
+      role: 'CUSTOMER',
+      createdAt: user.createdAt?.toISOString() ?? '',
+      isActive: user.isActive,
+      ordersDone: user.orders.length,
+      hasMessages: user._count.senderSupportMessage > 0,
+  
+      messages: allMessages.map((item) => ({
+        id: item.id,
+        sentAt: item.createdAt.toISOString(),
+        type: item.type,
+        message: item.message,
+        subject: item.subject,
+        sender: {
+          name: item.sender.name,
+          role: item.sender.role,
+        },
+      
+        sentBy: item.sentBy,
+        
+        repliedAt: item.repliedAt?.toISOString(),
+        replyMessage: item.reply,
+        replier: {
+          name: item.replier?.name,
+          role: item.replier?.role
+        },
+      })),
+  
+      history: user.orders.map((order) => ({
+        type: 'Pedido',
+        date: order.createdAt?.toISOString() ?? '',
+        value: Number(order.total),
+        productName: order.orderItems[0]?.product.name ?? '',
+        unitsOrdered: order.orderItems.reduce(
+          (sum, item) => sum + item.quantity,
+          0
+        ),
+        orderId: order.id,
+      })),
+    };
+    
+  });
 }
 
 export async function getSellers(): Promise<SellerDTO[]> {
   const sellers = await prisma.user.findMany({
     where: { role: 'SELLER' },
     include: {
-      userSupportMessage: true,
+      senderSupportMessage: {
+        include: {
+          sender: true,
+          replier: true,
+        },
+      },
+      recieverSupportMessage: {
+        include: { 
+          sender: true, 
+          replier: true 
+        }
+      },
+      _count: {
+        select: { 
+          senderSupportMessage: true,
+          recieverSupportMessage: true, 
+        }
+      },
       sellerProducts: {
         include: {
           orderItems: {
@@ -141,29 +195,44 @@ export async function getSellers(): Promise<SellerDTO[]> {
       ).values()
     );
 
+    const allMessages = [
+      ...seller.senderSupportMessage,
+      ...seller.recieverSupportMessage
+    ].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()); 
+
     return {
       id: seller.id,
       name: seller.name ?? '',
       role: 'SELLER',
       createdAt: seller.createdAt?.toISOString() ?? '',
       isActive: seller.isActive,
+      hasMessages: seller._count.senderSupportMessage > 0,    
+
+      messages: allMessages.map((item) => ({
+        id: item.id,
+        sentAt: item.createdAt.toISOString(),
+        type: item.type,
+        message: item.message,
+        subject: item.subject,
+        sender: {
+          name: item.sender.name,
+          role: item.sender.role,
+        },
+      
+        sentBy: item.sentBy,
+        
+        repliedAt: item.repliedAt?.toISOString(),
+        replyMessage: item.reply,
+        replier: {
+          name: item.replier?.name,
+          role: item.replier?.role
+        },
+      })),
 
       stats: {
         ordersDone: orders.length,
         salesDone: orders.filter(o => o.status === 'APPROVED').length,
       },
-
-      messages: seller.userSupportMessage.map((item) => ({
-        id: item.id,
-        sentDate: item.createdAt.toISOString(),
-        type: item.type,
-        message: item.message,
-        subject: item.subject,
-        reply: {
-          message: item.reply,
-          at: item.repliedAt?.toISOString() ?? ''
-        },
-      })),
 
       history: uniqueOrders.map((order) => ({
         type:
@@ -193,6 +262,15 @@ export async function getAdmins(): Promise<AdminDTO[]> {
   const admins = await prisma.user.findMany({
     where: { role: 'ADMIN' },
     include: {
+      senderSupportMessage: {
+        include: {
+          sender: true,
+          replier: true,
+        },
+      },
+      _count: {
+        select: { senderSupportMessage: true }
+      },
       actor: {
         include: {
           targetUser: true,
@@ -211,6 +289,29 @@ export async function getAdmins(): Promise<AdminDTO[]> {
     role: 'ADMIN',
     createdAt: admin.createdAt?.toISOString() ?? '',
     isActive: admin.isActive,
+
+    hasMessages: admin._count.senderSupportMessage > 0,
+
+    messages: admin.senderSupportMessage.map((item) => ({
+      id: item.id,
+      sentAt: item.createdAt.toISOString(),
+      type: item.type,
+      message: item.message,
+      subject: item.subject,
+      sender: {
+        name: item.sender.name,
+        role: item.sender.role,
+      },
+    
+      sentBy: item.sentBy,
+      
+      repliedAt: item.repliedAt?.toISOString(),
+      replyMessage: item.reply,
+      replier: {
+        name: item.replier?.name,
+        role: item.replier?.role
+      },
+    })),
 
     history: admin.actor.map((action) => {
       if (action.targetUserId && action.targetUser) {
@@ -271,32 +372,58 @@ export async function getUserAndSupportConversation(
   userId: string,
 ): Promise<UserAndSupportConversationDTO[]> {
   const conversation = await prisma.supportMessage.findMany({
-    where: { userId },
+    where: { 
+      OR: [
+        { senderId: userId },
+        { receiverId: userId },
+      ],
+    },
+    orderBy: {
+      createdAt: 'asc', 
+    },
     select: {
       id: true,
       message: true,
+      type: true,
+      sender: {
+        select: {
+          name: true,
+          role: true,        
+        },
+      },
+      replier: {
+        select: {
+          name: true,
+          role: true,
+        },
+      },
       createdAt: true,
-      replier: { select: {
-        name: true,
-      }},
       repliedAt: true,
       subject: true,
       reply: true,
+      sentBy: true,
     },
   });
 
   return conversation.map((item) => ({
-    conversationId: item.id,
+    id: item.id,
+    sentAt: item.createdAt.toISOString(),
+    type: item.type,
+    message: item.message,
+    subject: item.subject,
+    sender: {
+      name: item.sender.name,
+      role: item.sender.role,
+    },
+  
+    sentBy: item.sentBy,
+    
+    repliedAt: item.repliedAt?.toISOString(),
+    replyMessage: item.reply,
     replier: {
       name: item.replier?.name,
-      repliedAt: item.repliedAt?.toISOString(),
-      reply: item.reply
+      role: item.replier?.role
     },
-    sender: {
-      message: item.message,
-      sentAt: item.createdAt?.toISOString(),
-      subject: item.subject,
-    }
   }));
 }
 

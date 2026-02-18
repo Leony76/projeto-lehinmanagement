@@ -11,7 +11,16 @@ export type UsersPageModals = GenericPageModals
 | 'USER_SUPPORT_MESSAGES'
 | 'REPLY_MESSAGE'
 | 'REPLY_MESSAGE_CONFIRM'
+| 'SUPPORT_MESSAGE_TO_USER'
+| 'SUPPORT_MESSAGE_TO_USER_CONFIRM'
 ;
+
+export type UserDeactivatedMenuModals = 
+| 'CONTACT_SUPPORT' 
+| 'CONFIRM_SEND_MESSAGE' 
+| 'LAST_SUPPORT_MESSAGES' 
+| 'REPLY_SUPPORT_MESSAGE'
+| 'SEND_REPLY_CONFIRM'
 
 export type ProductPageModals = GenericPageModals 
 | 'EDIT_JUSTIFY'

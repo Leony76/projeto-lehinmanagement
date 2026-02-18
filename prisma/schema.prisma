@@ -33,8 +33,9 @@ model User {
   orderHistoryDeleted  OrderHistory[]  @relation("OrderHistoryDeletedBy")
   productReview        ProductReview[]
 
-  userSupportMessage   SupportMessage[] @relation("user_message")
-  adminReplyMessage    SupportMessage[] @relation("admin_message")     
+  senderSupportMessage   SupportMessage[]  @relation("user_message")
+  recieverSupportMessage    SupportMessage[] @relation("receiver_message")     
+  replierSupportMessage    SupportMessage[] @relation("replier_message")
 
   @@map("users")
 }
@@ -42,7 +43,8 @@ model User {
 model SupportMessage {
   id   Int   @id @default(autoincrement())
 
-  userId     String  @map("user_id")
+  senderId     String  @map("sender_id")
+  receiverId   String? @map("receiver_id")
   replierId  String?  @map("replier_id")
 
   type SupportMessageType 
@@ -54,11 +56,14 @@ model SupportMessage {
   createdAt  DateTime  @default(now())  @map("created_at")
   repliedAt  DateTime?  @map("replied_at")
 
+  sentBy SupportMessageSentBy @map("sent_by")
+
   situation SupportMessageSituation @default(UNRESOLVED)
   userSituation UserSituation @map("user_situation")
 
-  user User @relation("user_message", fields: [userId], references: [id])
-  replier User? @relation("admin_message", fields: [replierId], references: [id])
+  sender User @relation("user_message", fields: [senderId], references: [id])
+  receiver User? @relation("receiver_message", fields: [receiverId], references: [id])
+  replier User? @relation("replier_message", fields: [replierId], references: [id])
 
   @@map("support_messages")
 }
@@ -309,6 +314,7 @@ enum AdminAction {
   ORDER_CANCELED
   PAYMENT_REFUNDED
   MESSAGE_REPLY
+  MESSAGE_TO_USER
   EDITED
   DELETED
   BLOCKED
@@ -329,6 +335,11 @@ enum SupportMessageType {
   APPEAL
   QUESTION
   SUGGESTION
+  SUPPORT_ANSWER
+  SUPPORT_QUESTION
 }
 
-
+enum SupportMessageSentBy {
+  SUPPORT
+  USER
+}
