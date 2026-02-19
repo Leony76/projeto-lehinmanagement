@@ -1,4 +1,5 @@
 import { removeProduct, updateProduct } from "@/src/actions/productActions";
+import { sendMessageToSupport } from "@/src/actions/userActions";
 import { CATEGORY_LABEL_MAP } from "@/src/constants/generalConfigs";
 import { useToast } from "@/src/contexts/ToastContext";
 import { useUserStore } from "@/src/hooks/store/useUserStore";
@@ -6,6 +7,8 @@ import { useLockScrollY } from "@/src/hooks/useLockScrollY";
 import { AddProductFormData } from "@/src/schemas/addProductSchema";
 import { ProductPageModals } from "@/src/types/modal";
 import { ProductDTO } from "@/src/types/productDTO";
+import { UserAndSupportConversationDTO } from "@/src/types/UserAndSupportConversationDTO";
+import { UserSituation, SupportMessageType, SupportMessageSentBy } from "@prisma/client";
 import { useRef, useState } from "react";
 
 type Props = {
@@ -17,6 +20,7 @@ export const useProductLogic = ({product}:Props) => {
   const { showToast } = useToast();
 
   const [formData, setFormData] = useState<AddProductFormData | null>(null); 
+  const [selectedConversation, setSelectedConversation] = useState<UserAndSupportConversationDTO | null>(null);
 
   const datePutToSale = new Date(product.createdAt).toLocaleDateString("pt-BR");
   const category = CATEGORY_LABEL_MAP[product.category];
@@ -31,6 +35,7 @@ export const useProductLogic = ({product}:Props) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [imageFile, setImageFile] = useState<File | null>(null);  
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [supportMessage, setSupportMessage] = useState<string>('');
   
   const [preview, setPreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -43,12 +48,7 @@ export const useProductLogic = ({product}:Props) => {
 
   const handleRemoveProduct = async() => {
     if (loading!) return;
-    setLoading(true);
-
-    if (user?.role === 'ADMIN' && !removeJustify) {
-      setError('A justificativa de remoção é obrigatória');
-      return;
-    }
+    setLoading(true); 
 
     try {
       
@@ -67,6 +67,40 @@ export const useProductLogic = ({product}:Props) => {
       setLoading(false);
     }
   };
+
+  const handleSendMessageToSupport = async() => {
+    if (loading) return;
+    setLoading(true);
+
+    const userData = {
+      id: user?.id ?? '',
+      situation: user?.isActive
+        ? "ACTIVATED" 
+        : "DEACTIVATED" as UserSituation
+    };
+
+    const data = {
+      message: supportMessage,
+      type: 'APPEAL' as SupportMessageType,
+      sentBy: 'USER' as SupportMessageSentBy,
+    }
+
+    try {
+      await sendMessageToSupport(
+        userData,
+        data,    
+        product.id,    
+      );
+
+      showToast('Seu apelo foi enviado ao suporte', 'info');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally {
+      setLoading(false);
+      setActiveModal(null);
+      setSupportMessage('');
+    }
+  }
 
   const handleEditProduct = async (): Promise<void> => {
 
@@ -137,6 +171,12 @@ export const useProductLogic = ({product}:Props) => {
     fileInputRef,
     datePutToSale,
     productToBeEdited,
+    removeJustify,
+    supportMessage,
+    selectedConversation,
+    setSelectedConversation,
+    handleSendMessageToSupport,
+    setSupportMessage,
     setProductToBeEdited,
     handleRemoveProduct,
     handleEditProduct,

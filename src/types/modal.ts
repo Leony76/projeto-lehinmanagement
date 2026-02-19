@@ -31,6 +31,10 @@ export type ProductPageModals = GenericPageModals
 | 'CONFIRM_ORDER'
 | 'EDIT_PRODUCT'
 | 'ORDER_PRODUCT_MENU'
+| 'PRODUCT_REMOVE_JUSTIFY'
+| 'MESSAGE_TO_SUPPORT'
+| 'MESSAGE_TO_SUPPORT_CONFIRM'
+| 'PRODUCT_MESSAGES_SUPPORT'
 ;
 
 export type OrderPageModals = GenericPageModals

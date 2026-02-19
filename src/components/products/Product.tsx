@@ -22,6 +22,12 @@ import ImageExpand from '../modal/ImageExpand';
 import Button from '../form/Button';
 import Image from 'next/image'
 import Modal from '../modal/Modal';
+import { formattedDate } from '@/src/utils/formattedDate';
+import TextArea from '../form/TextArea';
+import Error from '../ui/Error';
+import WarningInfo from '../ui/WarningInfo';
+import { LuMessageCircleWarning } from 'react-icons/lu';
+import UserMessage from '../modal/Users/UserMessage';
 
 type Props = {
   product: ProductDTO;
@@ -108,10 +114,39 @@ const Product = ({
               type={'button'}
               icon={FaInfo}
               style='p-2 px-4'
-              onClick={() => logic.setActiveModal('PRODUCT_INFO')}
+              onClick={() => logic.setActiveModal('PRODUCT_MESSAGES_SUPPORT')}
             />
           </div>
         </div>
+
+      {!product.isActive &&
+        <span className='text-red py-1 bg-linear-to-r from-transparent via-red/50 to-transparent text-center -mt-0.75 mb-1'>
+          {product.removedBy === 'ADMIN'
+            ? 'Removido pelo sistema'
+            : 'Removido por você'
+          }
+        </span>
+      }
+
+      {!product.isActive && product.removedBy === 'ADMIN' && 
+        <div className='flex mb-1  gap-3'>
+          <Button
+            label='Ver motivo'
+            type='button'
+            style='flex-1'
+            onClick={() => logic.setActiveModal('PRODUCT_REMOVE_JUSTIFY')}
+          />
+          {product.supportMessages.length > 0 &&
+            <Button
+              icon={LuMessageCircleWarning}
+              type='button'
+              style={`text-2xl px-3 ${buttonColorsScheme.yellow}`}
+              onClick={() => logic.setActiveModal('PRODUCT_MESSAGES_SUPPORT')}
+            />
+          }
+        </div>
+      }
+      
       {logic.canOrder ? (
         logic.available > 0 ? (
           <Button
@@ -180,8 +215,14 @@ const Product = ({
           logic.setError('');
         }}}
         onClick={{ 
-          confirm: () => logic.handleRemoveProduct(),
           cancel: () => logic.setActiveModal(null),
+          confirm: () => {
+            if (logic.user?.role === 'ADMIN' && !logic.removeJustify) {
+              logic.setError('A justificativa de remoção é obrigatória');
+              return;
+            }
+            logic.handleRemoveProduct();
+          },
         }}
         product={{ sellerName: product.sellerName ?? '[Desconhecido]' }}
         misc={{ 
@@ -313,6 +354,146 @@ const Product = ({
           />
         </div>
       </Modal>
+
+      <Modal
+      isOpen={logic.activeModal === 'PRODUCT_REMOVE_JUSTIFY'} 
+      modalTitle={'Justificativa'} 
+      hasXClose
+      onCloseModalActions={() => {
+        logic.setActiveModal(null);
+      }}
+      >
+        {product.supportMessages.at(-1)?.replyMessage ? (
+          <div>
+            <label className='text-secondary-dark'>Resposta:</label>
+            <p className='text-primary-middledark bg-primary-ultralight/20 p-1 pl-2 rounded-md'>
+              {product.supportMessages.at(-1)?.replyMessage}
+            </p>
+          </div>
+        ) : (
+          <>
+            <span className='text-gray flex gap-2'>
+              Removido em:
+              <span className='text-yellow'>
+                {product.removedAt 
+                  ? formattedDate(product.removedAt)
+                  : '??/??/??'
+                }
+              </span>
+            </span>
+            <div>
+              <label className='text-secondary-dark'>Justificativa:</label>
+              <p className='text-primary-middledark bg-primary-ultralight/20 p-1 pl-2 rounded-md'>
+                {product.removeJustify}
+              </p>
+            </div>
+          </>
+        )}
+        <Button
+          type='button'
+          label='Entrar em contato com suporte'
+          onClick={() => logic.setActiveModal('MESSAGE_TO_SUPPORT')}
+        />
+      </Modal>
+
+      <Modal 
+      isOpen={logic.activeModal === 'MESSAGE_TO_SUPPORT'} 
+      modalTitle={'Mensagem ao suporte'} 
+      hasXClose
+      onCloseModalActions={() => {
+        logic.setActiveModal('PRODUCT_REMOVE_JUSTIFY');
+        logic.setSupportMessage('');
+        logic.setError('');
+      }}>
+        <p className='text-secondary'>
+          Escreva o que deseja que o suporte possa reanalizar para poder reverter a situção do seu produto removido.
+        </p>
+        <TextArea 
+          placeholder={'Mensagem'}
+          style={{
+            input: `h-30 ${logic.error 
+              ? 'shadow-[0px_0px_8px_red]'
+              : ''
+            }`,
+            container: 'mb-[-7px]'
+          }}
+          maxLength={500}
+          onChange={(e) => {
+            logic.setSupportMessage(e.target.value);
+            logic.setError('');
+          }}
+          value={logic.supportMessage}   
+          colorScheme='primary'    
+        />
+        
+        {logic.error && <Error error={logic.error}/>}
+
+        <Button 
+          type={'button'}
+          label='Enviar'
+          style='mt-1'
+          onClick={() => {
+            if (!logic.supportMessage) {
+              logic.setError('A mensagem não pode ser vazia');
+              return;
+            }
+            logic.setActiveModal('MESSAGE_TO_SUPPORT_CONFIRM');
+          }}
+        />
+      </Modal>
+
+      <Modal 
+      isOpen={logic.activeModal === 'MESSAGE_TO_SUPPORT_CONFIRM'} 
+      modalTitle={'Confirmar ação'} 
+      hasXClose
+      onCloseModalActions={() => {
+        logic.setActiveModal('MESSAGE_TO_SUPPORT');
+        logic.setError('');
+      }}>
+        <p className='text-secondary'>
+          Tem certeza que deseja mandar essa mensagem ?
+        </p>
+        
+        <WarningInfo
+          text='Nossa equipe irá responder ao seu apelo o mais rápido e transparente possível. A mensagem de retorno ficará disponível para ser visualizada no cartão do seu produto.'
+        />
+
+        <div className='flex gap-3 text-lg'>
+          <Button 
+            type={'submit'}
+            label='Sim'
+            loading={logic.loading}
+            loadingLabel='Processando'
+            style={`${buttonColorsScheme.green} flex-1`}
+            onClick={logic.handleSendMessageToSupport}
+          />
+          <Button 
+            type={'submit'}
+            label='Não'
+            style={`${buttonColorsScheme.red} flex-1`}
+            onClick={() => {
+              logic.setActiveModal('MESSAGE_TO_SUPPORT');
+              logic.setError('');
+            }}
+          />
+        </div>
+      </Modal>
+      
+      <Modal 
+      isOpen={logic.activeModal === 'PRODUCT_MESSAGES_SUPPORT'} 
+      modalTitle={'Mensagens'} 
+      hasXClose
+      onCloseModalActions={() => {
+        logic.setActiveModal(null);
+      }}>
+        <UserMessage
+          type='USER_MESSAGE'
+          conversations={product.supportMessages}
+          setSelectedConversation={logic.setSelectedConversation}
+          setActiveModal={logic.setActiveModal as any}
+        />
+      </Modal>
+
     </motion.div>
   )
 }

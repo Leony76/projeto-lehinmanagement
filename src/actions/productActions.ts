@@ -52,6 +52,8 @@ export async function removeProduct(
         where: { id },
         data: { 
           isActive: false,
+          deletedBy: 'ADMIN',
+          deletedAt: new Date(),
         },
       });
 

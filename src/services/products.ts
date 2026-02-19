@@ -1,18 +1,27 @@
 'use server'
 
-import { id } from "zod/v4/locales";
 import prisma from "../lib/prisma"
 import { BoughtProduct, UserProductsPutToSaleDTO } from "../types/userProductDTO";
-import { Category, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { getRequiredSession } from "../lib/get-session-user";
+import { ProductDTO } from "../types/productDTO";
 
-export const getProducts = async() => {
+export const getProducts = async(): Promise<ProductDTO[]> => {
 
   const user = (await getRequiredSession()).user;
 
-  const bringDeactivatedProductsToSeller: Prisma.ProductFindManyArgs = user.role === 'CUSTOMER' 
-  ? { where: { isActive: true } }
-  : {};
+  const bringDeactivatedProductsToSeller: Prisma.ProductFindManyArgs = user.role !== 'SELLER' 
+  ? { where: { 
+      isActive: true,
+    } }
+  : {
+    where: {
+      OR: [
+        { isActive: true },
+        { sellerId: user.id },
+      ]
+    }
+  };
   
   const [
     products,
@@ -27,8 +36,49 @@ export const getProducts = async() => {
             id: true,
             name: true,
             role: true,
-          },
+            senderSupportMessage: {
+              select: {
+                message: true,
+                createdAt: true,
+
+                reply: true,
+                repliedAt: true,
+                replier: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+              orderBy: { repliedAt: 'desc'},
+              take: 1,
+            },
+          },  
         },
+        adminActions: {
+          where: {
+            action: 'DELETED',
+          },
+          select: {
+            justification: true,
+          },
+          take: 1,
+        },
+        supportMessages: {
+          where: {
+            type: 'APPEAL',
+          },
+          orderBy: { createdAt: 'asc' },
+          include: {
+            replier: { select: { 
+              name: true,
+              role: true, 
+            }},
+            sender:  { select: { 
+              name: true,
+              role: true, 
+            }},
+          }
+        }  
       },
       orderBy: { id: 'desc' },
     }),
@@ -77,11 +127,36 @@ export const getProducts = async() => {
     category: product.category,
     description: product.description,
     imageUrl: product.imageUrl,
+    isActive: product.isActive,
+    removeJustify: product.adminActions[0]?.justification,
+    removedBy: product.deletedBy,
+    removedAt: product.deletedAt?.toISOString(),
     stock: product.stock,
     reservedStock: product.reservedStock,
     createdAt: product.createdAt?.toISOString() ?? null,
     updatedAt: product.updatedAt?.toISOString() ?? null,
     price: product.price.toNumber(),
+
+    supportMessages: product.supportMessages.map(msg => ({
+      id: msg.id,
+      sentAt: msg.createdAt.toISOString(),
+      type: msg.type,
+      subject: msg.subject,
+      message: msg.message,
+      sender: {
+        name: msg.sender.name ?? 'Desconhecido',
+        role: msg.sender.role ?? 'CUSTOMER',
+      },
+    
+      sentBy: msg.sentBy,
+      
+      repliedAt: msg.repliedAt?.toISOString() ?? '??/??/??',
+      replyMessage: msg.reply ?? null,
+      replier: {
+        name: msg.replier?.name ?? 'Desconhecido',
+        role: msg.replier?.role ?? 'ADMIN',
+      },
+    })),
 
     sellerId: product.seller.id,
     sellerName: product.seller.name,
