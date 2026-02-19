@@ -7,16 +7,16 @@ import MyProduct from "@/src/components/products/MyProduct";
 import { UserProductDTO } from "@/src/types/userProductDTO";
 import ProductCardsGrid from "@/src/components/ui/ProductCardsGrid";
 import NoContentFoundMessage from "@/src/components/ui/NoContentFoundMessage";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { filteredSearchForUserProducts } from "@/src/utils/filters/filteredSearchForUserProducts";
 import { CATEGORY_LABEL_MAP, USER_PRODUCT_FILTER_LABEL_MAP, UserProductFilterValue } from "@/src/constants/generalConfigs";
 import { Category } from "@prisma/client";
 
 type Props = {
-  myProducts: UserProductDTO[];
+  userData: UserProductDTO;
 }
 
-const MyProducts = ({myProducts}:Props) => {
+const MyProducts = ({ userData }:Props) => {
 
   const [search, setSearch] = useState<string>('');
   const [advancedFilter, setAdvancedFilter] = useState<UserProductFilterValue | null>(null);
@@ -24,9 +24,28 @@ const MyProducts = ({myProducts}:Props) => {
     
   const translatedAdvandedFilter = advancedFilter ? USER_PRODUCT_FILTER_LABEL_MAP[advancedFilter] : '';
   const translatedCategoryFilter = categoryFilter ? CATEGORY_LABEL_MAP[categoryFilter] : '';
-  
+
+  const [view, setView] = useState<'BOUGHT' | 'PUBLISHED'>('BOUGHT');
+
+  const currentList = useMemo(() => {
+    if (userData.role === 'CUSTOMER') {
+      return userData.boughtProduct 
+        ? [userData.boughtProduct] 
+        : []
+      ;
+    } 
+    
+    if (userData.role === 'SELLER') {
+      return view === 'BOUGHT' 
+        ? userData.boughtProducts 
+        : userData.publishedProducts;
+    }
+    
+    return [];
+  }, [userData, view]);
+
   const filteredUserProducts = filteredSearchForUserProducts(
-    myProducts,
+    currentList,
     search,
     advancedFilter,
     categoryFilter,
@@ -37,7 +56,7 @@ const MyProducts = ({myProducts}:Props) => {
   return (
     <div>
       <PageTitle style="my-2" title="Meus Produtos"/>
-      <div>
+      <div className="space-y-3">
         <Search 
           style={{input: 'mt-5'}} 
           colorScheme="primary"
@@ -45,29 +64,60 @@ const MyProducts = ({myProducts}:Props) => {
           onClearSearch={() => setSearch('')}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex gap-3 mt-3">
-        <Select 
-          style={{input: 'flex-1 w-full'}} 
-          selectSetup={"USER_PRODUCT_FILTER"} 
-          colorScheme={"primary"} 
-          label={"Filtro"}
-          onChange={(e) => setAdvancedFilter(e.target.value as UserProductFilterValue)}
-        />
-        <Select 
-          style={{input: 'flex-1 w-full'}} 
-          selectSetup={"CATEGORY"} 
-          colorScheme={"primary"} 
-          label={"Categoria"}
-          onChange={(e) => setCategoryFilter(e.target.value as Category)}
-        />
+
+        <div className="flex gap-3">
+          <Select 
+            style={{input: 'flex-1 w-full'}} 
+            selectSetup={"USER_PRODUCT_FILTER"} 
+            colorScheme={"primary"} 
+            label={"Filtro"}
+            onChange={(e) => setAdvancedFilter(e.target.value as UserProductFilterValue)}
+          />
+          <Select 
+            style={{input: 'flex-1 w-full'}} 
+            selectSetup={"CATEGORY"} 
+            colorScheme={"primary"} 
+            label={"Categoria"}
+            onChange={(e) => setCategoryFilter(e.target.value as Category)}
+          />
         </div>
+
+        {userData.role === 'SELLER' &&
+          <div className="flex border-2 border-secondary rounded-3xl w-fit text-secondary">
+            <button
+            onClick={() => setView('BOUGHT')}
+            className={`flex-1 rounded-l-xl p-1 px-4 cursor-pointer transition durantion-400 hover:bg-secondary/40 
+              ${view === 'BOUGHT' 
+                ? 'bg-secondary text-white' 
+                : ''
+              }
+            `}
+            >         
+              Comprados
+            </button>
+
+            <div className="bg-secondary-middledark w-0.5"/>
+
+            <button 
+            onClick={() => setView('PUBLISHED')}
+            className={`flex-2 rounded-r-xl p-1 px-4 cursor-pointer transition durantion-400 hover:bg-secondary/40 
+              ${view === 'PUBLISHED' 
+                ? 'bg-secondary text-white' 
+                : ''
+              }
+            `}
+            >
+              Colocados à venda
+            </button>
+          </div>
+        }
       </div>
     {(hasUserProducts) ? (
       <ProductCardsGrid>
-      {filteredUserProducts.map((userProduct) => (
+      {filteredUserProducts.map((item) => (
         <MyProduct 
-          key={userProduct.id}
-          userProduct={userProduct}
+          key={'id' in item ? item.id : item.product.id}
+          userProduct={item}
         />
       ))}
       </ProductCardsGrid>

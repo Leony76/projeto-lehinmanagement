@@ -20,6 +20,8 @@ model User {
   role Role?     @default(CUSTOMER)
   isActive       Boolean    @default(true)
 
+  messageAfterReactivated Boolean @default(false) @map("message_after_reactivated")
+
   accounts             Account[]
   sessions             Session[]
   orders               Order[]

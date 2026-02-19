@@ -99,7 +99,7 @@ const ProductInfo = ({
             
              <LabelValue
               label='Avaliação'
-              value={product.rating ?? 'Não avaliado'}
+              value={Number(product.rating).toFixed(1).replace('.',',') ?? 'Não avaliado'}
             />
           </div>
         </div>

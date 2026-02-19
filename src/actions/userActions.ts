@@ -41,6 +41,7 @@ export async function deactivateUserAccount(
       where: { id: userId },
       data: {
         isActive: false,
+        messageAfterReactivated: true,
       },
     });
 
@@ -152,5 +153,16 @@ export async function sendReplyMessage(
   });
 
   revalidatePath('/users');
+}
+
+export async function toggleMessageAfteruserActivated(
+  userId: string,
+) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { messageAfterReactivated: false },
+  });
+
+  revalidatePath('/dashboard');
 }
 

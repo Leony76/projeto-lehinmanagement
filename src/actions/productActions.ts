@@ -41,7 +41,8 @@ export async function createProduct(input: unknown) {
 
 export async function removeProduct(
   id: number, 
-  removeJustify?: string 
+  removeJustify?: string,
+  action?: 'FROM_INVENTORY' | 'FOR_SALE', 
 ) {
   const user = (await getRequiredSession()).user;
 
@@ -69,17 +70,35 @@ export async function removeProduct(
   } else {
     const session = await getRequiredSession();
 
-    await prisma.costumerProduct.updateMany({
-      where: {
-        costumerProductId: id,
-        costumerId: session.user.id,
-      },
-      data: {
-        deletedAt: new Date(),
-      }
-    });
+    if (action === 'FROM_INVENTORY') {
 
-    revalidatePath('/products/my-products');
+      await prisma.costumerProduct.updateMany({
+        where: {
+          costumerProductId: id,
+          costumerId: session.user.id,
+        },
+        data: {
+          deletedAt: new Date(),
+        }
+      });
+  
+      revalidatePath('/products/my-products');
+    } else {
+      
+      await prisma.product.update({
+        where: {
+          id,
+          sellerId: session.user.id,
+        },
+        data: {
+          isActive: false,
+          deletedAt: new Date(),
+          deletedBy: session.user.role ?? 'CUSTOMER' as any,         
+        },
+      });
+
+      revalidatePath('/products');
+    }
   }
 }
 

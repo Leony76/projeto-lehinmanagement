@@ -61,11 +61,12 @@ type BaseProps = {
 
 export type UsersDTO = | (BaseProps & {
   role: 'SELLER';
+  
   stats: {
     ordersDone: number;
     salesDone: number;
   };
-
+  
   hasMessages: boolean;
   messages: UserAndSupportConversationDTO[];
   history: SellerActionHistory[];

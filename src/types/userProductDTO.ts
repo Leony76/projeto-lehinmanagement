@@ -1,6 +1,30 @@
 import { Category } from "@prisma/client";
 
-export type UserProductDTO = {
+export type UserProductsPutToSaleDTO = {
+  product: {
+    id: number;
+  
+    name: string;
+    category: Category;
+    description: string | null;
+    publishedAt: string;
+    updatedAt: string | null;
+    AverageRating: number | null;
+
+    stock: number;
+    price: number;
+
+    imageUrl: string;
+
+    soldUnits: number;
+
+  };
+  seller: {
+    name: string;
+  };
+};
+
+export type BoughtProduct = {
   id: number;
   name: string;
   category: Category;
@@ -9,7 +33,7 @@ export type UserProductDTO = {
   stock: number;
   imageUrl: string;
   createdAt: string;
-
+  
   orders: {
     id: number;
     total: number;
@@ -20,8 +44,21 @@ export type UserProductDTO = {
       price: number;
     }[];
   }[];
-
+  
   productRating: number;
   hasReview: boolean;
   productAverageRating: string | null;
+}
+
+export type UserProductDTO = {
+  role: 'CUSTOMER',
+
+  boughtProduct: BoughtProduct;
+} | {
+  role: 'SELLER',
+
+  boughtProducts: BoughtProduct[];
+  publishedProducts: UserProductsPutToSaleDTO[];
 };
+
+export type FiltrableUserProduct = BoughtProduct | UserProductsPutToSaleDTO;

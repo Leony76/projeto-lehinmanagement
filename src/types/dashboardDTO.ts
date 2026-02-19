@@ -28,6 +28,10 @@ export interface DashboardEarnDTO {
 export interface CustomerDashboardStatsDTO {
   role: "CUSTOMER";
 
+  userId: string;
+  username: string;
+  messageAfterActivation: boolean;
+  activationJustification: string;
   orders: DashboardOrdersStatsDTO;
   spend: DashboardSpendDTO;
 }
@@ -35,6 +39,10 @@ export interface CustomerDashboardStatsDTO {
 export interface SellerDashboardStatsDTO {
   role: "SELLER";
 
+  userId: string;
+  username: string;
+  messageAfterActivation: boolean;
+  activationJustification: string;
   orders: DashboardOrdersStatsDTO;
   spend: DashboardSpendDTO;
 
@@ -55,6 +63,8 @@ export interface SellerDashboardStatsDTO {
 
 export interface AdminDashboardStatsDTO {
   role: "ADMIN";
+  userId: string;
+  username: string;
 
   usersCount: {
     customers: number;

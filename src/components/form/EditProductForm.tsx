@@ -15,6 +15,7 @@ import Button from '@/src/components/form/Button'
 import Input from '@/src/components/form/Input'
 import Modal from '../modal/Modal'
 import Error from '../ui/Error'
+import { useUserStore } from '@/src/hooks/store/useUserStore';
 
 type Props = {
   productToBeEdited: ProductDTO | null,
@@ -43,6 +44,8 @@ const EditProductForm = ({
   imageProps,
   isOpen,
 }:Props) => {
+
+  const user = useUserStore((stats) => stats.user);
 
   const {
     register,
@@ -84,8 +87,14 @@ const EditProductForm = ({
       <form
       className={style.mainContainer}
       onSubmit={handleSubmit((data) => {
-        actions.setFormData(data as AddProductFormData); 
-        actions.setActiveModal('EDIT_JUSTIFY');
+        actions.setFormData(data as AddProductFormData);
+        
+        if (user?.role === 'ADMIN') {
+          actions.setActiveModal('EDIT_JUSTIFY');
+          return;
+        }
+        
+        actions.setActiveModal('EDIT_PRODUCT_CONFIRM')
       })}
       >
         <input
@@ -190,7 +199,10 @@ const EditProductForm = ({
           
           <Button
             style={style.editButton}
-            label="Prosseguir"
+            label={user?.role === 'ADMIN'
+              ? "Prosseguir"
+              : "Editar"
+            }
             type="submit"
           />
         </div>

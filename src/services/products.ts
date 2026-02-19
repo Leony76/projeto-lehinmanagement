@@ -1,18 +1,26 @@
 'use server'
 
+import { id } from "zod/v4/locales";
 import prisma from "../lib/prisma"
+import { BoughtProduct, UserProductsPutToSaleDTO } from "../types/userProductDTO";
+import { Category, Prisma } from "@prisma/client";
+import { getRequiredSession } from "../lib/get-session-user";
 
 export const getProducts = async() => {
 
+  const user = (await getRequiredSession()).user;
+
+  const bringDeactivatedProductsToSeller: Prisma.ProductFindManyArgs = user.role === 'CUSTOMER' 
+  ? { where: { isActive: true } }
+  : {};
+  
   const [
     products,
     avgRatings,
     productSales, 
   ] = await Promise.all([
     prisma.product.findMany({
-      where: {
-        isActive: true,
-      },
+      ...bringDeactivatedProductsToSeller,
       include: {
         seller: {
           select: {
@@ -83,7 +91,9 @@ export const getProducts = async() => {
   }));
 }
 
-export const getUserProducts = async (userId: string) => {
+export const getUserProducts = async (
+  userId: string
+): Promise<BoughtProduct[]> => {
   const items = await prisma.costumerProduct.findMany({
     where: {
       costumerId: userId,
@@ -181,3 +191,53 @@ export const getUserProducts = async (userId: string) => {
 
   return Array.from(productMap.values());
 }
+
+
+
+export const getUserProductsPutForSale = async (
+  userId: string
+): Promise<UserProductsPutToSaleDTO[]> => {
+  const products = await prisma.product.findMany({
+    where: { 
+      sellerId: userId,
+      deletedAt: null,
+    },
+    include: {
+      seller: { select: { name: true } },
+      reviews: { select: { rating: true } },
+      _count: {
+        select: {
+          orderItems: {
+            where: { order: { status: 'APPROVED' } },
+          },
+        },
+      },
+    },
+  });
+
+  return products.map((product) => {
+
+    const totalRatings = product.reviews.length;
+    const sumRatings = product.reviews.reduce((acc, rev) => acc + rev.rating, 0);
+    const average = totalRatings > 0 ? sumRatings / totalRatings : 0;
+
+    return {
+      product: {
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        description: product.description,
+        imageUrl: product.imageUrl,
+        price: product.price.toNumber(),
+        publishedAt: product.createdAt.toISOString(),
+        AverageRating: average, 
+        soldUnits: product._count.orderItems, 
+        stock: product.stock,
+        updatedAt: product.updatedAt?.toISOString() ?? null,
+      },
+      seller: {
+        name: product.seller.name ?? '[Desconhecido]',
+      },
+    };
+  });
+};

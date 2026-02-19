@@ -16,7 +16,7 @@ export const useProductLogic = ({product}:Props) => {
 
   const { showToast } = useToast();
 
-  const [formData, setFormData] = useState<AddProductFormData | null>(null); // ADICIONE ISSO
+  const [formData, setFormData] = useState<AddProductFormData | null>(null); 
 
   const datePutToSale = new Date(product.createdAt).toLocaleDateString("pt-BR");
   const category = CATEGORY_LABEL_MAP[product.category];
@@ -118,7 +118,6 @@ export const useProductLogic = ({product}:Props) => {
       setActiveModal(null);
       setFormData(null);
     }
-
   }
 
   useLockScrollY(Boolean(activeModal)); 

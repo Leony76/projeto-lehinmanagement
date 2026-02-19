@@ -103,12 +103,12 @@ const Menu = ({menu, showMenu}:Props) => {
               />
             ) : user?.role === 'ADMIN' && (
               <>
-              <MenuItem 
+              {/* <MenuItem 
                 style='text-[13px]' 
                 route='/products/sell-product' 
                 closeMenu={showMenu} 
                 label={'Adicionar Produto'}
-              />
+              /> */}
               <MenuItem 
                 route='/users' 
                 closeMenu={showMenu} 
