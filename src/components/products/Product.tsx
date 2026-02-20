@@ -114,7 +114,7 @@ const Product = ({
               type={'button'}
               icon={FaInfo}
               style='p-2 px-4'
-              onClick={() => logic.setActiveModal('PRODUCT_MESSAGES_SUPPORT')}
+              onClick={() => logic.setActiveModal('PRODUCT_INFO')}
             />
           </div>
         </div>
@@ -363,32 +363,23 @@ const Product = ({
         logic.setActiveModal(null);
       }}
       >
-        {product.supportMessages.at(-1)?.replyMessage ? (
+        <>
+          <span className='text-gray flex gap-2'>
+            Removido em:
+            <span className='text-yellow'>
+              {product.removedAt 
+                ? formattedDate(product.removedAt)
+                : '??/??/??'
+              }
+            </span>
+          </span>
           <div>
-            <label className='text-secondary-dark'>Resposta:</label>
+            <label className='text-secondary-dark'>Justificativa:</label>
             <p className='text-primary-middledark bg-primary-ultralight/20 p-1 pl-2 rounded-md'>
-              {product.supportMessages.at(-1)?.replyMessage}
+              {product.removeJustify}
             </p>
           </div>
-        ) : (
-          <>
-            <span className='text-gray flex gap-2'>
-              Removido em:
-              <span className='text-yellow'>
-                {product.removedAt 
-                  ? formattedDate(product.removedAt)
-                  : '??/??/??'
-                }
-              </span>
-            </span>
-            <div>
-              <label className='text-secondary-dark'>Justificativa:</label>
-              <p className='text-primary-middledark bg-primary-ultralight/20 p-1 pl-2 rounded-md'>
-                {product.removeJustify}
-              </p>
-            </div>
-          </>
-        )}
+        </>
         <Button
           type='button'
           label='Entrar em contato com suporte'

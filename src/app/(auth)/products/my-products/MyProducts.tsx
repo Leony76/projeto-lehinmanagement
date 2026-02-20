@@ -11,6 +11,7 @@ import { useMemo, useState } from "react";
 import { filteredSearchForUserProducts } from "@/src/utils/filters/filteredSearchForUserProducts";
 import { CATEGORY_LABEL_MAP, USER_PRODUCT_FILTER_LABEL_MAP, UserProductFilterValue } from "@/src/constants/generalConfigs";
 import { Category } from "@prisma/client";
+import SwitchRenderViewButtons from "@/src/components/ui/SwitchRenderViewButtons";
 
 type Props = {
   userData: UserProductDTO;
@@ -83,33 +84,18 @@ const MyProducts = ({ userData }:Props) => {
         </div>
 
         {userData.role === 'SELLER' &&
-          <div className="flex border-2 border-secondary rounded-3xl w-fit text-secondary">
-            <button
-            onClick={() => setView('BOUGHT')}
-            className={`flex-1 rounded-l-xl p-1 px-4 cursor-pointer transition durantion-400 hover:bg-secondary/40 
-              ${view === 'BOUGHT' 
-                ? 'bg-secondary text-white' 
-                : ''
-              }
-            `}
-            >         
-              Comprados
-            </button>
-
-            <div className="bg-secondary-middledark w-0.5"/>
-
-            <button 
-            onClick={() => setView('PUBLISHED')}
-            className={`flex-2 rounded-r-xl p-1 px-4 cursor-pointer transition durantion-400 hover:bg-secondary/40 
-              ${view === 'PUBLISHED' 
-                ? 'bg-secondary text-white' 
-                : ''
-              }
-            `}
-            >
-              Colocados à venda
-            </button>
-          </div>
+          <SwitchRenderViewButtons 
+            onClick={{
+              setFirstView: () => setView('BOUGHT'),
+              setSecondView: () => setView('PUBLISHED'),
+            }} view={{
+              first: view === 'BOUGHT',
+              second: view === 'PUBLISHED',
+            }} label={{
+              first: "Comprados",
+              second: "Colocados à venda"
+            }}
+          />
         }
       </div>
     {(hasUserProducts) ? (

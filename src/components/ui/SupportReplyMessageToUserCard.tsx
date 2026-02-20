@@ -18,12 +18,13 @@ const SupportReplyMessageToUserCard = ({
 }:Props) => {
 
   const MAX_MESSAGE_LENGTH = 120;
+
   const [readMoreUserMessage, setReadMoreUserMessage] = useState<boolean>(false);
   const [readMoreReplierMessage, setReadMoreReplierMessage] = useState<boolean>(false);
 
   return (
     <div className={`flex flex-col bg-gray-100/10 p-2 rounded-xl border-2
-      ${conversation.repliedAt
+      ${conversation.replyMessage !== null
         ? 'border-green'
         : 'border-red'
       }
@@ -66,7 +67,7 @@ const SupportReplyMessageToUserCard = ({
         </button>
       }
 
-      {conversation.repliedAt ? (
+      {conversation.replyMessage !== null ? (
 
         <div className='flex flex-col pt-1'>
 
@@ -82,7 +83,7 @@ const SupportReplyMessageToUserCard = ({
           </span>
 
           <span className='text-yellow text-sm mb-2'>
-            {formattedDate(conversation.repliedAt)}
+            {conversation.repliedAt && formattedDate(conversation.repliedAt)}
           </span>
 
           <p className='dark:text-secondary-light wrap-break-word text-secondary-middledark mb-2 border-secondary-middledark border-y py-1'>

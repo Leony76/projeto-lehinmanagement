@@ -11,6 +11,8 @@ import { useState } from "react";
 import { CATEGORY_LABEL_MAP, PRODUCT_FILTER_LABEL_MAP, ProductFilterValue } from "@/src/constants/generalConfigs";
 import { Category } from "@prisma/client";
 import { filteredSearchForProducts } from "@/src/utils/filters/filteredSearchForProducts";
+import SwitchRenderViewButtons from "@/src/components/ui/SwitchRenderViewButtons";
+import { useUserStore } from "@/src/hooks/store/useUserStore";
 
 type Props = {
   products: ProductDTO[];
@@ -20,13 +22,17 @@ const Products = ({
   products,
 }: Props) => {
 
+  const user = useUserStore((s) => s.user);
+
+  const [view, setView] = useState<'REMOVED' | 'ACTIVE'>('ACTIVE');
+
   const [search, setSearch] = useState<string>('');
   const [advancedFilter, setAdvancedFilter] = useState<ProductFilterValue | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<Category | null>(null);
 
   const translatedAdvandedFilter = advancedFilter ? PRODUCT_FILTER_LABEL_MAP[advancedFilter] : '';
   const translatedCategoryFilter = categoryFilter ? CATEGORY_LABEL_MAP[categoryFilter] : '';
-
+  
   const filteredProducts = filteredSearchForProducts(
     products,
     search,
@@ -34,7 +40,21 @@ const Products = ({
     categoryFilter,
   );
 
-  const hasProducts = filteredProducts.length > 0;
+  const displayProducts = filteredProducts.filter((product) => 
+    view === 'ACTIVE' 
+      ? product.isActive !== false 
+      : product.isActive === false
+  );
+
+  const hasProductsToDisplay = displayProducts.length > 0;
+  const hasRemovedProducts = filteredProducts.some((product) => product.isActive === false);
+
+  const renderedProducts = displayProducts.map((product) => (
+    <Product 
+      key={product.id} 
+      product={product} 
+    />
+  ));
     
   return (
     <div>
@@ -42,7 +62,7 @@ const Products = ({
         style="my-2" 
         title="Produtos"
       />
-      <div>
+      <div className="space-y-3">
         <Search 
           style={{input: 'mt-5'}} 
           colorScheme="primary"
@@ -50,7 +70,7 @@ const Products = ({
           onClearSearch={() => setSearch('')}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex gap-3 mt-3">
+        <div className="flex gap-3">
           <Select 
             style={{input: `flex-1 w-full`}} 
             selectSetup={"PRODUCT_FILTER"} 
@@ -66,15 +86,25 @@ const Products = ({
             onChange={(e) => setCategoryFilter(e.target.value as Category)}
           />
         </div>
+        
+        {(user?.role !== 'CUSTOMER' && hasRemovedProducts !== undefined) &&
+          <SwitchRenderViewButtons 
+            onClick={{
+              setFirstView: () => setView('ACTIVE'),
+              setSecondView: () => setView('REMOVED'),
+            }} view={{
+              first: view === 'ACTIVE',
+              second: view === 'REMOVED',
+            }} label={{
+              first: "Ativos",
+              second: "Removidos"
+            }}
+          />
+        }
       </div>
-    {(hasProducts) ? (
+    {(hasProductsToDisplay) ? (
       <ProductCardsGrid>
-      {filteredProducts.map((product) => (
-        <Product
-          key={product.id}
-          product={product}
-        />
-      ))}
+        {renderedProducts}
       </ProductCardsGrid>
     ) : (
       <NoContentFoundMessage 

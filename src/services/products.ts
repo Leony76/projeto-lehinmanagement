@@ -10,16 +10,23 @@ export const getProducts = async(): Promise<ProductDTO[]> => {
 
   const user = (await getRequiredSession()).user;
 
-  const bringDeactivatedProductsToSeller: Prisma.ProductFindManyArgs = user.role !== 'SELLER' 
+  const bringDeactivatedProductsToSeller: Prisma.ProductFindManyArgs = user.role === 'CUSTOMER' 
   ? { where: { 
       isActive: true,
     } }
-  : {
+  : user.role === 'SELLER' ? {
     where: {
       OR: [
         { isActive: true },
         { sellerId: user.id },
       ]
+    }
+  } : {
+    where: {
+      OR: [
+        { isActive: true     },
+        { deletedBy: 'ADMIN' },
+      ],  
     }
   };
   

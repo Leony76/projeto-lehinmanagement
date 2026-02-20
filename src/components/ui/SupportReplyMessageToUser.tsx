@@ -21,7 +21,7 @@ const SupportReplyMessageToUser = (props:Props) => {
 
       <span className='text-gray'>
         Respondidas: <span className='text-green-200'>{props.conversations.reduce((acc, cur) => 
-          cur.repliedAt
+          cur.replyMessage !== null
             ? acc + 1
             : acc
         , 0)}
@@ -30,7 +30,7 @@ const SupportReplyMessageToUser = (props:Props) => {
 
       <span className='text-gray'>
         Não respondidas: <span className='text-red'>{props.conversations.reduce((acc, cur) => 
-          !cur.repliedAt 
+          cur.replyMessage === null 
             ? acc + 1
             : 0
         , 0)}
