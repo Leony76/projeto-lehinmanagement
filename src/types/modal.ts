@@ -35,6 +35,8 @@ export type ProductPageModals = GenericPageModals
 | 'MESSAGE_TO_SUPPORT'
 | 'MESSAGE_TO_SUPPORT_CONFIRM'
 | 'PRODUCT_MESSAGES_SUPPORT'
+| 'ACTIVE_PRODUCT'
+| 'ACTIVE_PRODUCT_CONFIRM'
 ;
 
 export type OrderPageModals = GenericPageModals
@@ -63,4 +65,8 @@ export type UserProductPageModals = GenericPageModals
 | 'PRODUCT_INFO_IMAGE_EXPAND'
 | 'EDIT_PRODUCT'
 | 'EDIT_PRODUCT_CONFIRM'
+| 'PRODUCT_REMOVE_JUSTIFY'
+| 'PRODUCT_MESSAGES_SUPPORT'
+| 'MESSAGE_TO_SUPPORT'
+| 'MESSAGE_TO_SUPPORT_CONFIRM'
 ;

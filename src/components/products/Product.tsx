@@ -28,6 +28,7 @@ import Error from '../ui/Error';
 import WarningInfo from '../ui/WarningInfo';
 import { LuMessageCircleWarning } from 'react-icons/lu';
 import UserMessage from '../modal/Users/UserMessage';
+import ConfirmAction from '../modal/Orders/ConfirmAction';
 
 type Props = {
   product: ProductDTO;
@@ -165,15 +166,25 @@ const Product = ({
         )
       ) : (
         <div className="flex gap-2">
-          <Button
+          {(!product.isActive && logic.user?.role === 'ADMIN') ? ( 
+            <Button
             type="button"
-            label="Editar"
-            style={`flex-1 dark:bg-yellow-500 ${buttonColorsScheme.yellow}`}
-            onClick={() => {
-              logic.setActiveModal('EDIT_PRODUCT');
-              logic.setProductToBeEdited(product);
-            }}
-          />
+            label="Ativar"
+            style={`flex-1 dark:bg-green-500 ${buttonColorsScheme.green}`}
+            onClick={() => logic.setActiveModal('ACTIVE_PRODUCT')}
+            />           
+          ) : (
+            <Button
+              type="button"
+              label="Editar"
+              style={`flex-1 dark:bg-yellow-500 ${buttonColorsScheme.yellow}`}
+              onClick={() => {
+                logic.setActiveModal('EDIT_PRODUCT');
+                logic.setProductToBeEdited(product);
+              }}
+            />
+          )}
+
           <Button
             type="button"
             label="Remover"
@@ -380,11 +391,13 @@ const Product = ({
             </p>
           </div>
         </>
-        <Button
-          type='button'
-          label='Entrar em contato com suporte'
-          onClick={() => logic.setActiveModal('MESSAGE_TO_SUPPORT')}
-        />
+        {logic.user?.role === 'SELLER' &&
+          <Button
+            type='button'
+            label='Entrar em contato com suporte'
+            onClick={() => logic.setActiveModal('MESSAGE_TO_SUPPORT')}
+          />
+        }
       </Modal>
 
       <Modal 
@@ -485,6 +498,64 @@ const Product = ({
         />
       </Modal>
 
+      <Modal 
+      isOpen={logic.activeModal === 'ACTIVE_PRODUCT'} 
+      modalTitle={'Ativar produto'} 
+      hasXClose
+      onCloseModalActions={() => {
+        logic.setActiveModal(null);
+      }}>
+        <p className='text-secondary'>
+          Escreva a justificativa do porquê da ativação desse produto novamente.
+        </p>
+        <TextArea 
+          placeholder={'Justificativa'}
+          style={{
+            input: `h-30 ${logic.error 
+              ? 'shadow-[0px_0px_8px_red]'
+              : ''
+            }`,
+            container: 'mb-[-7px]'
+          }}
+          maxLength={250}
+          onChange={(e) => {
+            logic.setReactivateProductJustify(e.target.value);
+            logic.setError('');
+          }}
+          value={logic.reactivateProductJustify}   
+          colorScheme='primary'    
+        />
+        
+        {logic.error && <Error error={logic.error}/>}
+
+        <Button 
+          type={'button'}
+          label='Prosseguir'
+          style='mt-1'
+          onClick={() => {
+            if (!logic.reactivateProductJustify) {
+              logic.setError('A justificativa não pode ser vazia');
+              return;
+            }
+            logic.setError('');
+            logic.setActiveModal('ACTIVE_PRODUCT_CONFIRM');
+          }}
+        />
+      </Modal>
+      
+      <ConfirmAction
+        isOpen={logic.activeModal === 'ACTIVE_PRODUCT_CONFIRM'}
+        loading={logic.loading}
+        onAccept={{handleSubmit: logic.handleReactiveProduct}}
+        decision={'ACCEPT'}
+        customSentence={{
+          title: 'Confirmar ação',
+          sentence: `Tem certeza que deseja reativar esse produto do vendedor ${product.sellerName} ?`
+        }}
+        isActionIrreversible
+        hasWarning
+        onCloseActions={() => logic.setActiveModal('ACTIVE_PRODUCT')}
+      />
     </motion.div>
   )
 }

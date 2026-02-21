@@ -1,4 +1,5 @@
-import { Category } from "@prisma/client";
+import { Category, DeletedBy } from "@prisma/client";
+import { UserAndSupportConversationDTO } from "./UserAndSupportConversationDTO";
 
 export type UserProductsPutToSaleDTO = {
   product: {
@@ -10,6 +11,12 @@ export type UserProductsPutToSaleDTO = {
     publishedAt: string;
     updatedAt: string | null;
     AverageRating: number | null;
+
+    isActive: boolean;
+    removeJustify: string | undefined;
+    removedAt: string | undefined;
+    removedBy: DeletedBy | null;
+    supportMessages: UserAndSupportConversationDTO[];
 
     stock: number;
     price: number;

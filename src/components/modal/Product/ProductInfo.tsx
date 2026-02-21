@@ -97,9 +97,12 @@ const ProductInfo = ({
               value={updatedAt}
             />
             
-             <LabelValue
+            <LabelValue
               label='Avaliação'
-              value={Number(product.rating).toFixed(1).replace('.',',') ?? 'Não avaliado'}
+              value={isNaN(Number(product.rating)) 
+                ? product.rating ?? 'Não Avaliado'
+                : Number(product.rating).toFixed(1).replace('.',',')
+              }
             />
           </div>
         </div>

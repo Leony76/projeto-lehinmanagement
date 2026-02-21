@@ -1,5 +1,5 @@
 import { UserProductFilterValue } from "@/src/constants/generalConfigs";
-import { FiltrableUserProduct } from "@/src/types/userProductDTO";
+import { BoughtProduct, FiltrableUserProduct, UserProductsPutToSaleDTO } from "@/src/types/userProductDTO";
 import { Category } from "@prisma/client";
 
 
@@ -10,30 +10,36 @@ export const filteredSearchForUserProducts = (
   categoryFilter: Category | null,
 ): FiltrableUserProduct[] => {
 
+  if (!items) return [];
+
   const filteredItems = items.filter(item => {
 
-    const productData = 'product' in item 
-      ? item.product 
-      : item
-    ;
+    const isPublished = 'product' in item;
+    const productData = isPublished ? item.product : item;
 
-    const matchesSearch = search
-      ? productData.name.toLowerCase().includes(search.toLowerCase())
-      : true;
+    const matchesSearch = !search || 
+      productData.name.toLowerCase().includes(search.toLowerCase());
 
-    const matchesCategory = categoryFilter
-      ? productData.category === categoryFilter
-      : true;
+    const matchesCategory = !categoryFilter || 
+      productData.category === categoryFilter;
 
     const matchesAdvancedFilter = (() => {
       if (!advancedFilter) return true;
 
       switch (advancedFilter) {
         case 'rated':
-          return 'hasReview' in item ? item.hasReview : false;
+          if (!isPublished) return (item as BoughtProduct).hasReview;
+          return (item as UserProductsPutToSaleDTO).product.AverageRating! > 0;
 
         case 'not_rated':
-          return 'hasReview' in item ? !item.hasReview : false;
+          if (!isPublished) return !(item as BoughtProduct).hasReview;
+          return (item as UserProductsPutToSaleDTO).product.AverageRating === 0;
+        
+        case 'price_asc':
+        case 'price_desc':
+        case 'favorite':
+        case 'least_favorite':
+          return true;
 
         default:
           return true;

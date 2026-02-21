@@ -59,7 +59,7 @@ export async function removeProduct(
 
       await tx.adminActionHistory.create({
         data: {
-          action: 'DELETED',
+          action: 'PRODUCT_REMOVED',
           justification: removeJustify ?? '',
           actorId: user.id,
           targetProductId: id, 
@@ -137,7 +137,7 @@ export async function updateProduct(input: unknown, justify?: string) {
 
       await tx.adminActionHistory.create({
         data: {
-          action: 'EDITED',
+          action: 'PRODUCT_EDITED',
           justification: justify,
           actorId: user.id,
           targetProductId: validatedData.id!,
@@ -472,4 +472,40 @@ export async function updatedProductStock(
   });
 
   revalidatePath('/orders');
+}
+
+export async function reactivateRemovedProduct( 
+  productId: number,
+  justify?: string,
+) {
+  const user = (await getRequiredSession()).user;
+
+  const whereCondition = user.role === 'ADMIN' 
+    ? { id: productId } 
+    : { id: productId, sellerId: user.id };
+
+  await prisma.$transaction(async (tx) => {
+    await tx.product.update({
+      where: whereCondition,
+      data: {
+        isActive: true,
+        deletedAt: null,
+        deletedBy: null,     
+      },
+    });
+
+    if (user.role === 'ADMIN') {
+      await tx.adminActionHistory.create({
+        data: {
+          action: 'PRODUCT_REACTIVATED',
+          justification: justify ?? '',
+          actorId: user.id,
+          targetProductId: productId,
+        },
+      });
+    }
+  });
+
+  revalidatePath('/products');
+  revalidatePath('/products/my-products');
 }

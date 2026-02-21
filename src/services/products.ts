@@ -63,11 +63,12 @@ export const getProducts = async(): Promise<ProductDTO[]> => {
         },
         adminActions: {
           where: {
-            action: 'DELETED',
+            action: 'PRODUCT_REMOVED',
           },
           select: {
             justification: true,
           },
+          orderBy: { createdAt: 'desc' },
           take: 1,
         },
         supportMessages: {
@@ -282,11 +283,29 @@ export const getUserProductsPutForSale = async (
   const products = await prisma.product.findMany({
     where: { 
       sellerId: userId,
-      deletedAt: null,
     },
     include: {
       seller: { select: { name: true } },
-      reviews: { select: { rating: true } },
+      reviews: { select: { rating: true } }, 
+      adminActions: {
+        where: { action: 'PRODUCT_REMOVED' },
+        select: { justification: true },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      },
+      supportMessages: {
+        where: { type: 'APPEAL' },
+        include: {
+          replier: { select: { 
+            name: true, 
+            role: true 
+          }},
+          sender: { select: { 
+            name: true, 
+            role: true 
+          }}, 
+        }
+      },
       _count: {
         select: {
           orderItems: {
@@ -316,6 +335,29 @@ export const getUserProductsPutForSale = async (
         soldUnits: product._count.orderItems, 
         stock: product.stock,
         updatedAt: product.updatedAt?.toISOString() ?? null,
+
+        isActive: product.isActive,
+        removeJustify: product.adminActions[0]?.justification,
+        removedAt: product.deletedAt?.toISOString() ?? '??/??/??',
+        removedBy: product.deletedBy,
+        supportMessages: product.supportMessages.map(msg => ({
+          id: msg.id,
+          sentAt: msg.createdAt.toISOString(),
+          type: msg.type,
+          subject: msg.subject,
+          message: msg.message,
+          sender: {
+            name: msg.sender.name ?? 'Desconhecido',
+            role: msg.sender.role,
+          },
+          sentBy: msg.sentBy,
+          repliedAt: msg.repliedAt?.toISOString() ?? '??/??/??',
+          replyMessage: msg.reply,
+          replier: {
+            name: msg.replier?.name ?? 'Desconhecido',
+            role: msg.replier?.role ?? 'ADMIN',
+          },
+        })), 
       },
       seller: {
         name: product.seller.name ?? '[Desconhecido]',

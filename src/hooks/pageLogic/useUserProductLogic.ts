@@ -4,15 +4,22 @@ import { useToast } from "@/src/contexts/ToastContext";
 import { UserProductPageModals } from "@/src/types/modal";
 import { useState, useEffect, useRef } from "react";
 import { useLockScrollY } from "../useLockScrollY";
-import { BoughtProduct, FiltrableUserProduct, UserProductDTO } from "@/src/types/userProductDTO";
+import { BoughtProduct, FiltrableUserProduct, UserProductDTO, UserProductsPutToSaleDTO } from "@/src/types/userProductDTO";
 import { AddProductFormData } from "@/src/schemas/addProductSchema";
 import { ProductDTO } from "@/src/types/productDTO";
+import { useUserStore } from "../store/useUserStore";
+import { sendMessageToSupport } from "@/src/actions/userActions";
+import { UserSituation, SupportMessageType, SupportMessageSentBy } from "@prisma/client";
+import { UserAndSupportConversationDTO } from "@/src/types/UserAndSupportConversationDTO";
 
 type Props = {
   userProduct: FiltrableUserProduct;
 }
 
 export const useUserProductLogic = ({ userProduct }:Props) => {
+
+  const user = useUserStore((s) => s.user);
+  
   const { showToast } = useToast();
 
   const isFirstRender = useRef(true);
@@ -35,7 +42,9 @@ export const useUserProductLogic = ({ userProduct }:Props) => {
   const [loading, setLoading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [supportMessage, setSupportMessage] = useState<string>('');
 
+  const userProductForSale = (productData as UserProductsPutToSaleDTO['product']);
 
   const initialRating = 'productRating' in userProduct 
     ? userProduct.productRating 
@@ -49,6 +58,8 @@ export const useUserProductLogic = ({ userProduct }:Props) => {
 
   const [productComment, setProductComment] = useState<string>('');
   const [imageFile, setImageFile] = useState<File | null>(null);  
+  const [selectedConversation, setSelectedConversation] = useState<UserAndSupportConversationDTO | null>(null);
+  
 
   const [rating, setRating] = useState<number>(initialRating);
 
@@ -174,6 +185,40 @@ export const useUserProductLogic = ({ userProduct }:Props) => {
 
   }
 
+  const handleSendMessageToSupport = async(): Promise<void> => {
+    if (loading) return;
+    setLoading(true);
+
+    const userData = {
+      id: user?.id ?? '',
+      situation: user?.isActive
+        ? "ACTIVATED" 
+        : "DEACTIVATED" as UserSituation
+    };
+
+    const data = {
+      message: supportMessage,
+      type: 'APPEAL' as SupportMessageType,
+      sentBy: 'USER' as SupportMessageSentBy,
+    }
+
+    try {
+      await sendMessageToSupport(
+        userData,
+        data,    
+        productData.id,    
+      );
+
+      showToast('Seu apelo foi enviado ao suporte', 'info');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally {
+      setLoading(false);
+      setActiveModal(null);
+      setSupportMessage('');
+    }
+  }
+
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
@@ -184,6 +229,7 @@ export const useUserProductLogic = ({ userProduct }:Props) => {
   }, [rating]);
 
   return {
+    user,
     error,
     rating,
     loading,
@@ -201,6 +247,11 @@ export const useUserProductLogic = ({ userProduct }:Props) => {
     imageFile,
     fileInputRef,
     imageError,
+    userProductForSale,
+    supportMessage,
+    selectedConversation,
+    setSelectedConversation,
+    setSupportMessage,
     setImageFile,
     setImageError,
     setFormData,
@@ -208,6 +259,7 @@ export const useUserProductLogic = ({ userProduct }:Props) => {
     setProductToBeEdited,
     handleEditProduct,
     handleCommentRatingProduct,
+    handleSendMessageToSupport,
     handleRemoveUserProductFromInventory,
     handleRemoveUserProductForSale,
     setProductComment,

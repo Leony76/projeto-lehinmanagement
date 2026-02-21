@@ -123,7 +123,9 @@ const Products = ({
             ? `Nenhum resultado para a categoria "${translatedCategoryFilter}"`
           : advancedFilter
             ? `Nenhum resultado para o filtro avançado "${translatedAdvandedFilter}"`
-          : `Nenhum produto disponível no momento`
+          : view === 'REMOVED' 
+            ? `Nenhum produto removido por você`
+          : `Nenhum produto adiquirido por você no momento`
         }
       />
     )}

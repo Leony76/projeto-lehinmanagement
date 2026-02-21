@@ -12,15 +12,17 @@ type Props = {
 
 const SupportReplyMessageToUser = (props:Props) => {
 
+  const conversations = props.conversations || [];
+
   return (
     <>
     <div className='space-x-4 mb-1'>
       <span className='text-gray'>
-        Contagem: <span className='text-yellow'>{props.conversations.length}</span>
+        Contagem: <span className='text-yellow'>{conversations.length}</span>
       </span>
 
       <span className='text-gray'>
-        Respondidas: <span className='text-green-200'>{props.conversations.reduce((acc, cur) => 
+        Respondidas: <span className='text-green-200'>{conversations.reduce((acc, cur) => 
           cur.replyMessage !== null
             ? acc + 1
             : acc
@@ -29,7 +31,7 @@ const SupportReplyMessageToUser = (props:Props) => {
       </span>
 
       <span className='text-gray'>
-        Não respondidas: <span className='text-red'>{props.conversations.reduce((acc, cur) => 
+        Não respondidas: <span className='text-red'>{conversations.reduce((acc, cur) => 
           cur.replyMessage === null 
             ? acc + 1
             : 0
@@ -39,8 +41,8 @@ const SupportReplyMessageToUser = (props:Props) => {
     </div>
 
     <div className={`flex flex-col gap-3 max-h-[50vh] overflow-y-auto ${primaryColorScrollBar} pr-2`}>
-      {props.conversations.length > 0 ? (
-        props.conversations.map((conversation) => (
+      {conversations.length > 0 ? (
+        conversations.map((conversation) => (
           <SupportReplyMessageToUserCard
             key={conversation.id}
             conversation={conversation}

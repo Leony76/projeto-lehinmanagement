@@ -7,15 +7,16 @@ export type ProductDTO = {
   category: Category;
   description: string | null;
   price: number;
-  isActive: boolean;
-  removeJustify: string | undefined;
-  removedAt: string | undefined;
-  removedBy: DeletedBy | null;
   stock: number;
   reservedStock: number;
   imageUrl: string;
   createdAt: string;
   updatedAt: string | null;
+
+  isActive: boolean;
+  removeJustify: string | undefined;
+  removedAt: string | undefined;
+  removedBy: DeletedBy | null;
   supportMessages: UserAndSupportConversationDTO[];
 
   sellerId: string;

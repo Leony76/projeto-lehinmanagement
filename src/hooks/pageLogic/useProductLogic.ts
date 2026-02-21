@@ -1,4 +1,4 @@
-import { removeProduct, updateProduct } from "@/src/actions/productActions";
+import { reactivateRemovedProduct, removeProduct, updateProduct } from "@/src/actions/productActions";
 import { sendMessageToSupport } from "@/src/actions/userActions";
 import { CATEGORY_LABEL_MAP } from "@/src/constants/generalConfigs";
 import { useToast } from "@/src/contexts/ToastContext";
@@ -31,6 +31,8 @@ export const useProductLogic = ({product}:Props) => {
 
   const [removeJustify, setRemoveJustify] = useState<string>('');
   const [editJustify, setEditJustify] = useState<string>('');
+  const [reactivateProductJustify, setReactivateProductJustify] = useState<string>('');
+
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [imageFile, setImageFile] = useState<File | null>(null);  
@@ -46,7 +48,7 @@ export const useProductLogic = ({product}:Props) => {
   const available = product.stock - product.reservedStock;
   const canOrder = (product.sellerId !== user?.id) && (user?.role !== 'ADMIN');
 
-  const handleRemoveProduct = async() => {
+  const handleRemoveProduct = async(): Promise<void> => {
     if (loading!) return;
     setLoading(true); 
 
@@ -68,7 +70,7 @@ export const useProductLogic = ({product}:Props) => {
     }
   };
 
-  const handleSendMessageToSupport = async() => {
+  const handleSendMessageToSupport = async(): Promise<void> => {
     if (loading) return;
     setLoading(true);
 
@@ -102,7 +104,7 @@ export const useProductLogic = ({product}:Props) => {
     }
   }
 
-  const handleEditProduct = async (): Promise<void> => {
+  const handleEditProduct = async(): Promise<void> => {
 
     if (loading) return;
 
@@ -154,6 +156,28 @@ export const useProductLogic = ({product}:Props) => {
     }
   }
 
+  const handleReactiveProduct = async(): Promise<void> => {
+    if (loading) return;
+    setLoading(true);
+    
+    try {
+      if (user?.role !== 'ADMIN') throw new Error('Não autorizado');
+
+      await reactivateRemovedProduct(
+        product.id,
+        reactivateProductJustify
+      );
+
+      showToast('Produto reativado com sucesso', 'success');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally {
+      setLoading(false);
+      setReactivateProductJustify('');
+      setActiveModal(null);
+    }
+  }
+
   useLockScrollY(Boolean(activeModal)); 
 
   return {
@@ -170,16 +194,19 @@ export const useProductLogic = ({product}:Props) => {
     editJustify,
     fileInputRef,
     datePutToSale,
-    productToBeEdited,
     removeJustify,
     supportMessage,
+    productToBeEdited,
     selectedConversation,
-    setSelectedConversation,
+    reactivateProductJustify,
+    setReactivateProductJustify,
     handleSendMessageToSupport,
-    setSupportMessage,
+    setSelectedConversation,
+    handleReactiveProduct,
     setProductToBeEdited,
     handleRemoveProduct,
     handleEditProduct,
+    setSupportMessage,
     setRemoveJustify,
     setEditJustify,
     setActiveModal,

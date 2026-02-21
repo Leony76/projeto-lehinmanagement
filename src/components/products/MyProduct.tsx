@@ -22,6 +22,12 @@ import EditProductForm from '../form/EditProductForm';
 import { ProductDTO } from '@/src/types/productDTO';
 import { ProductPageModals } from '@/src/types/modal';
 import Modal from '../modal/Modal';
+import { LuMessageCircleWarning } from 'react-icons/lu';
+import { formattedDate } from '@/src/utils/formattedDate';
+import TextArea from '../form/TextArea';
+import Error from '../ui/Error';
+import WarningInfo from '../ui/WarningInfo';
+import UserMessage from '../modal/Users/UserMessage';
 
 type Props = {
   userProduct: FiltrableUserProduct;
@@ -100,6 +106,37 @@ const MyProduct = ({
           }
           </div>
         </div>
+
+        {logic.isPublished && !(logic.productData as UserProductsPutToSaleDTO['product']).isActive &&
+          <span className='text-red py-1 bg-linear-to-r from-transparent via-red/50 to-transparent text-center -mt-0.75 mb-1'>
+            {(logic.productData as UserProductsPutToSaleDTO['product']).removedBy === 'ADMIN'
+              ? 'Removido pelo sistema'
+              : 'Removido por você'
+            }
+          </span>
+        }
+
+        {logic.isPublished && !logic.userProductForSale.isActive
+        && logic.userProductForSale.removedBy === 'ADMIN' && 
+          <div className='flex mb-1  gap-3'>
+            <Button
+              label='Ver motivo'
+              type='button'
+              colorScheme='primary'
+              style='flex-1'
+              onClick={() => logic.setActiveModal('PRODUCT_REMOVE_JUSTIFY')}
+            />
+            {(logic.productData as UserProductsPutToSaleDTO['product']).supportMessages.length > 0 &&
+              <Button
+                icon={LuMessageCircleWarning}
+                type='button'
+                style={`text-2xl px-3 ${buttonColorsScheme.yellow}`}
+                onClick={() => logic.setActiveModal('PRODUCT_MESSAGES_SUPPORT')}
+              />
+            }
+          </div>
+        }
+
         <div className={`flex gap-2 ${!logic.isPublished ? 'mt-2' : ''}`}>
           <Button 
             type='button' 
@@ -263,8 +300,8 @@ const MyProduct = ({
             ? ((userProduct as UserProductsPutToSaleDTO).product.updatedAt ?? (userProduct as UserProductsPutToSaleDTO).product.publishedAt)
             : (userProduct as BoughtProduct).createdAt,
           rating: logic.isPublished 
-            ? (logic.productData as any).AverageRating?.toString() 
-            : (userProduct as any).productAverageRating
+            ? (logic.productData as any).AverageRating 
+            : 1
         }}
         actions={{
           onImageClick: () => logic.setActiveModal('PRODUCT_INFO_IMAGE_EXPAND'),
@@ -323,6 +360,138 @@ const MyProduct = ({
             }}
           />
         </div>
+      </Modal>
+
+      <Modal
+      isOpen={logic.activeModal === 'PRODUCT_REMOVE_JUSTIFY'} 
+      modalTitle={'Justificativa'} 
+      hasXClose
+      onCloseModalActions={() => {
+        logic.setActiveModal(null);
+      }}
+      >
+        <>
+          <span className='text-gray flex gap-2'>
+            Removido em:
+            <span className='text-yellow'>
+              {logic.userProductForSale.removedAt 
+                ? formattedDate(logic.userProductForSale.removedAt)
+                : '??/??/??'
+              }
+            </span>
+          </span>
+          <div>
+            <label className='text-secondary-dark'>Justificativa:</label>
+            <p className='text-primary-middledark bg-primary-ultralight/20 p-1 pl-2 rounded-md'>
+              {logic.userProductForSale.removeJustify}
+            </p>
+          </div>
+        </>
+        {logic.user?.role === 'SELLER' &&
+          <Button
+            type='button'
+            label='Entrar em contato com suporte'
+            onClick={() => logic.setActiveModal('MESSAGE_TO_SUPPORT')}
+          />
+        }
+      </Modal>
+
+      <Modal 
+      isOpen={logic.activeModal === 'MESSAGE_TO_SUPPORT'} 
+      modalTitle={'Mensagem ao suporte'} 
+      hasXClose
+      onCloseModalActions={() => {
+        logic.setActiveModal('PRODUCT_REMOVE_JUSTIFY');
+        logic.setSupportMessage('');
+        logic.setError('');
+      }}>
+        <p className='text-secondary'>
+          Escreva o que deseja que o suporte possa reanalizar para poder reverter a situção do seu produto removido.
+        </p>
+        <TextArea 
+          placeholder={'Mensagem'}
+          style={{
+            input: `h-30 ${logic.error 
+              ? 'shadow-[0px_0px_8px_red]'
+              : ''
+            }`,
+            container: 'mb-[-7px]'
+          }}
+          maxLength={500}
+          onChange={(e) => {
+            logic.setSupportMessage(e.target.value);
+            logic.setError('');
+          }}
+          value={logic.supportMessage}   
+          colorScheme='primary'    
+        />
+        
+        {logic.error && <Error error={logic.error}/>}
+
+        <Button 
+          type={'button'}
+          label='Enviar'
+          style='mt-1'
+          onClick={() => {
+            if (!logic.supportMessage) {
+              logic.setError('A mensagem não pode ser vazia');
+              return;
+            }
+            logic.setActiveModal('MESSAGE_TO_SUPPORT_CONFIRM');
+          }}
+        />
+      </Modal>
+
+      <Modal 
+      isOpen={logic.activeModal === 'MESSAGE_TO_SUPPORT_CONFIRM'} 
+      modalTitle={'Confirmar ação'} 
+      hasXClose
+      onCloseModalActions={() => {
+        logic.setActiveModal('MESSAGE_TO_SUPPORT');
+        logic.setError('');
+      }}>
+        <p className='text-secondary'>
+          Tem certeza que deseja mandar essa mensagem ?
+        </p>
+        
+        <WarningInfo
+          text='Nossa equipe irá responder ao seu apelo o mais rápido e transparente possível. A mensagem de retorno ficará disponível para ser visualizada no cartão do seu produto.'
+        />
+
+        <div className='flex gap-3 text-lg'>
+          <Button 
+            type={'submit'}
+            label='Sim'
+            loading={logic.loading}
+            loadingLabel='Processando'
+            style={`${buttonColorsScheme.green} flex-1`}
+            onClick={logic.handleSendMessageToSupport}
+          />
+          <Button 
+            type={'submit'}
+            label='Não'
+            style={`${buttonColorsScheme.red} flex-1`}
+            onClick={() => {
+              logic.setActiveModal('MESSAGE_TO_SUPPORT');
+              logic.setError('');
+            }}
+          />
+        </div>
+      </Modal>
+
+      <Modal 
+      isOpen={logic.activeModal === 'PRODUCT_MESSAGES_SUPPORT'} 
+      modalTitle={'Mensagens'} 
+      hasXClose
+      onCloseModalActions={() => {
+        logic.setActiveModal(null);
+      }}>
+        <UserMessage
+          type='USER_MESSAGE'
+          conversations={logic.userProductForSale.supportMessages}
+          setSelectedConversation={logic.setSelectedConversation}
+          setActiveModal={logic.setActiveModal as any}
+        />
       </Modal>
     </motion.div>
   )

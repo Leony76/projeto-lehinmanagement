@@ -38,8 +38,9 @@ const MyProducts = ({ userData }:Props) => {
     
     if (userData.role === 'SELLER') {
       return view === 'BOUGHT' 
-        ? userData.boughtProducts 
-        : userData.publishedProducts;
+        ? (userData.boughtProducts || []) 
+        : (userData.publishedProducts || [])
+      ;
     }
     
     return [];
@@ -124,6 +125,8 @@ const MyProducts = ({ userData }:Props) => {
             ? `Nenhum resultado para a categoria "${translatedCategoryFilter}"`
           : advancedFilter
             ? `Nenhum resultado para o filtro avançado "${translatedAdvandedFilter}"`
+          : view === 'PUBLISHED' 
+            ? `Nenhum produto publicado por você`
           : `Nenhum produto adiquirido por você no momento`
         }
       />
