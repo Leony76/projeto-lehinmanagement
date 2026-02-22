@@ -3,7 +3,9 @@
 import { toggleDarkTheme } from "@/src/actions/userActions";
 import PageTitle from "@/src/components/ui/PageTitle"
 import SectionTitle from "@/src/components/ui/SectionTitle"
+import SettingsSectionContainer from "@/src/components/ui/SettingsSectionContainer";
 import ToggleButton from "@/src/components/ui/ToggleButton"
+import ToggleOptionContainer from "@/src/components/ui/ToggleOptionContainer";
 import { useToast } from "@/src/contexts/ToastContext";
 import { useThemeStore } from "@/src/hooks/store/useDarkTheme";
 import { FaRegMoon } from "react-icons/fa6"
@@ -34,21 +36,18 @@ const Settings = () => {
         title="Configurações"
         style="my-3 mb-4"
       />
-      <div className="bg-primary-light/7 dark:bg-gray-900 p-2 space-y-2 rounded-4xl border border-primary-middledark">
-        <SectionTitle 
-          title="Sistema"
-        />
-        <div className="flex justify-between dark:bg-secondary/30 bg-secondary-light/50 rounded-4xl p-4 border border-secondary-middledark">
-          <span className="flex text-lg text-primary-middledark dark:text-primary items-center gap-1">
-            <FaRegMoon size={25}/>
-            Tema escuro
-          </span>
-          <ToggleButton 
-            value={isDark}
-            onChange={handleToggleTheme}
-          />
-        </div>
-      </div>
+
+      <SettingsSectionContainer sectionName="Sistema" >
+        <ToggleOptionContainer
+          icon={FaRegMoon}
+          iconSize={25}
+          label={'Tema escuro'}
+          onChange={{
+            toggleOption: () => handleToggleTheme(),
+            optionValue: isDark,
+          }}
+        />      
+      </SettingsSectionContainer>
     </div>
   )
 }
