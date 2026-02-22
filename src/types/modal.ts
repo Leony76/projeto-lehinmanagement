@@ -37,6 +37,7 @@ export type ProductPageModals = GenericPageModals
 | 'PRODUCT_MESSAGES_SUPPORT'
 | 'ACTIVE_PRODUCT'
 | 'ACTIVE_PRODUCT_CONFIRM'
+| 'DELETE_PRODUCT_CONFIRM'
 ;
 
 export type OrderPageModals = GenericPageModals
@@ -61,6 +62,7 @@ export type UserProductPageModals = GenericPageModals
 | 'USER_PRODUCT_INFO'
 | 'REMOVE_PRODUCT_FROM_INVENTORY_CONFIRM'
 | 'REMOVE_PRODUCT_FOR_SALE_CONFIRM'
+| 'DELETE_PRODUCT_FOR_SALE_CONFIRM'
 | 'PRODUCT_INFO'
 | 'PRODUCT_INFO_IMAGE_EXPAND'
 | 'EDIT_PRODUCT'
@@ -69,4 +71,5 @@ export type UserProductPageModals = GenericPageModals
 | 'PRODUCT_MESSAGES_SUPPORT'
 | 'MESSAGE_TO_SUPPORT'
 | 'MESSAGE_TO_SUPPORT_CONFIRM'
+| 'REACTIVE_PRODUCT_CONFIRM'
 ;

@@ -3,7 +3,7 @@
 import { auth } from "@/src/lib/auth";
 import prisma from "@/src/lib/prisma";
 import { addProductSchema } from "@/src/schemas/addProductSchema";
-import { Category, OrderStatus, Role } from "@prisma/client";
+import { Category, DeletedBy, OrderStatus, Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { PaymentOptionsValue } from "../constants/generalConfigs";
@@ -30,7 +30,6 @@ export async function createProduct(input: unknown) {
       description: data.description,
       price: Number(data.price),
       stock: Number(data.stock),
-      isActive: true,
       sellerId: session.user.id,
     },
   })
@@ -51,9 +50,9 @@ export async function removeProduct(
       await tx.product.update({
         where: { id },
         data: { 
-          isActive: false,
-          deletedBy: 'ADMIN',
-          deletedAt: new Date(),
+          status: 'REMOVED',
+          removedBy: 'ADMIN',
+          removedAt: new Date(),
         },
       });
 
@@ -93,9 +92,9 @@ export async function removeProduct(
           sellerId: session.user.id,
         },
         data: {
-          isActive: false,
-          deletedAt: new Date(),
-          deletedBy: session.user.role ?? 'CUSTOMER' as any,         
+          status: 'REMOVED',
+          removedAt: new Date(),
+          removedBy: session.user.role ?? 'CUSTOMER' as any,         
         },
       });
 
@@ -488,9 +487,9 @@ export async function reactivateRemovedProduct(
     await tx.product.update({
       where: whereCondition,
       data: {
-        isActive: true,
-        deletedAt: null,
-        deletedBy: null,     
+        status: 'ACTIVE',
+        removedAt: null,
+        removedBy: null,     
       },
     });
 
@@ -505,6 +504,35 @@ export async function reactivateRemovedProduct(
       });
     }
   });
+
+  revalidatePath('/products');
+  revalidatePath('/products/my-products');
+}
+
+export async function deleteProduct(
+  productId: number,
+) {
+  const user = (await getRequiredSession()).user;
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: {
+      status: 'DELETED',
+      deletedAt: new Date(),
+      deletedBy: user.role as DeletedBy,
+    },
+  });
+
+  if (user.role === 'ADMIN') {
+    await prisma.adminActionHistory.create({
+      data: {
+        action: 'PRODUCT_DELETED',
+        justification: '[ Ação administrativa ]',
+        actorId: user.id,
+        targetProductId: productId,
+      },
+    });
+  }
 
   revalidatePath('/products');
   revalidatePath('/products/my-products');

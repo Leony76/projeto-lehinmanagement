@@ -1,7 +1,7 @@
 'use server'
 
 import prisma from "../lib/prisma"
-import { BoughtProduct, UserProductsPutToSaleDTO } from "../types/userProductDTO";
+import { BoughtProduct } from "../types/userProductDTO";
 import { Prisma } from "@prisma/client";
 import { getRequiredSession } from "../lib/get-session-user";
 import { ProductDTO } from "../types/productDTO";
@@ -10,22 +10,24 @@ export const getProducts = async(): Promise<ProductDTO[]> => {
 
   const user = (await getRequiredSession()).user;
 
-  const bringDeactivatedProductsToSeller: Prisma.ProductFindManyArgs = user.role === 'CUSTOMER' 
+  const productsToBringByRole: Prisma.ProductFindManyArgs = 
+  user.role === 'CUSTOMER' 
   ? { where: { 
-      isActive: true,
-    } }
+      NOT: [
+        { status: 'DELETED' },
+        { status: 'REMOVED' },
+      ],
+    }}
   : user.role === 'SELLER' ? {
     where: {
-      OR: [
-        { isActive: true },
-        { sellerId: user.id },
-      ]
+      NOT: { status: 'DELETED' },  
     }
   } : {
     where: {
+      NOT: { status: 'DELETED' },
       OR: [
-        { isActive: true     },
-        { deletedBy: 'ADMIN' },
+        { status: 'ACTIVE' },
+        { removedBy: 'ADMIN' },
       ],  
     }
   };
@@ -36,7 +38,7 @@ export const getProducts = async(): Promise<ProductDTO[]> => {
     productSales, 
   ] = await Promise.all([
     prisma.product.findMany({
-      ...bringDeactivatedProductsToSeller,
+      ...productsToBringByRole,
       include: {
         seller: {
           select: {
@@ -130,47 +132,57 @@ export const getProducts = async(): Promise<ProductDTO[]> => {
   );
 
   return products.map(product => ({
-    id: product.id,
-    name: product.name,
-    category: product.category,
-    description: product.description,
-    imageUrl: product.imageUrl,
-    isActive: product.isActive,
-    removeJustify: product.adminActions[0]?.justification,
-    removedBy: product.deletedBy,
-    removedAt: product.deletedAt?.toISOString(),
-    stock: product.stock,
-    reservedStock: product.reservedStock,
-    createdAt: product.createdAt?.toISOString() ?? null,
-    updatedAt: product.updatedAt?.toISOString() ?? null,
-    price: product.price.toNumber(),
+    product: {
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      description: product.description,
+      price: product.price.toNumber(),
+      stock: product.stock,
+      reservedStock: product.reservedStock,
+      imageUrl: product.imageUrl,
+      createdAt: product.createdAt?.toISOString() ?? null,
+      updatedAt: product.updatedAt?.toISOString() ?? null,
 
-    supportMessages: product.supportMessages.map(msg => ({
-      id: msg.id,
-      sentAt: msg.createdAt.toISOString(),
-      type: msg.type,
-      subject: msg.subject,
-      message: msg.message,
-      sender: {
-        name: msg.sender.name ?? 'Desconhecido',
-        role: msg.sender.role ?? 'CUSTOMER',
-      },
-    
-      sentBy: msg.sentBy,
+      averageRating: avgRatingMap.get(product.id) ?? null,
+      salesCount: salesMap.get(product.id) ?? null,
+
+      status: product.status,
       
-      repliedAt: msg.repliedAt?.toISOString() ?? '??/??/??',
-      replyMessage: msg.reply ?? null,
-      replier: {
-        name: msg.replier?.name ?? 'Desconhecido',
-        role: msg.replier?.role ?? 'ADMIN',
+      removed: {
+        by: product.removedBy,
+        justify: product.adminActions[0]?.justification,
+        at: product.removedAt?.toISOString(),
+    
+        supportMessages: product.supportMessages.map(msg => ({
+          id: msg.id,
+          sentAt: msg.createdAt.toISOString(),
+          type: msg.type,
+          subject: msg.subject,
+          message: msg.message,
+          sender: {
+            name: msg.sender.name ?? 'Desconhecido',
+            role: msg.sender.role ?? 'CUSTOMER',
+          },
+        
+          sentBy: msg.sentBy,
+          
+          repliedAt: msg.repliedAt?.toISOString() ?? '??/??/??',
+          replyMessage: msg.reply ?? null,
+          replier: {
+            name: msg.replier?.name ?? 'Desconhecido',
+            role: msg.replier?.role ?? 'ADMIN',
+          },
+        })),
       },
-    })),
+    },
 
-    sellerId: product.seller.id,
-    sellerName: product.seller.name,
-    sellerRole: product.seller.role,
-    productSalesCount: salesMap.get(product.id) ?? null,
-    productAverageRating: avgRatingMap.get(product.id) ?? null,
+
+    seller: {
+      id: product.seller.id,
+      name: product.seller.name,
+      role: product.seller.role,
+    },
   }));
 }
 
@@ -279,13 +291,18 @@ export const getUserProducts = async (
 
 export const getUserProductsPutForSale = async (
   userId: string
-): Promise<UserProductsPutToSaleDTO[]> => {
+): Promise<ProductDTO[]> => {
   const products = await prisma.product.findMany({
     where: { 
       sellerId: userId,
+      NOT: { status: 'DELETED' }
     },
     include: {
-      seller: { select: { name: true } },
+      seller: { select: { 
+        id: true,
+        name: true,
+        role: true,
+      }},
       reviews: { select: { rating: true } }, 
       adminActions: {
         where: { action: 'PRODUCT_REMOVED' },
@@ -328,39 +345,51 @@ export const getUserProductsPutForSale = async (
         name: product.name,
         category: product.category,
         description: product.description,
-        imageUrl: product.imageUrl,
         price: product.price.toNumber(),
-        publishedAt: product.createdAt.toISOString(),
-        AverageRating: average, 
-        soldUnits: product._count.orderItems, 
         stock: product.stock,
+        reservedStock: product.reservedStock,
+        imageUrl: product.imageUrl,
+        createdAt: product.createdAt?.toISOString() ?? null,
         updatedAt: product.updatedAt?.toISOString() ?? null,
 
-        isActive: product.isActive,
-        removeJustify: product.adminActions[0]?.justification,
-        removedAt: product.deletedAt?.toISOString() ?? '??/??/??',
-        removedBy: product.deletedBy,
-        supportMessages: product.supportMessages.map(msg => ({
-          id: msg.id,
-          sentAt: msg.createdAt.toISOString(),
-          type: msg.type,
-          subject: msg.subject,
-          message: msg.message,
-          sender: {
-            name: msg.sender.name ?? 'Desconhecido',
-            role: msg.sender.role,
-          },
-          sentBy: msg.sentBy,
-          repliedAt: msg.repliedAt?.toISOString() ?? '??/??/??',
-          replyMessage: msg.reply,
-          replier: {
-            name: msg.replier?.name ?? 'Desconhecido',
-            role: msg.replier?.role ?? 'ADMIN',
-          },
-        })), 
+        averageRating: average.toString(),
+        salesCount: product._count.orderItems,
+
+        status: product.status,
+        
+        removed: {
+          by: product.removedBy,
+          justify: product.adminActions[0]?.justification,
+          at: product.removedAt?.toISOString(),
+      
+          supportMessages: product.supportMessages.map(msg => ({
+            id: msg.id,
+            sentAt: msg.createdAt.toISOString(),
+            type: msg.type,
+            subject: msg.subject,
+            message: msg.message,
+            sender: {
+              name: msg.sender.name ?? 'Desconhecido',
+              role: msg.sender.role ?? 'CUSTOMER',
+            },
+          
+            sentBy: msg.sentBy,
+            
+            repliedAt: msg.repliedAt?.toISOString() ?? '??/??/??',
+            replyMessage: msg.reply ?? null,
+            replier: {
+              name: msg.replier?.name ?? 'Desconhecido',
+              role: msg.replier?.role ?? 'ADMIN',
+            },
+          })),
+        },
       },
+
+
       seller: {
-        name: product.seller.name ?? '[Desconhecido]',
+        id: product.seller.id,
+        name: product.seller.name,
+        role: product.seller.role,
       },
     };
   });

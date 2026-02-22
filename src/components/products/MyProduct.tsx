@@ -6,7 +6,7 @@ import Button from '../form/Button';
 import { UserProductOrdersFilterValue } from '@/src/constants/generalConfigs';
 import { AiOutlineMessage } from 'react-icons/ai';
 import { buttonColorsScheme } from '@/src/constants/systemColorsPallet';
-import { BoughtProduct, FiltrableUserProduct, UserProductDTO, UserProductsPutToSaleDTO } from '@/src/types/userProductDTO';
+import { BoughtProduct, FiltrableUserProduct } from '@/src/types/userProductDTO';
 import Rating from '../ui/Rating';
 import { FaRegTrashCan } from 'react-icons/fa6';
 import { motion } from 'framer-motion';
@@ -17,10 +17,8 @@ import RemoveUserProduct from '../modal/Orders/RemoveUserProduct';
 import ProductComment from '../modal/Product/ProductComment';
 import { useUserProductLogic } from '@/src/hooks/pageLogic/useUserProductLogic';
 import ProductInfo from '../modal/Product/ProductInfo';
-import EditProductJustify from '../modal/Product/EditProductJustify';
 import EditProductForm from '../form/EditProductForm';
 import { ProductDTO } from '@/src/types/productDTO';
-import { ProductPageModals } from '@/src/types/modal';
 import Modal from '../modal/Modal';
 import { LuMessageCircleWarning } from 'react-icons/lu';
 import { formattedDate } from '@/src/utils/formattedDate';
@@ -107,17 +105,17 @@ const MyProduct = ({
           </div>
         </div>
 
-        {logic.isPublished && !(logic.productData as UserProductsPutToSaleDTO['product']).isActive &&
+        {logic.isPublished && logic.userProductForSale.status === 'REMOVED' &&
           <span className='text-red py-1 bg-linear-to-r from-transparent via-red/50 to-transparent text-center -mt-0.75 mb-1'>
-            {(logic.productData as UserProductsPutToSaleDTO['product']).removedBy === 'ADMIN'
+            {logic.userProductForSale.removed.by === 'ADMIN'
               ? 'Removido pelo sistema'
               : 'Removido por você'
             }
           </span>
         }
 
-        {logic.isPublished && !logic.userProductForSale.isActive
-        && logic.userProductForSale.removedBy === 'ADMIN' && 
+        {logic.isPublished && logic.userProductForSale.status === 'REMOVED'
+        && logic.userProductForSale.removed.by === 'ADMIN' && 
           <div className='flex mb-1  gap-3'>
             <Button
               label='Ver motivo'
@@ -126,7 +124,7 @@ const MyProduct = ({
               style='flex-1'
               onClick={() => logic.setActiveModal('PRODUCT_REMOVE_JUSTIFY')}
             />
-            {(logic.productData as UserProductsPutToSaleDTO['product']).supportMessages.length > 0 &&
+            {(logic.productData as ProductDTO['product']).removed.supportMessages.length > 0 &&
               <Button
                 icon={LuMessageCircleWarning}
                 type='button'
@@ -163,21 +161,40 @@ const MyProduct = ({
 
         {logic.isPublished &&
           <div className="flex gap-2 mt-1">
+            {logic.userProductForSale.status === 'REMOVED' && logic.userProductForSale.removed.by === 'SELLER' &&
+              <Button
+                type="button"
+                label="Repor"
+                style={`flex-1 dark:bg-green-500 ${buttonColorsScheme.green}`}
+                onClick={() => logic.setActiveModal('REACTIVE_PRODUCT_CONFIRM')}
+              />
+            }
+
             <Button
               type="button"
               label="Editar"
               style={`flex-1 dark:bg-yellow-500 ${buttonColorsScheme.yellow}`}
               onClick={() => {
                 logic.setActiveModal('EDIT_PRODUCT');
-                logic.setProductToBeEdited(logic.productData as unknown as ProductDTO);
+                logic.setProductToBeEdited(logic.productData as ProductDTO['product']);
               }}
             />
-            <Button
-              type="button"
-              label="Remover"
-              style={`flex-1 ${buttonColorsScheme.red}`}
-              onClick={() => logic.setActiveModal('REMOVE_PRODUCT_FOR_SALE_CONFIRM')}
-            />
+
+            {logic.userProductForSale.status === 'REMOVED' ? (
+              <Button
+                type="button"
+                label="Excluir"
+                style={`flex-1 ${buttonColorsScheme.red}`}
+                onClick={() => logic.setActiveModal('DELETE_PRODUCT_FOR_SALE_CONFIRM')}
+              />
+            ) : (
+              <Button
+                type="button"
+                label="Remover"
+                style={`flex-1 ${buttonColorsScheme.red}`}
+                onClick={() => logic.setActiveModal('REMOVE_PRODUCT_FOR_SALE_CONFIRM')}
+              />
+            )}
           </div>
         }
       </div>
@@ -290,17 +307,17 @@ const MyProduct = ({
           price: logic.productData.price,
           stock: logic.productData.stock,
           salesCount: logic.isPublished 
-            ? (userProduct as UserProductsPutToSaleDTO).product.soldUnits 
-            : (userProduct as any).orders?.reduce((acc: number, curr: any) => acc + curr.items.length, 0) ?? 0,
+            ? (userProduct as ProductDTO).product.salesCount ?? 0
+            : (userProduct as BoughtProduct).orders?.reduce((acc: number, curr: any) => acc + curr.items.length, 0) ?? 0,
           publishedAt: logic.isPublished 
-            ? (userProduct as UserProductsPutToSaleDTO).product.publishedAt 
+            ? (userProduct as ProductDTO).product.createdAt
             : (userProduct as BoughtProduct).createdAt,
 
           updatedAt: logic.isPublished 
-            ? ((userProduct as UserProductsPutToSaleDTO).product.updatedAt ?? (userProduct as UserProductsPutToSaleDTO).product.publishedAt)
+            ? ((userProduct as ProductDTO).product.updatedAt ?? (userProduct as ProductDTO).product.createdAt)
             : (userProduct as BoughtProduct).createdAt,
           rating: logic.isPublished 
-            ? (logic.productData as any).AverageRating 
+            ? (logic.productData as ProductDTO['product']).averageRating
             : 1
         }}
         actions={{
@@ -374,8 +391,8 @@ const MyProduct = ({
           <span className='text-gray flex gap-2'>
             Removido em:
             <span className='text-yellow'>
-              {logic.userProductForSale.removedAt 
-                ? formattedDate(logic.userProductForSale.removedAt)
+              {logic.userProductForSale.removed?.at !== undefined 
+                ? formattedDate(logic.userProductForSale.removed.at)
                 : '??/??/??'
               }
             </span>
@@ -383,7 +400,7 @@ const MyProduct = ({
           <div>
             <label className='text-secondary-dark'>Justificativa:</label>
             <p className='text-primary-middledark bg-primary-ultralight/20 p-1 pl-2 rounded-md'>
-              {logic.userProductForSale.removeJustify}
+              {logic.userProductForSale.removed?.justify}
             </p>
           </div>
         </>
@@ -488,10 +505,59 @@ const MyProduct = ({
       }}>
         <UserMessage
           type='USER_MESSAGE'
-          conversations={logic.userProductForSale.supportMessages}
+          conversations={logic.userProductForSale.removed?.supportMessages}
           setSelectedConversation={logic.setSelectedConversation}
           setActiveModal={logic.setActiveModal as any}
         />
+      </Modal>
+
+      <Modal 
+      isOpen={
+        logic.activeModal === 'REACTIVE_PRODUCT_CONFIRM'
+        || logic.activeModal === 'DELETE_PRODUCT_FOR_SALE_CONFIRM'
+      } 
+      modalTitle={logic.activeModal === 'REACTIVE_PRODUCT_CONFIRM' 
+        ? 'Repor produto'
+        : 'Excluir produto'
+      } 
+      hasXClose
+      onCloseModalActions={() => logic.setActiveModal(null)}>
+        <p className='text-secondary'>
+          {logic.activeModal === 'REACTIVE_PRODUCT_CONFIRM' 
+            ? 'Tem certeza em repor esse produto ?'
+            : 'Tem certeza em excluir esse produto ?'
+          }         
+        </p>
+
+        <div className='flex gap-3 text-lg'>
+          <Button 
+            type={'submit'}
+            label='Sim'
+            loading={logic.loading}
+            loadingLabel='Processando'
+            style={`${buttonColorsScheme.green} flex-1`}
+            onClick={() => {
+              if (logic.activeModal === 'REACTIVE_PRODUCT_CONFIRM') {
+                logic.handleReactivateProduct(logic.userProductForSale.id);
+                return;
+              }
+              logic.handleDeleteProduct();
+            }}
+          />
+          <Button 
+            type={'submit'}
+            label='Não'
+            style={`${buttonColorsScheme.red} flex-1`}
+            onClick={() => {
+              if (logic.activeModal === 'REACTIVE_PRODUCT_CONFIRM') {
+                logic.setActiveModal('MESSAGE_TO_SUPPORT');
+                logic.setError('');
+                return;
+              }
+              logic.setActiveModal(null);
+            }}
+          />
+        </div>
       </Modal>
     </motion.div>
   )

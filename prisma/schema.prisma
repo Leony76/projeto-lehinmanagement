@@ -170,13 +170,16 @@ model Product {
   price          Decimal
   description    String? 
   stock          Int
-  reservedStock  Int          @default(0)
-  isActive       Boolean      @map("is_active")
-  deletedBy      DeletedBy?   @map("deleted_by")
+  reservedStock  Int            @default(0) @map("reserved_stock")
+  status         ProductStatus  @default(ACTIVE) 
+  removedBy      DeletedBy?     @map("removed_by")
+  deletedBy      DeletedBy?     @map("deleted_by")
   category       Category
   imageUrl       String       @map("image_url")
+
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime?    @updatedAt @map("updated_at")
+  removedAt      DateTime?    @map("removed_at")
   deletedAt      DateTime?    @map("deleted_at")
 
   orderItems     OrderItem[]
@@ -317,9 +320,8 @@ enum AdminAction {
   USER_ACTIVATED
   PRODUCT_REMOVED
   PRODUCT_EDITED
+  PRODUCT_DELETED
   PRODUCT_REACTIVATED
-  ORDER_CANCELED
-  PAYMENT_REFUNDED
   MESSAGE_REPLY
   MESSAGE_TO_USER
 }
@@ -345,4 +347,10 @@ enum SupportMessageType {
 enum SupportMessageSentBy {
   SUPPORT
   USER
+}
+
+enum ProductStatus {
+  ACTIVE
+  REMOVED
+  DELETED
 }

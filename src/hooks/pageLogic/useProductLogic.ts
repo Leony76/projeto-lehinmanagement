@@ -1,4 +1,4 @@
-import { reactivateRemovedProduct, removeProduct, updateProduct } from "@/src/actions/productActions";
+import { deleteProduct, reactivateRemovedProduct, removeProduct, updateProduct } from "@/src/actions/productActions";
 import { sendMessageToSupport } from "@/src/actions/userActions";
 import { CATEGORY_LABEL_MAP } from "@/src/constants/generalConfigs";
 import { useToast } from "@/src/contexts/ToastContext";
@@ -12,20 +12,23 @@ import { UserSituation, SupportMessageType, SupportMessageSentBy } from "@prisma
 import { useRef, useState } from "react";
 
 type Props = {
-  product: ProductDTO;
+  item: ProductDTO;
 }
 
-export const useProductLogic = ({product}:Props) => {
+export const useProductLogic = ({item}:Props) => {
 
   const { showToast } = useToast();
+
+  const product = item.product;
+  const seller = item.seller;
 
   const [formData, setFormData] = useState<AddProductFormData | null>(null); 
   const [selectedConversation, setSelectedConversation] = useState<UserAndSupportConversationDTO | null>(null);
 
   const datePutToSale = new Date(product.createdAt).toLocaleDateString("pt-BR");
-  const category = CATEGORY_LABEL_MAP[product.category];
+  const category = CATEGORY_LABEL_MAP[item.product.category];
 
-  const [productToBeEdited, setProductToBeEdited] = useState<ProductDTO | null>(null);
+  const [productToBeEdited, setProductToBeEdited] = useState<ProductDTO['product'] | null>(null);
 
   const [activeModal, setActiveModal] = useState<ProductPageModals | null>(null);
 
@@ -46,7 +49,7 @@ export const useProductLogic = ({product}:Props) => {
   const user = useUserStore((stats) => stats.user);
 
   const available = product.stock - product.reservedStock;
-  const canOrder = (product.sellerId !== user?.id) && (user?.role !== 'ADMIN');
+  const canOrder = (seller.id !== user?.id) && (user?.role !== 'ADMIN');
 
   const handleRemoveProduct = async(): Promise<void> => {
     if (loading!) return;
@@ -69,6 +72,24 @@ export const useProductLogic = ({product}:Props) => {
       setLoading(false);
     }
   };
+
+  const handleDeleteProduct = async(): Promise<void> => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      if (product.status === 'ACTIVE') throw new Error('Não se pode excluir um produto sem primeiro estar removido');
+
+      await deleteProduct(product.id);
+
+      showToast('Produto deletado com sucesso', 'success');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally {
+      setLoading(false);
+      setActiveModal(null);
+    }
+  }
 
   const handleSendMessageToSupport = async(): Promise<void> => {
     if (loading) return;
@@ -161,7 +182,7 @@ export const useProductLogic = ({product}:Props) => {
     setLoading(true);
     
     try {
-      if (user?.role !== 'ADMIN') throw new Error('Não autorizado');
+      if (seller.id !== user?.id) throw new Error('Não autorizado');
 
       await reactivateRemovedProduct(
         product.id,
@@ -183,12 +204,14 @@ export const useProductLogic = ({product}:Props) => {
   return {
     user,
     error,
+    seller,
     loading,
     preview,
     canOrder,
     category,
     available,
     imageFile,
+    product,
     imageError,
     activeModal,
     editJustify,
@@ -204,6 +227,7 @@ export const useProductLogic = ({product}:Props) => {
     setSelectedConversation,
     handleReactiveProduct,
     setProductToBeEdited,
+    handleDeleteProduct,
     handleRemoveProduct,
     handleEditProduct,
     setSupportMessage,

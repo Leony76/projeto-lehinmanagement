@@ -1,10 +1,10 @@
-import { rateCommentProduct, removeProduct, updateProduct } from "@/src/actions/productActions";
+import { deleteProduct, rateCommentProduct, reactivateRemovedProduct, removeProduct, updateProduct } from "@/src/actions/productActions";
 import { UserProductOrdersFilterValue, CATEGORY_LABEL_MAP } from "@/src/constants/generalConfigs";
 import { useToast } from "@/src/contexts/ToastContext";
 import { UserProductPageModals } from "@/src/types/modal";
 import { useState, useEffect, useRef } from "react";
 import { useLockScrollY } from "../useLockScrollY";
-import { BoughtProduct, FiltrableUserProduct, UserProductDTO, UserProductsPutToSaleDTO } from "@/src/types/userProductDTO";
+import { BoughtProduct, FiltrableUserProduct } from "@/src/types/userProductDTO";
 import { AddProductFormData } from "@/src/schemas/addProductSchema";
 import { ProductDTO } from "@/src/types/productDTO";
 import { useUserStore } from "../store/useUserStore";
@@ -31,7 +31,7 @@ export const useUserProductLogic = ({ userProduct }:Props) => {
   ;
 
   const [formData, setFormData] = useState<AddProductFormData | null>(null); 
-  const [productToBeEdited, setProductToBeEdited] = useState<ProductDTO | null>(null);
+  const [productToBeEdited, setProductToBeEdited] = useState<ProductDTO['product'] | null>(null);
   
 
   const [activeModal, setActiveModal] = useState<UserProductPageModals | null>(null);
@@ -44,11 +44,11 @@ export const useUserProductLogic = ({ userProduct }:Props) => {
   const [imageError, setImageError] = useState<string | null>(null);
   const [supportMessage, setSupportMessage] = useState<string>('');
 
-  const userProductForSale = (productData as UserProductsPutToSaleDTO['product']);
+  const userProductForSale = (productData as ProductDTO['product']);
 
   const initialRating = 'productRating' in userProduct 
     ? userProduct.productRating 
-    : (userProduct.product.AverageRating ?? 0);
+    : (userProduct.product.averageRating ?? 0);
 
   const dateString = 'publishedAt' in productData 
     ? productData.publishedAt 
@@ -61,7 +61,7 @@ export const useUserProductLogic = ({ userProduct }:Props) => {
   const [selectedConversation, setSelectedConversation] = useState<UserAndSupportConversationDTO | null>(null);
   
 
-  const [rating, setRating] = useState<number>(initialRating);
+  const [rating, setRating] = useState<number>(Number(initialRating));
 
   const datePutToSale = new Date(dateString).toLocaleDateString("pt-BR");
 
@@ -219,6 +219,40 @@ export const useUserProductLogic = ({ userProduct }:Props) => {
     }
   }
 
+  const handleDeleteProduct = async(): Promise<void> => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      if (userProductForSale.status === 'ACTIVE') throw new Error('Não se pode excluir um produto sem primeiro estar removido');
+
+      await deleteProduct(userProductForSale.id);
+
+      showToast('Produto deletado com sucesso', 'success');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally {
+      setLoading(false);
+      setActiveModal(null);
+    }
+  }
+
+  const handleReactivateProduct = async(productId:number): Promise<void> => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      await reactivateRemovedProduct(productId);
+
+      showToast('Produto reposto com sucesso', 'success');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally { 
+      setLoading(false);
+      setActiveModal(null);
+    }
+  }
+
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
@@ -250,6 +284,8 @@ export const useUserProductLogic = ({ userProduct }:Props) => {
     userProductForSale,
     supportMessage,
     selectedConversation,
+    handleDeleteProduct,
+    handleReactivateProduct,
     setSelectedConversation,
     setSupportMessage,
     setImageFile,

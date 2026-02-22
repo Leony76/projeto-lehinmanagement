@@ -15,11 +15,11 @@ import SwitchRenderViewButtons from "@/src/components/ui/SwitchRenderViewButtons
 import { useUserStore } from "@/src/hooks/store/useUserStore";
 
 type Props = {
-  products: ProductDTO[];
+  items: ProductDTO[];
 };
 
 const Products = ({ 
-  products,
+  items,
 }: Props) => {
 
   const user = useUserStore((s) => s.user);
@@ -34,25 +34,26 @@ const Products = ({
   const translatedCategoryFilter = categoryFilter ? CATEGORY_LABEL_MAP[categoryFilter] : '';
   
   const filteredProducts = filteredSearchForProducts(
-    products,
+    items,
     search,
     advancedFilter,
     categoryFilter,
+    view === 'REMOVED',
   );
 
-  const displayProducts = filteredProducts.filter((product) => 
+  const displayProducts = filteredProducts.filter((item) => 
     view === 'ACTIVE' 
-      ? product.isActive !== false 
-      : product.isActive === false
+      ? item.product.status !== 'REMOVED'
+      : item.product.status === 'REMOVED'
   );
 
   const hasProductsToDisplay = displayProducts.length > 0;
-  const hasRemovedProducts = filteredProducts.some((product) => product.isActive === false);
+  const hasRemovedProducts = filteredProducts.some((item) => item.product.status === 'REMOVED');
 
-  const renderedProducts = displayProducts.map((product) => (
+  const renderedProducts = displayProducts.map((item) => (
     <Product 
-      key={product.id} 
-      product={product} 
+      key={item.product.id} 
+      item={item} 
     />
   ));
     

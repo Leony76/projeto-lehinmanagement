@@ -18,7 +18,7 @@ import Error from '../ui/Error'
 import { useUserStore } from '@/src/hooks/store/useUserStore';
 
 type Props = {
-  productToBeEdited: ProductDTO | null,
+  productToBeEdited: ProductDTO['product'] | null,
   onCloseActions: () => void;
   isOpen: boolean;
   actions: {

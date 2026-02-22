@@ -1,35 +1,9 @@
-import { Category, DeletedBy } from "@prisma/client";
-import { UserAndSupportConversationDTO } from "./UserAndSupportConversationDTO";
+import { Category, DeletedBy, ProductStatus } from "@prisma/client";
+import { ProductDTO } from "./productDTO";
 
-export type UserProductsPutToSaleDTO = {
-  product: {
-    id: number;
-  
-    name: string;
-    category: Category;
-    description: string | null;
-    publishedAt: string;
-    updatedAt: string | null;
-    AverageRating: number | null;
-
-    isActive: boolean;
-    removeJustify: string | undefined;
-    removedAt: string | undefined;
-    removedBy: DeletedBy | null;
-    supportMessages: UserAndSupportConversationDTO[];
-
-    stock: number;
-    price: number;
-
-    imageUrl: string;
-
-    soldUnits: number;
-
-  };
-  seller: {
-    name: string;
-  };
-};
+// export type UserProductsPutToSaleDTO = {
+//   product: ProductDTO;
+// };
 
 export type BoughtProduct = {
   id: number;
@@ -65,7 +39,7 @@ export type UserProductDTO = {
   role: 'SELLER',
 
   boughtProducts: BoughtProduct[];
-  publishedProducts: UserProductsPutToSaleDTO[];
+  publishedProducts: ProductDTO[];
 };
 
-export type FiltrableUserProduct = BoughtProduct | UserProductsPutToSaleDTO;
+export type FiltrableUserProduct = BoughtProduct | ProductDTO;

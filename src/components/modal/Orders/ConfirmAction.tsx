@@ -116,10 +116,11 @@ const ConfirmAction = ({
         </span>
         </>
       ) : (  
+        hasWarning && 
         <span className='text-yellow-dark flex items-center gap-1'>
           <WarningInfo
             text={
-              hasWarning && isActionIrreversible 
+              isActionIrreversible 
               ? 'Essa ação é irreversível'
               : 'Essa ação pode ser revertida depois'
             }

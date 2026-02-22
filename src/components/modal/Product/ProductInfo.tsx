@@ -20,7 +20,7 @@ type Props = {
     salesCount: number;
     publishedAt: string;
     updatedAt: string;
-    rating: string | null;
+    rating: string | null | number;
   };
   actions: {
     onImageClick: () => void;

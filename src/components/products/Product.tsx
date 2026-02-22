@@ -31,14 +31,14 @@ import UserMessage from '../modal/Users/UserMessage';
 import ConfirmAction from '../modal/Orders/ConfirmAction';
 
 type Props = {
-  product: ProductDTO;
+  item: ProductDTO;
 }
 
 const Product = ({
-  product,
+  item,
 }:Props) => { 
 
-  const { ...logic } = useProductLogic({ product });
+  const { ...logic } = useProductLogic({ item });
 
   return (
     <motion.div
@@ -54,8 +54,8 @@ const Product = ({
     >
       <div className={styles.imageContainer}>
         <Image
-          src={product.imageUrl}
-          alt={product.name}
+          src={logic.product.imageUrl}
+          alt={logic.product.name}
           fill
           className={styles.image}
         />
@@ -63,7 +63,7 @@ const Product = ({
 
       <div className={styles.productInfosContainer}>
         <h3 className={styles.name}>
-          {product.name}
+          {logic.product.name}
         </h3>
         <div className={styles.category_date_ratingContainer}>
           <div className={styles.category_date}>
@@ -72,20 +72,20 @@ const Product = ({
             <span>{logic.datePutToSale}</span>
           </div>
           <div className={styles.rating}>
-            {!product.productAverageRating 
+            {!logic.product.averageRating 
               ? <IoStarOutline/>
               : <IoStar/> 
             }
-            {product.productAverageRating ?? 'Não avaliado'}
+            {logic.product.averageRating ?? 'Não avaliado'}
           </div>
-        {(product.sellerRole !== 'ADMIN') ? (       
+        {(logic.seller.role !== 'ADMIN') ? (       
           <div className={styles.sellerContainer}>
             <span className={styles.label}>
               Vendedor(a):
             </span> 
-            {product.sellerName === logic.user?.name
-              ? getNameAndSurname(product.sellerName) + ' (Você)'
-              : getNameAndSurname(product.sellerName)
+            {logic.seller.name === logic.user?.name
+              ? getNameAndSurname(logic.seller.name) + ' (Você)'
+              : getNameAndSurname(logic.seller.name)
             }
           </div>
         ) : (
@@ -95,12 +95,12 @@ const Product = ({
         )}
         </div>
         <div className={styles.price_stockContainer}>
-          {product.stock > 0 ? (
+          {logic.product.stock > 0 ? (
             <span className={styles.stock.withStock}>
               <span className={productCardSetup.stockLabel}>
                 Em estoque:
               </span> 
-              {product.stock}
+              {logic.product.stock}
             </span>
           ) : (
             <span className={styles.stock.withoutStock}>
@@ -109,7 +109,7 @@ const Product = ({
           )}
           <div className={styles.price_productInfoContainer}>
             <span className={styles.price}>
-              {formatCurrency(product.price)}
+              {formatCurrency(logic.product.price)}
             </span>
             <Button 
               type={'button'}
@@ -120,16 +120,16 @@ const Product = ({
           </div>
         </div>
 
-      {!product.isActive &&
+      {logic.product.status === 'REMOVED' &&
         <span className='text-red py-1 bg-linear-to-r from-transparent via-red/50 to-transparent text-center -mt-0.75 mb-1'>
-          {product.removedBy === 'ADMIN'
+          {logic.product.removed.by === 'ADMIN'
             ? 'Removido pelo sistema'
             : 'Removido por você'
           }
         </span>
       }
 
-      {!product.isActive && product.removedBy === 'ADMIN' && 
+      {logic.product.status === 'REMOVED' && logic.product.removed.by === 'ADMIN' && 
         <div className='flex mb-1  gap-3'>
           <Button
             label='Ver motivo'
@@ -137,7 +137,7 @@ const Product = ({
             style='flex-1'
             onClick={() => logic.setActiveModal('PRODUCT_REMOVE_JUSTIFY')}
           />
-          {product.supportMessages.length > 0 &&
+          {logic.product.removed.supportMessages.length > 0 &&
             <Button
               icon={LuMessageCircleWarning}
               type='button'
@@ -166,12 +166,21 @@ const Product = ({
         )
       ) : (
         <div className="flex gap-2">
-          {(!product.isActive && logic.user?.role === 'ADMIN') ? ( 
+          {(logic.product.status === 'REMOVED') ? ( 
             <Button
             type="button"
-            label="Ativar"
+            label={`${logic.user?.role === 'ADMIN' 
+              ? 'Ativar'
+              : 'Repor'
+            }`}
             style={`flex-1 dark:bg-green-500 ${buttonColorsScheme.green}`}
-            onClick={() => logic.setActiveModal('ACTIVE_PRODUCT')}
+            onClick={() => {
+              if (logic.user?.role === 'SELLER') {
+                logic.setActiveModal('ACTIVE_PRODUCT_CONFIRM');
+                return;
+              }
+              logic.setActiveModal('ACTIVE_PRODUCT')
+            }}
             />           
           ) : (
             <Button
@@ -180,17 +189,26 @@ const Product = ({
               style={`flex-1 dark:bg-yellow-500 ${buttonColorsScheme.yellow}`}
               onClick={() => {
                 logic.setActiveModal('EDIT_PRODUCT');
-                logic.setProductToBeEdited(product);
+                logic.setProductToBeEdited(logic.product);
               }}
             />
           )}
 
-          <Button
-            type="button"
-            label="Remover"
-            style={`flex-1 ${buttonColorsScheme.red}`}
-            onClick={() => logic.setActiveModal('CONFIRM_REMOVE_PRODUCT')}
-          />
+          {logic.product.status === 'ACTIVE' ? (
+            <Button
+              type="button"
+              label="Remover"
+              style={`flex-1 ${buttonColorsScheme.red}`}
+              onClick={() => logic.setActiveModal('CONFIRM_REMOVE_PRODUCT')}
+            />
+          ) : (
+            <Button
+              type="button"
+              label="Excluir"
+              style={`flex-1 ${buttonColorsScheme.red}`}
+              onClick={() => logic.setActiveModal('DELETE_PRODUCT_CONFIRM')}
+            />
+          )}
         </div>
       )}
       </div>
@@ -235,7 +253,7 @@ const Product = ({
             logic.handleRemoveProduct();
           },
         }}
-        product={{ sellerName: product.sellerName ?? '[Desconhecido]' }}
+        product={{ sellerName: logic.seller.name ?? '[Desconhecido]' }}
         misc={{ 
           error: logic.error, 
           loading: logic.loading, 
@@ -303,16 +321,16 @@ const Product = ({
           onCloseActions: () => logic.setActiveModal(null),
         }}
         product={{
-          imageUrl: product.imageUrl,
-          name: product.name,
+          imageUrl: logic.product.imageUrl,
+          name: logic.product.name,
           category: logic.category,
-          description: product.description ?? '[Sem descrição]',
-          price: product.price,
-          stock: product.stock,
-          publishedAt: product.createdAt,
-          updatedAt: product.updatedAt ?? 'Sem atualização',
-          salesCount: product.productSalesCount ?? 0,
-          rating: product.productAverageRating ?? 'Não avaliado',
+          description: logic.product.description ?? '[Sem descrição]',
+          price: logic.product.price,
+          stock: logic.product.stock,
+          publishedAt: logic.product.createdAt,
+          updatedAt: logic.product.updatedAt ?? 'Sem atualização',
+          salesCount: logic.product.salesCount ?? 0,
+          rating: logic.product.averageRating ?? 'Não avaliado',
         }}
         actions={{
           onImageClick: () => logic.setActiveModal('EXPAND_IMAGE'),
@@ -325,14 +343,14 @@ const Product = ({
           onCloseActions: () => logic.setActiveModal('PRODUCT_INFO'),
         }}
         image={{
-          imageUrl: product.imageUrl,
-          name: product.name,
+          imageUrl: logic.product.imageUrl,
+          name: logic.product.name,
         }}
       />
 
       <OrderProduct
         activeModal={logic.activeModal}
-        selectedProduct={product}
+        selectedProduct={logic.product}
         setActiveModal={logic.setActiveModal} 
       />
 
@@ -378,8 +396,8 @@ const Product = ({
           <span className='text-gray flex gap-2'>
             Removido em:
             <span className='text-yellow'>
-              {product.removedAt 
-                ? formattedDate(product.removedAt)
+              {logic.product.removed.at 
+                ? formattedDate(logic.product.removed.at)
                 : '??/??/??'
               }
             </span>
@@ -387,7 +405,7 @@ const Product = ({
           <div>
             <label className='text-secondary-dark'>Justificativa:</label>
             <p className='text-primary-middledark bg-primary-ultralight/20 p-1 pl-2 rounded-md'>
-              {product.removeJustify}
+              {logic.product.removed.justify}
             </p>
           </div>
         </>
@@ -492,7 +510,7 @@ const Product = ({
       }}>
         <UserMessage
           type='USER_MESSAGE'
-          conversations={product.supportMessages}
+          conversations={logic.product.removed.supportMessages}
           setSelectedConversation={logic.setSelectedConversation}
           setActiveModal={logic.setActiveModal as any}
         />
@@ -544,17 +562,35 @@ const Product = ({
       </Modal>
       
       <ConfirmAction
-        isOpen={logic.activeModal === 'ACTIVE_PRODUCT_CONFIRM'}
+        isOpen={
+          logic.activeModal === 'ACTIVE_PRODUCT_CONFIRM' 
+          || logic.activeModal === 'DELETE_PRODUCT_CONFIRM'        
+        }
         loading={logic.loading}
-        onAccept={{handleSubmit: logic.handleReactiveProduct}}
+        onAccept={{handleSubmit: logic.activeModal === 'ACTIVE_PRODUCT_CONFIRM' 
+          ? logic.handleReactiveProduct
+          : logic.handleDeleteProduct
+        }}
         decision={'ACCEPT'}
         customSentence={{
           title: 'Confirmar ação',
-          sentence: `Tem certeza que deseja reativar esse produto do vendedor ${product.sellerName} ?`
+          sentence: logic.activeModal === 'ACTIVE_PRODUCT_CONFIRM' 
+            ? logic.user?.role === 'ADMIN' 
+              ? `Tem certeza que deseja reativar esse produto do vendedor ${logic.seller.name}?`
+              : `Tem certeza que deseja reativar esse produto?`
+            : logic.user?.role === 'ADMIN'
+              ? `Tem certeza que deseja deletar esse produto do vendedor ${logic.seller.name}?`
+              : `Tem certeza que deseja deletar esse produto?`
         }}
         isActionIrreversible
-        hasWarning
-        onCloseActions={() => logic.setActiveModal('ACTIVE_PRODUCT')}
+        hasWarning={logic.user?.role === 'ADMIN' || logic.activeModal === 'DELETE_PRODUCT_CONFIRM'}
+        onCloseActions={() => {
+          if (logic.user?.role === 'ADMIN' && logic.activeModal === 'ACTIVE_PRODUCT_CONFIRM') {
+            logic.setActiveModal('ACTIVE_PRODUCT')
+            return;
+          }
+          logic.setActiveModal(null);
+        }}
       />
     </motion.div>
   )
