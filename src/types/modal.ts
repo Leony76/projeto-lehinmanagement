@@ -15,6 +15,10 @@ export type UsersPageModals = GenericPageModals
 | 'SUPPORT_MESSAGE_TO_USER_CONFIRM'
 ;
 
+export type SettingsPageModals = 
+| 'IMAGE_EXPAND'
+;
+
 export type UserDeactivatedMenuModals = 
 | 'CONTACT_SUPPORT' 
 | 'CONFIRM_SEND_MESSAGE' 

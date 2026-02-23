@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import prisma from "../lib/prisma";
 import { getRequiredSession } from "../lib/get-session-user";
-import { Prisma, SupportMessageSentBy, SupportMessageType, UserSituation } from "@prisma/client";
+import { SupportMessageSentBy, SupportMessageType, UserSituation } from "@prisma/client";
+import { UserInfosEditFormData } from "../schemas/editUserInfosSchema";
 
 export async function toggleDarkTheme(darkTheme: boolean) {
   const session = await getRequiredSession();
@@ -169,3 +170,19 @@ export async function toggleMessageAfteruserActivated(
   revalidatePath('/dashboard');
 }
 
+export async function updateUserData(
+  data: UserInfosEditFormData,
+) {
+  const user = (await getRequiredSession()).user;
+  
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { 
+      name: data.name,
+      email: data.email,
+      image: data.image as string,
+    },
+  });
+
+  revalidatePath('/settings');
+}

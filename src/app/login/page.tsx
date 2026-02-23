@@ -15,6 +15,7 @@ import { loginSchema, LoginFormData } from '@/src/schemas/loginSchema';
 import { useRouter } from 'next/navigation';
 import Error from '@/src/components/ui/Error';
 import { loginStyle as style } from '@/src/styles/login.style';
+import { useUserStore } from '@/src/hooks/store/useUserStore';
 
 const Login = () => {
 
@@ -42,7 +43,11 @@ const Login = () => {
         setError(null);
         setLoading(true);
       }, 
-      onSuccess: () => {
+      onSuccess: (ctx) => {
+        if (ctx.data) {
+          useUserStore.getState().setUser(ctx.data.user, ctx.data.session);
+        }
+
         router.push("/dashboard?success=login");
       },
       onError: (ctx) => {
