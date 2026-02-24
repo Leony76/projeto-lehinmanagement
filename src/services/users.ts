@@ -105,6 +105,8 @@ export async function getCustomers(): Promise<CustomerDTO[]> {
       createdAt: user.createdAt?.toISOString() ?? '',
       isActive: user.isActive,
       ordersDone: user.orders.length,
+      profileImageUrl: user.image,
+
       hasMessages: user._count.senderSupportMessage > 0,
   
       messages: allMessages.map((item) => ({
@@ -206,6 +208,7 @@ export async function getSellers(): Promise<SellerDTO[]> {
       role: 'SELLER',
       createdAt: seller.createdAt?.toISOString() ?? '',
       isActive: seller.isActive,
+      profileImageUrl: seller.image,
       hasMessages: seller._count.senderSupportMessage > 0,    
 
       messages: allMessages.map((item) => ({
@@ -288,6 +291,7 @@ export async function getAdmins(): Promise<AdminDTO[]> {
     name: admin.name ?? '',
     role: 'ADMIN',
     createdAt: admin.createdAt?.toISOString() ?? '',
+    profileImageUrl: admin.image ?? null,
     isActive: admin.isActive,
 
     hasMessages: admin._count.senderSupportMessage > 0,

@@ -17,6 +17,7 @@ export type UsersPageModals = GenericPageModals
 
 export type SettingsPageModals = 
 | 'IMAGE_EXPAND'
+| 'PASSWORD'
 ;
 
 export type UserDeactivatedMenuModals = 

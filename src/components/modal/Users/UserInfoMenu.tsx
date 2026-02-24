@@ -10,7 +10,7 @@ import LabelValue from '../../ui/LabelValue';
 import UserMostRecentActionInfoCard from '../../ui/UserMostRecentActionInfoCard';
 import Modal from '../Modal';
 import Image from 'next/image';
-import PlaceHolder from '@/public/my-interpretation-of-the-torque-twister-before-picture-on-v0-2p6oyytw55691.jpg'
+import PlaceHolder from '@/public/Profile_avatar_placeholder_large.png';
 import { UsersPageModals } from '@/src/types/modal';
 import NoContentFoundMessage from '../../ui/NoContentFoundMessage';
 import { useState } from 'react';
@@ -57,7 +57,7 @@ const UserInfoMenu = ({
 
           <div className="order-1 self-center hover:scale-[1.025] cursor-zoom-in hover:brightness-[1.2] hover:shadow-[0px_0px_15px_orange] transition duration-200 sm:order-2 h-fit w-fit mx-auto border-2 rounded-full p-2 my-2 border-primary">
             <Image
-              src={PlaceHolder}
+              src={user.profileImageUrl || PlaceHolder}
               alt={"placeholder"}
               height={270}
               width={270}
@@ -114,14 +114,14 @@ const UserInfoMenu = ({
                   <Button 
                     type={"button"}
                     label="Desativar conta"
-                    style={`px-5 ${buttonColorsScheme.red} w-fit h-fit`}        
+                    style={`px-5 ${buttonColorsScheme.red} w-fit text-sm`}        
                     onClick={() => modal.setActiveModal('DEACTIVATE_USER')}    
                   />
                 ) : !user.isActive && (
                   <Button 
                     type={"button"}
                     label="Ativar conta"
-                    style={`px-5 ${buttonColorsScheme.green} w-fit h-fit mt-auto`}        
+                    style={`px-5 ${buttonColorsScheme.green} w-fit mt-auto`}        
                     onClick={() => modal.setActiveModal('ACTIVATE_USER')}    
                   />
                 )

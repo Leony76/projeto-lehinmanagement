@@ -20,6 +20,8 @@ import { UserInfosEditFormData, userInfosEditSchema } from "@/src/schemas/editUs
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { authClient } from "@/src/lib/auth-client";
+import Modal from "@/src/components/modal/Modal";
+import Error from "@/src/components/ui/Error";
 
 const Settings = () => {
 
@@ -37,14 +39,22 @@ const Settings = () => {
   const userAvatar = user?.image;
 
   const [loading, setLoading] = useState<boolean>(false);
+  const [passwordStep, setPasswordStep] = useState<'VERIFY' | 'CHANGE' | null>(null)
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string>('');
 
   const [activeModal, setActiveModal] = useState<SettingsPageModals | null>(null);
   const [editInfos, setEditInfos] = useState<boolean>(false);
 
+  const [currentPassword, setCurrentPassword] = useState("");
+
+  const [newPassword, setNewPassword] = useState("");
+  const [newPasswordRepeat, setNewPasswordRepeat] = useState("");
+
   const isDark = useThemeStore((state) => state.isDark);
   const setDark = useThemeStore((state) => state.setDark);
+
 
   const { 
     register, 
@@ -59,7 +69,11 @@ const Settings = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setValue("image", file); 
+      setValue("image", file, { 
+        shouldValidate: true, 
+        shouldDirty: true,
+        shouldTouch: true 
+      }); 
 
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -83,18 +97,78 @@ const Settings = () => {
   }
 
 
+  const handleVerifyPassword = async () => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      const { error } = await authClient.changePassword({
+        currentPassword: currentPassword,
+        newPassword: currentPassword, 
+        revokeOtherSessions: false,
+      });
+
+      if (error) throw new window.Error("Senha atual incorreta");
+
+      setPasswordStep('CHANGE');
+    } catch (err:unknown) {
+      showToast(`${err}`, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (loading) return;
+    setLoading(true);
+
+    if (newPassword !== newPasswordRepeat) {
+      setError('A senhas não coincidem');
+      setLoading(false);
+      return;
+    } else if (newPassword.length < 6) {
+      setError('A nova senha deve ter no mínimo 6 caractéres');
+      setLoading(false);
+      return;
+    }
+
+    setError('');
+
+    try {
+      const { error } = await authClient.changePassword({
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+        revokeOtherSessions: true,
+      });
+
+      if (error) throw new window.Error(error.message);
+
+      showToast("A Senha foi alterada", "info");
+
+      passwordModalCloseActions();
+    } catch (err: any) {
+      showToast(err.message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSaveNewUserInfos = async(data: UserInfosEditFormData) => {
+    
     const result = userInfosEditSchema.safeParse(data);
 
     if (loading) return;
     setLoading(true);
 
     try {
-      if (!result.success) throw new Error(result.error.issues[0].message);
+      if (!result.success) throw new window.Error(result.error.issues[0].message);
 
       let finalImageUrl = userAvatar;
 
-      if (data.image instanceof File) {
+      const imageFile = data.image;
+      const isNewImage = imageFile && (imageFile instanceof File || (imageFile as any).size > 0);
+
+      if (isNewImage) {
         const formData = new FormData();
         formData.append("file", data.image);
 
@@ -103,7 +177,7 @@ const Settings = () => {
           body: formData,
         });
 
-        if (!res.ok) throw new Error("Falha no upload da imagem");
+        if (!res.ok) throw new window.Error("Falha no upload da imagem");
         
         const uploadData = await res.json();
         finalImageUrl = uploadData.url; 
@@ -120,10 +194,8 @@ const Settings = () => {
         image: finalImageUrl as string
       });
 
-      reset({
-        name: data.name,
-        email: data.email,
-      });
+      setValue("name", data.name);
+      setValue("email", data.email);
 
       await authClient.getSession();
 
@@ -137,6 +209,15 @@ const Settings = () => {
     }
   }
 
+  const passwordModalCloseActions = () => {
+    setActiveModal(null);
+    setPasswordStep(null);
+    setCurrentPassword("");
+    setError('');
+    setNewPassword("");
+    setNewPasswordRepeat("");
+  }
+
   useEffect(() => {
     if (session.data?.user) {
       setDisplayUser({
@@ -148,13 +229,13 @@ const Settings = () => {
   }, [session.data?.user]);
 
   useEffect(() => {
-    if (user) {
+    if (user && !loading && !editInfos) { 
       reset({
         name: user.name,
         email: user.email,
       });
     }
-  }, [user, reset]);
+  }, [user, reset, loading, editInfos]);
 
   return (
     <>
@@ -266,6 +347,10 @@ const Settings = () => {
                       type="button"
                       label="Alterar senha"
                       style={`w-fit px-5 ${buttonColorsScheme.yellow}`}
+                      onClick={() => {
+                        setActiveModal('PASSWORD');
+                        setPasswordStep('VERIFY');
+                      }}
                     />
 
                     <Button
@@ -298,6 +383,88 @@ const Settings = () => {
       </div>
     </div>
 
+    {/* ⇊ MODALS ⇊ */}
+
+    {/* PASSWORD VERIFY */}
+
+    <Modal 
+    isOpen={activeModal === 'PASSWORD'} 
+    onCloseModalActions={() => {
+      passwordModalCloseActions();
+    }}
+    hasXClose
+    modalTitle={passwordStep === 'VERIFY'
+      ? 'Verificar senha'
+      : 'Alterar senha'
+    } 
+    >
+      {passwordStep === 'VERIFY' ? (
+        <>
+        <p className="text-secondary-middledark">
+          Insira sua senha atual para continuar
+        </p>
+        <Input 
+          type="password" 
+          colorScheme="primary"
+          placeholder="Senha atual"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+        />
+        <Button 
+          label="Verificar"
+          loadingLabel="Processando"
+          loading={loading}
+          style={`w-full ${currentPassword.length === 0
+            ? 'pointer-events-none opacity-70'
+            : ''
+          }`}
+          onClick={handleVerifyPassword} 
+          type={"button"}        
+        />
+        </>
+      ) : (
+        <>
+        <p className="text-secondary-middledark">
+          Insira a nova senha:
+        </p>
+
+        <Input 
+          type="password" 
+          placeholder="Nova senha"
+          label="Nova senha"
+          value={newPassword}
+          onChange={(e) => {
+            if (newPassword.length >= 6) setError('');
+            setNewPassword(e.target.value);
+          }}
+        />
+
+        <Input 
+          label="Repetir nova senha"
+          type="password" 
+          placeholder="Nova senha"
+          value={newPasswordRepeat}
+          onChange={(e) => setNewPasswordRepeat(e.target.value)}
+        />
+
+        {error && <Error error={error}/>}
+
+        <Button 
+          label="Redefinir Senha"
+          loading={loading}
+          style={`w-full mt-2 ${buttonColorsScheme.green} ${newPassword.length === 0 || newPasswordRepeat.length === 0
+            ? 'pointer-events-none opacity-70'
+            : ''
+          }`}
+          loadingLabel="Processando"
+          onClick={handleUpdatePassword} 
+          type={"button"}        
+        />
+        </>
+      )}
+    </Modal>
+
+    {/* IMAGE EXPAND */}
 
     <ImageExpand 
       modal={{
