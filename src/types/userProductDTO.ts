@@ -31,10 +31,10 @@ export type BoughtProduct = {
   productAverageRating: string | null;
 }
 
-export type UserProductDTO = {
+export type UserProductDTO = | {
   role: 'CUSTOMER',
 
-  boughtProduct: BoughtProduct;
+  boughtProducts: BoughtProduct[];
 } | {
   role: 'SELLER',
 

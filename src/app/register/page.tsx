@@ -30,7 +30,6 @@ const Register = () => {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    mode: "onTouched" 
   });
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -100,7 +99,7 @@ const Register = () => {
 
           <Input
             label="Senha"
-            placeholder="Mínimo 6 caracteres"
+            placeholder="Mínimo 8 caracteres"
             type="password"
             colorScheme="secondary"
             style={{ container: 'mt-1' }}

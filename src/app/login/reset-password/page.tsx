@@ -4,7 +4,7 @@ import Link from 'next/link';
 import LRC from '@/public/LericoriaPadraoFogo2.png';
 import Image from 'next/image';
 import Input from '@/src/components/form/Input';
-import { titleColors, textColors } from '@/src/constants/systemColorsPallet';
+import { titleColors, textColors, buttonColorsScheme } from '@/src/constants/systemColorsPallet';
 import Button from '@/src/components/form/Button';
 import { useState } from 'react';
 import Error from '@/src/components/ui/Error';
@@ -56,9 +56,14 @@ const ResetPasswordPage = () => {
   if (!token) {
     return (
       <main className={style.mainContainer}>
-        <div className={style.innerContainer}>
-          <p className="text-red-500">Link de recuperação inválido ou expirado.</p>
-          <Link href="/login" className="text-blue-500 underline">Voltar para o login</Link>
+        <div className={style.innerContainer + ' gap-2 bg-linear-to-r from-transparent via-red/30 to-transparent py-2 '}>
+          <p className="text-red-500">
+            Link de recuperação inválido ou expirado.
+          </p>
+
+          <Link href="/login" className={`text-blue-500 px-5 ${buttonColorsScheme.secondary}`}>
+            Voltar para o login
+          </Link>
         </div>
       </main>
     );
@@ -113,8 +118,8 @@ const ResetPasswordPage = () => {
             label={'Alterar'}
             type='button'
             onClick={() => {
-              if (newPassword.length < 6) {
-                setError('A nova senha deve conter no mínimo 6 caracteres');
+              if (newPassword.length < 8) {
+                setError('A nova senha deve conter no mínimo 8 caracteres');
                 return; 
               }
               setError(''); 

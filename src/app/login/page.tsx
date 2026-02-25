@@ -29,7 +29,6 @@ const Login = () => {
     formState: { errors }
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    mode: 'onTouched'
   })
 
   const onSubmit = async (data: LoginFormData) => {
@@ -99,6 +98,10 @@ const Login = () => {
             {...register("password")}
             error={errors.password?.message}
           />
+
+          <Link className='text-cyan hover:underline w-fit text-sm' href={'/login/forgot-password'}>
+            Esqueci a senha
+          </Link>
 
           {error && <Error error={error}/>}
 

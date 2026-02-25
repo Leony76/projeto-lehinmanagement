@@ -23,7 +23,7 @@ export default async function MyProductsPage() {
       }
     : {
         role: 'CUSTOMER',
-        boughtProduct: boughtProducts[0], 
+        boughtProducts: boughtProducts, 
       };
 
   return (

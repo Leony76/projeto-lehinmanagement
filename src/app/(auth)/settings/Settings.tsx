@@ -126,8 +126,8 @@ const Settings = () => {
       setError('A senhas não coincidem');
       setLoading(false);
       return;
-    } else if (newPassword.length < 6) {
-      setError('A nova senha deve ter no mínimo 6 caractéres');
+    } else if (newPassword.length < 8) {
+      setError('A nova senha deve ter no mínimo 8 caractéres');
       setLoading(false);
       return;
     }
@@ -279,7 +279,7 @@ const Settings = () => {
             className={`relative sm:order-2 mx-auto order-1 transition-all duration-200 h-fit w-fit border-2 rounded-full p-2 my-2 border-primary 
               ${editInfos 
                 ? 'cursor-pointer hover:brightness-90'
-                : 'cursor-zoom-in hover:scale-[1.025] hover:brightness-[1.1] hover:shadow-[0px_0px_15px_rgba(255,165,0,0.5)]' // Efeito original
+                : 'cursor-zoom-in hover:scale-[1.025] hover:brightness-[1.1] hover:shadow-[0px_0px_15px_rgba(255,165,0,0.5)]' 
               }`}
             onClick={() => {
               if (editInfos) {
@@ -294,7 +294,7 @@ const Settings = () => {
                 alt={"avatar"}
                 height={270}
                 width={270}
-                className="rounded-full aspect-square object-cover pointer-events-none" // Adicione pointer-events-none aqui
+                className="rounded-full aspect-square object-cover pointer-events-none" 
               />
 
               {editInfos && (
@@ -434,7 +434,7 @@ const Settings = () => {
           label="Nova senha"
           value={newPassword}
           onChange={(e) => {
-            if (newPassword.length >= 6) setError('');
+            if (newPassword.length >= 8) setError('');
             setNewPassword(e.target.value);
           }}
         />

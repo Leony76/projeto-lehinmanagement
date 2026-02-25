@@ -30,19 +30,15 @@ const MyProducts = ({ userData }:Props) => {
 
   const currentList = useMemo(() => {
     if (userData.role === 'CUSTOMER') {
-      return userData.boughtProduct 
-        ? [userData.boughtProduct] 
-        : []
-      ;
-    } 
-    
-    if (userData.role === 'SELLER') {
-      return view === 'BOUGHT' 
-        ? (userData.boughtProducts || []) 
-        : (userData.publishedProducts || [])
-      ;
+      return userData.boughtProducts || [];
     }
-    
+
+    if (userData.role === 'SELLER') {
+      return view === 'BOUGHT'
+        ? (userData.boughtProducts || [])
+        : (userData.publishedProducts || []);
+    }
+
     return [];
   }, [userData, view]);
 
