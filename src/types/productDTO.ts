@@ -1,5 +1,6 @@
 import { Category, DeletedBy, ProductStatus, Role } from "@prisma/client";
 import { UserAndSupportConversationDTO } from "./UserAndSupportConversationDTO";
+import { ProductReviewsDTO } from "./productReviewsDTO";
 
 export type ProductDTO = {
   product: {
@@ -26,8 +27,10 @@ export type ProductDTO = {
   
       supportMessages: UserAndSupportConversationDTO[];
     };
-  };
 
+    reviews?: ProductReviewsDTO[];
+  };
+  
 
   seller: {
     id: string;

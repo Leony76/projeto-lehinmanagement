@@ -236,6 +236,7 @@ const MyProduct = ({
         onCloseActions={() => {
           logic.setActiveModal(null);
           logic.setError('');
+          logic.setProductComment('');
         }}
         onChange={{ textArea: (e) =>  {
           logic.setProductComment(e.target.value);
@@ -249,9 +250,9 @@ const MyProduct = ({
             logic.setActiveModal(null);
           }
         }}}
+        comment={logic.productComment}
         hasReview={!logic.isPublished ? (userProduct as BoughtProduct).hasReview : false}
         misc={{ error: logic.error }}
-
       />
 
       <ImageExpand modal={{

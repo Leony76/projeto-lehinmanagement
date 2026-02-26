@@ -29,6 +29,7 @@ import WarningInfo from '../ui/WarningInfo';
 import { LuMessageCircleWarning } from 'react-icons/lu';
 import UserMessage from '../modal/Users/UserMessage';
 import ConfirmAction from '../modal/Orders/ConfirmAction';
+import ProductReviews from '../modal/Product/ProductReviews';
 
 type Props = {
   item: ProductDTO;
@@ -334,7 +335,18 @@ const Product = ({
         }}
         actions={{
           onImageClick: () => logic.setActiveModal('EXPAND_IMAGE'),
+          setActiveModal: logic.setActiveModal,
         }}
+      />
+
+      <ProductReviews
+        modal={{
+          isOpen: logic.activeModal === 'PRODUCT_REVIEWS',
+          onCloseActions: () => {
+            logic.setActiveModal('PRODUCT_INFO');
+          }
+        }}
+        items={logic.reviews}
       />
 
       <ImageExpand

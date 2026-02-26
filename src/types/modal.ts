@@ -2,6 +2,7 @@ export type GenericPageModals  =
 | 'REMOVE_ORDER'
 | 'EXPAND_IMAGE'
 | 'ORDERS_FROM_PRODUCT'
+| 'PRODUCT_REVIEWS'
 ;
 
 export type UsersPageModals = GenericPageModals

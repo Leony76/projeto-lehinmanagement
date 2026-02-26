@@ -2,9 +2,10 @@
 
 import prisma from "../lib/prisma"
 import { BoughtProduct } from "../types/userProductDTO";
-import { Prisma } from "@prisma/client";
+import { Prisma, ProductReview, Role } from "@prisma/client";
 import { getRequiredSession } from "../lib/get-session-user";
 import { ProductDTO } from "../types/productDTO";
+import { ProductReviewsDTO } from "../types/productReviewsDTO";
 
 export const getProducts = async(): Promise<ProductDTO[]> => {
 
@@ -393,4 +394,44 @@ export const getUserProductsPutForSale = async (
       },
     };
   });
+};
+
+
+export const getProductReviews = async(): Promise<ProductReviewsDTO[]> => {
+  const productReviews = await prisma.productReview.findMany({
+    where: {
+      NOT: { comment: null },
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          role: true,
+          image: true,
+        }
+      }
+    }
+  });
+
+  return productReviews.map<ProductReviewsDTO>((item) => ({
+    productId: item.productId,
+
+    comment: {
+      id: item.id,
+      text: item.comment,
+      at: item.createdAt.toISOString(),
+    },
+
+    rating: {
+      rate: item.rating,
+    },
+
+    reviewer: {
+      id: item.user.id,
+      name: item.user.name ?? '[ Desconhecido ]',
+      role: item.user.role as Role,
+      profileImage: item.user.image,
+    },
+  }));
 };

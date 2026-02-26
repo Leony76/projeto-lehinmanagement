@@ -21,6 +21,7 @@ export const useProductLogic = ({item}:Props) => {
 
   const product = item.product;
   const seller = item.seller;
+  const reviews = item.product.reviews;
 
   const [formData, setFormData] = useState<AddProductFormData | null>(null); 
   const [selectedConversation, setSelectedConversation] = useState<UserAndSupportConversationDTO | null>(null);
@@ -206,6 +207,7 @@ export const useProductLogic = ({item}:Props) => {
     error,
     seller,
     loading,
+    reviews,
     preview,
     canOrder,
     category,
