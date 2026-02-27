@@ -1,12 +1,7 @@
-import Image from 'next/image';
 import Modal from '../Modal'
 import { ProductReviewsDTO } from '@/src/types/productReviewsDTO';
 import NoContentFoundMessage from '../../ui/NoContentFoundMessage';
-import Rating from '../../ui/Rating';
-import { ROLE_LABEL } from '@/src/constants/generalConfigs';
-import { timeAgo } from '@/src/utils/timeAgo';
-import { useState } from 'react';
-import { primaryColorScrollBar, secondaryColorScrollBar } from '@/src/styles/scrollBar.style';
+import { secondaryColorScrollBar } from '@/src/styles/scrollBar.style';
 import ProductReview from '../../ui/ProductReview';
 
 type Props = {

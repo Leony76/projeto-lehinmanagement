@@ -13,6 +13,7 @@ import { Category } from "@prisma/client";
 import { filteredSearchForProducts } from "@/src/utils/filters/filteredSearchForProducts";
 import SwitchRenderViewButtons from "@/src/components/ui/SwitchRenderViewButtons";
 import { useUserStore } from "@/src/hooks/store/useUserStore";
+import { Tooltip } from "@/src/components/ui/Tooltip";
 
 type Props = {
   items: ProductDTO[];
@@ -89,18 +90,23 @@ const Products = ({
         </div>
         
         {(user?.role !== 'CUSTOMER' && hasRemovedProducts !== undefined) &&
-          <SwitchRenderViewButtons 
-            onClick={{
-              setFirstView: () => setView('ACTIVE'),
-              setSecondView: () => setView('REMOVED'),
-            }} view={{
-              first: view === 'ACTIVE',
-              second: view === 'REMOVED',
-            }} label={{
-              first: "Ativos",
-              second: "Removidos"
-            }}
-          />
+          <Tooltip 
+          position="top" 
+          text="Alterne entre os produtos disponíveis para compra e os removidos por você"
+          >
+            <SwitchRenderViewButtons 
+              onClick={{
+                setFirstView: () => setView('ACTIVE'),
+                setSecondView: () => setView('REMOVED'),
+              }} view={{
+                first: view === 'ACTIVE',
+                second: view === 'REMOVED',
+              }} label={{
+                first: "Ativos",
+                second: "Removidos"
+              }}
+            />
+          </Tooltip>
         }
       </div>
     {(hasProductsToDisplay) ? (

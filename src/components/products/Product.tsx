@@ -3,7 +3,9 @@
 import { motion } from 'framer-motion';
 import { FaInfo } from 'react-icons/fa6';
 import { ProductDTO } from '@/src/types/productDTO';
+import { LuMessageCircleWarning } from 'react-icons/lu';
 import { IoStar, IoStarOutline } from 'react-icons/io5';
+import { formattedDate } from '@/src/utils/formattedDate';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 import { getNameAndSurname } from '@/src/utils/getNameAndSurname';
 import { useProductLogic } from '@/src/hooks/pageLogic/useProductLogic';
@@ -14,22 +16,21 @@ import { productCardStyles as styles } from '@/src/styles/Product/productCard.st
 
 import RemoveProductJustify from '../modal/Product/RemoveProductJustify';
 import EditProductJustify from '../modal/Product/EditProductJustify';
+import ProductReviews from '../modal/Product/ProductReviews';
 import ConfirmRemove from '../modal/Product/ConfirmRemove';
+import ConfirmAction from '../modal/Orders/ConfirmAction';
 import ProductInfo from '../modal/Product/ProductInfo';
 import EditProductForm from '../form/EditProductForm';
+import UserMessage from '../modal/Users/UserMessage';
 import OrderProduct from '../modal/OrderProduct';
 import ImageExpand from '../modal/ImageExpand';
-import Button from '../form/Button';
-import Image from 'next/image'
-import Modal from '../modal/Modal';
-import { formattedDate } from '@/src/utils/formattedDate';
-import TextArea from '../form/TextArea';
-import Error from '../ui/Error';
 import WarningInfo from '../ui/WarningInfo';
-import { LuMessageCircleWarning } from 'react-icons/lu';
-import UserMessage from '../modal/Users/UserMessage';
-import ConfirmAction from '../modal/Orders/ConfirmAction';
-import ProductReviews from '../modal/Product/ProductReviews';
+import TextArea from '../form/TextArea';
+import Button from '../form/Button';
+import Modal from '../modal/Modal';
+import Error from '../ui/Error';
+import Image from 'next/image'
+import { Tooltip } from '../ui/Tooltip';
 
 type Props = {
   item: ProductDTO;
@@ -112,12 +113,17 @@ const Product = ({
             <span className={styles.price}>
               {formatCurrency(logic.product.price)}
             </span>
-            <Button 
-              type={'button'}
-              icon={FaInfo}
-              style='p-2 px-4'
-              onClick={() => logic.setActiveModal('PRODUCT_INFO')}
-            />
+            <Tooltip 
+            position='top' 
+            text='Informações do produto' 
+            > 
+              <Button 
+                type={'button'}
+                icon={FaInfo}
+                style='p-2 px-4'
+                onClick={() => logic.setActiveModal('PRODUCT_INFO')}
+              />
+            </Tooltip>
           </div>
         </div>
 

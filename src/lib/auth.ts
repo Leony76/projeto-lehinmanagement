@@ -7,10 +7,12 @@ const resend = new Resend(process.env.RESEND_API_KEY || "TEMP_KEY");
 
 export const auth = betterAuth({
   trustedOrigins: [
-    process.env.NEXT_PUBLIC_BASE_URL!,
+    process.env.NEXT_PUBLIC_APP_URL!,
     "http://localhost:3000",
     "http://192.168.0.5:3000",
+    "https://unvascularly-unriskable-mable.ngrok-free.dev"
   ],
+
   emailAndPassword: {
     enabled: true,
     async sendResetPassword(data) {
@@ -86,9 +88,18 @@ export const auth = betterAuth({
       });
     }
   },
+
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+  },
+
   user: {
     additionalFields: {
       role: {

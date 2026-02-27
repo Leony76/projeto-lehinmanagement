@@ -9,6 +9,7 @@ import { useLockScrollY } from "@/src/hooks/useLockScrollY";
 import { useHideHeaderOnScrollDown } from "@/src/hooks/useHideHeaderOnScrollDown";
 import { useUserStore } from "@/src/hooks/store/useUserStore";
 import { useRouter } from "next/navigation";
+import { Tooltip } from "@/src/components/ui/Tooltip";
 
 type Props = {
   children: React.ReactNode;
@@ -56,8 +57,12 @@ export default function AuthLayout({ children }: Props) {
         `}
       >
         {user?.isActive ? (
-          <div className="flex flex-col min-h-dvh dark:bg-black">
-            <Menu menu={menu} showMenu={showMenu} />
+          <div className="flex flex-col min-h-dvh dark:bg-black">        
+            <Menu 
+              menu={menu} 
+              showMenu={showMenu} 
+            />
+
             <header
               className={`
                 fixed top-0 inset-x-0 z-50
@@ -66,12 +71,23 @@ export default function AuthLayout({ children }: Props) {
               `}
             >
               <nav className="relative z-60 flex justify-between items-center py-2 px-3 border-b-[1.5px] shadow-md border-primary bg-linear-to-l from-primary to-primary-dark dark:bg-linear-to-l dark:from-gray-800 dark:to-gray-900">
-                <Image src={LRC} alt="Lericoria" width={45} height={67} />
-                <IoMenu
-                  size={50}
-                  onClick={() => showMenu(!menu)}
-                  className="text-secondary hover:scale-[1.1] hover:text-secondary-light transition duration-150 cursor-pointer"
+                <Image 
+                  src={LRC} 
+                  alt="Lericoria" 
+                  width={45} 
+                  height={67} 
                 />
+
+                <Tooltip
+                text="Menu de navegação"
+                position="left"
+                >      
+                  <IoMenu
+                    size={50}
+                    onClick={() => showMenu(!menu)}
+                    className="text-secondary hover:scale-[1.1] hover:text-secondary-light transition duration-150 cursor-pointer"
+                  />
+                </Tooltip>
               </nav>
             </header>
 
