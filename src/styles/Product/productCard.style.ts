@@ -55,7 +55,7 @@ export const productCardStyles = {
       
   label: 'text-gray', 
 
-  moreInfosButton: 'text-lg flex-5',
+  moreInfosButton: 'flex-5',
   removeProductButton: `flex-1 ${buttonColorsScheme.red}`,
   warningMessage: 'text-sm text-yellow-dark -mt-2 flex items-center gap-1',
 };

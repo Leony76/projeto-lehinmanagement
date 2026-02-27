@@ -11,6 +11,7 @@ type Props = {
   onCloseActions: () => void;
   onChange: { textArea: (e:React.ChangeEvent<HTMLTextAreaElement>) => void };
   hasReview: boolean;
+  comment: string;
   onClick: { comment: () => void }
   misc: { error: string };
 }
@@ -22,6 +23,7 @@ const ProductComment = ({
   onClick,
   hasReview,
   misc,
+  comment,
 }:Props) => {
   return (
     <Modal 
@@ -38,8 +40,11 @@ const ProductComment = ({
         colorScheme='primary' 
         placeholder={'Deixe seu comentário...'}
         onChange={onChange.textArea}
+        value={comment}
         maxLength={1000}
       />
+
+
       {hasReview && !misc.error && 
         <WarningInfo 
           text={'Você já comentou sobre esse produto. Um novo comentário sobrescreverá o seu último.'}

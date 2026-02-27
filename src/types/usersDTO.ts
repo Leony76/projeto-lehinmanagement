@@ -55,17 +55,19 @@ export type AdminActionHistory = {
 type BaseProps = {
   id: string;
   name: string;
+  profileImageUrl: string | null;
   createdAt: string;
   isActive: boolean;
 }
 
 export type UsersDTO = | (BaseProps & {
   role: 'SELLER';
+  
   stats: {
     ordersDone: number;
     salesDone: number;
   };
-
+  
   hasMessages: boolean;
   messages: UserAndSupportConversationDTO[];
   history: SellerActionHistory[];

@@ -7,16 +7,13 @@ const SellProduct = async () => {
 
   const user = (await getRequiredSession()).user;
   
-  if (user.role === 'CUSTOMER') {
+  if (user.role !== 'SELLER') {
     redirect('/products');
   }
   
   return (
     <div>
-      <PageTitle style='mt-2' title={user.role === 'ADMIN'
-        ? 'Adicionar produto'
-        : 'Vender produto'
-      }/>
+      <PageTitle style='mt-2' title={'Vender produto'}/>
       <AddSellProductForm />
     </div>
   )

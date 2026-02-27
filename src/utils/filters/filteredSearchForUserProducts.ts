@@ -1,33 +1,57 @@
 import { UserProductFilterValue } from "@/src/constants/generalConfigs";
-import { UserProductDTO } from "@/src/types/userProductDTO";
+import { BoughtProduct, FiltrableUserProduct } from "@/src/types/userProductDTO";
 import { Category } from "@prisma/client";
-import { getTotalOrderedAmount } from "../geTotalOrderAmount";
+import { ProductDTO } from "@/src/types/productDTO";
+
+const isBoughtProduct = (
+  item: BoughtProduct | ProductDTO
+): item is BoughtProduct => {
+  return 'hasReview' in item;
+};
 
 export const filteredSearchForUserProducts = (
-  items: UserProductDTO[],
+  items: FiltrableUserProduct[],
   search: string,
   advancedFilter: UserProductFilterValue | null,
   categoryFilter: Category | null,
-): UserProductDTO[] => {
+): FiltrableUserProduct[] => {
+
+  if (!items?.length) return [];
 
   const filteredItems = items.filter(item => {
-    const matchesSearch = search
-      ? item.name.toLowerCase().includes(search.toLowerCase())
-      : true;
 
-    const matchesCategory = categoryFilter
-      ? item.category === categoryFilter
-      : true;
+    const productData = isBoughtProduct(item)
+      ? item
+      : item.product;
+
+    const matchesSearch =
+      !search ||
+      productData.name.toLowerCase().includes(search.toLowerCase());
+
+    const matchesCategory =
+      !categoryFilter || productData.category === categoryFilter;
 
     const matchesAdvancedFilter = (() => {
       if (!advancedFilter) return true;
 
       switch (advancedFilter) {
         case 'rated':
-          return item.hasReview;
+          if (isBoughtProduct(item)) {
+            return item.hasReview;
+          }
+          return Number(item.product.averageRating ?? 0) > 0;
 
         case 'not_rated':
-          return !item.hasReview;
+          if (isBoughtProduct(item)) {
+            return !item.hasReview;
+          }
+          return Number(item.product.averageRating ?? 0) === 0;
+
+        case 'price_asc':
+        case 'price_desc':
+        case 'favorite':
+        case 'least_favorite':
+          return true;
 
         default:
           return true;
@@ -40,27 +64,33 @@ export const filteredSearchForUserProducts = (
   return [...filteredItems].sort((a, b) => {
     if (!advancedFilter) return 0;
 
-    const aTotalOrdered = getTotalOrderedAmount(a);
-    const bTotalOrdered = getTotalOrderedAmount(b);
+    const aProduct = isBoughtProduct(a) ? a : a.product;
+    const bProduct = isBoughtProduct(b) ? b : b.product;
+
+    const aRating = Number(
+      isBoughtProduct(a)
+        ? a.productAverageRating ?? 0
+        : a.product.averageRating ?? 0
+    );
+
+    const bRating = Number(
+      isBoughtProduct(b)
+        ? b.productAverageRating ?? 0
+        : b.product.averageRating ?? 0
+    );
 
     switch (advancedFilter) {
       case 'price_asc':
-        return a.price - b.price;
+        return aProduct.price - bProduct.price;
 
       case 'price_desc':
-        return b.price - a.price;
-
-      case 'most_owned':
-        return bTotalOrdered - aTotalOrdered;
-
-      case 'least_owned':
-        return aTotalOrdered - bTotalOrdered;
+        return bProduct.price - aProduct.price;
 
       case 'favorite':
-        return Number(b.productAverageRating ?? 0) - Number(a.productAverageRating ?? 0);
+        return bRating - aRating;
 
       case 'least_favorite':
-        return Number(a.productAverageRating ?? 0) - Number(b.productAverageRating ?? 0);
+        return aRating - bRating;
 
       default:
         return 0;

@@ -20,6 +20,8 @@ model User {
   role Role?     @default(CUSTOMER)
   isActive       Boolean    @default(true)
 
+  messageAfterReactivated Boolean @default(false) @map("message_after_reactivated")
+
   accounts             Account[]
   sessions             Session[]
   orders               Order[]
@@ -53,6 +55,8 @@ model SupportMessage {
   message    String @db.Text
   reply      String?
 
+  targetProductId  Int?     @map("target_product_id")
+
   createdAt  DateTime  @default(now())  @map("created_at")
   repliedAt  DateTime?  @map("replied_at")
 
@@ -64,6 +68,7 @@ model SupportMessage {
   sender User @relation("user_message", fields: [senderId], references: [id])
   receiver User? @relation("receiver_message", fields: [receiverId], references: [id])
   replier User? @relation("replier_message", fields: [replierId], references: [id])
+  targetProduct Product? @relation(fields: [targetProductId], references: [id])
 
   @@map("support_messages")
 }
@@ -165,18 +170,22 @@ model Product {
   price          Decimal
   description    String? 
   stock          Int
-  reservedStock  Int          @default(0)
-  isActive       Boolean      @map("is_active")
-  deletedBy      DeletedBy?   @map("deleted_by")
+  reservedStock  Int            @default(0) @map("reserved_stock")
+  status         ProductStatus  @default(ACTIVE) 
+  removedBy      DeletedBy?     @map("removed_by")
+  deletedBy      DeletedBy?     @map("deleted_by")
   category       Category
   imageUrl       String       @map("image_url")
+
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime?    @updatedAt @map("updated_at")
+  removedAt      DateTime?    @map("removed_at")
   deletedAt      DateTime?    @map("deleted_at")
 
   orderItems     OrderItem[]
   adminActions   AdminActionHistory[]
   seller         User         @relation(fields: [sellerId], references: [id])
+  supportMessages  SupportMessage[]
   customer       CostumerProduct[]
   reviews        ProductReview[]
 
@@ -311,14 +320,10 @@ enum AdminAction {
   USER_ACTIVATED
   PRODUCT_REMOVED
   PRODUCT_EDITED
-  ORDER_CANCELED
-  PAYMENT_REFUNDED
+  PRODUCT_DELETED
+  PRODUCT_REACTIVATED
   MESSAGE_REPLY
   MESSAGE_TO_USER
-  EDITED
-  DELETED
-  BLOCKED
-  UNBLOCKED
 }
 
 enum UserSituation {
@@ -342,4 +347,10 @@ enum SupportMessageType {
 enum SupportMessageSentBy {
   SUPPORT
   USER
+}
+
+enum ProductStatus {
+  ACTIVE
+  REMOVED
+  DELETED
 }

@@ -27,7 +27,7 @@ export function Tooltip({
   };
 
   return (
-    <div className={`relative inline-flex group ${style ?? ''}`}>
+    <div className={`relative z-10 inline-flex group ${style ?? ''}`}>
       {children}
 
       <span className={`
@@ -35,7 +35,7 @@ export function Tooltip({
         absolute
         scale-0 group-hover:scale-100
         transition-all duration-150
-        rounded-md bg-secondary-dark/30 px-2 py-1
+        rounded-md bg-secondary-dark/70 px-2 py-1
         text-xs text-primary
         brightness-[1.2]
         whitespace-nowrap shadow

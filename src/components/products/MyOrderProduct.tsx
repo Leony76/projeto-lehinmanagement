@@ -272,7 +272,7 @@ const MyOrderProduct = ({
             }`}
             colorScheme="secondary"
             disabled={!!(paymentStatus !== 'APPROVED' && paymentMethod)}
-            onClick={() => setActiveModal('ORDERS_FROM_PRODUCT')}
+            onClick={() => setActiveModal('PAY_ORDER_CONFIRM')}
         />
       </Modal>
 

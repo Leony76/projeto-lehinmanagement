@@ -1,7 +1,7 @@
 'use client';
 
 import Image from "next/image";
-import PlaceHolder from '@/public/my-interpretation-of-the-torque-twister-before-picture-on-v0-2p6oyytw55691.jpg'
+import PlaceHolder from '@/public/Profile_avatar_placeholder_large.png';
 import { buttonColorsScheme } from "@/src/constants/systemColorsPallet";
 import { IoInformation } from "react-icons/io5";
 import Button from "../form/Button";
@@ -138,7 +138,7 @@ const UserCard = ({
       <div className='flex items-center gap-2 flex-1'>
         <div className='border-2 border-primary aspect-square rounded-full p-1'>
           <Image
-            src={PlaceHolder}
+            src={user.profileImageUrl || PlaceHolder}
             alt={'placeholder'}
             width={50}
             height={50}
@@ -224,7 +224,7 @@ const UserCard = ({
           onCloseActions: () => setActiveModal('USER_INFOS'),
         }} 
         image={{
-          imageUrl: PlaceHolder,
+          imageUrl: user.profileImageUrl || PlaceHolder,
           name: 'placeholder'
         }}
       />
@@ -261,9 +261,6 @@ const UserCard = ({
           ))}
         </div>
       </Modal>
-
-
-
 
       <Modal
       isOpen={activeModal === 'REPLY_MESSAGE'} 
@@ -324,10 +321,6 @@ const UserCard = ({
         />
       </div>
     </Modal>
-    
-
-
-
 
 
     <Modal 

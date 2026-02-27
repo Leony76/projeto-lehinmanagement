@@ -11,14 +11,21 @@ import { useState } from "react";
 import { CATEGORY_LABEL_MAP, PRODUCT_FILTER_LABEL_MAP, ProductFilterValue } from "@/src/constants/generalConfigs";
 import { Category } from "@prisma/client";
 import { filteredSearchForProducts } from "@/src/utils/filters/filteredSearchForProducts";
+import SwitchRenderViewButtons from "@/src/components/ui/SwitchRenderViewButtons";
+import { useUserStore } from "@/src/hooks/store/useUserStore";
+import { Tooltip } from "@/src/components/ui/Tooltip";
 
 type Props = {
-  products: ProductDTO[];
+  items: ProductDTO[];
 };
 
 const Products = ({ 
-  products,
+  items,
 }: Props) => {
+
+  const user = useUserStore((s) => s.user);
+
+  const [view, setView] = useState<'REMOVED' | 'ACTIVE'>('ACTIVE');
 
   const [search, setSearch] = useState<string>('');
   const [advancedFilter, setAdvancedFilter] = useState<ProductFilterValue | null>(null);
@@ -26,15 +33,30 @@ const Products = ({
 
   const translatedAdvandedFilter = advancedFilter ? PRODUCT_FILTER_LABEL_MAP[advancedFilter] : '';
   const translatedCategoryFilter = categoryFilter ? CATEGORY_LABEL_MAP[categoryFilter] : '';
-
+  
   const filteredProducts = filteredSearchForProducts(
-    products,
+    items,
     search,
     advancedFilter,
     categoryFilter,
+    view === 'REMOVED',
   );
 
-  const hasProducts = filteredProducts.length > 0;
+  const displayProducts = filteredProducts.filter((item) => 
+    view === 'ACTIVE' 
+      ? item.product.status !== 'REMOVED'
+      : item.product.status === 'REMOVED'
+  );
+
+  const hasProductsToDisplay = displayProducts.length > 0;
+  const hasRemovedProducts = filteredProducts.some((item) => item.product.status === 'REMOVED');
+
+  const renderedProducts = displayProducts.map((item) => (
+    <Product 
+      key={item.product.id} 
+      item={item} 
+    />
+  ));
     
   return (
     <div>
@@ -42,7 +64,7 @@ const Products = ({
         style="my-2" 
         title="Produtos"
       />
-      <div>
+      <div className="space-y-3">
         <Search 
           style={{input: 'mt-5'}} 
           colorScheme="primary"
@@ -50,7 +72,7 @@ const Products = ({
           onClearSearch={() => setSearch('')}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex gap-3 mt-3">
+        <div className="flex gap-3">
           <Select 
             style={{input: `flex-1 w-full`}} 
             selectSetup={"PRODUCT_FILTER"} 
@@ -66,15 +88,30 @@ const Products = ({
             onChange={(e) => setCategoryFilter(e.target.value as Category)}
           />
         </div>
+        
+        {(user?.role !== 'CUSTOMER' && hasRemovedProducts !== undefined) &&
+          <Tooltip 
+          position="top" 
+          text="Alterne entre os produtos disponíveis para compra e os removidos por você"
+          >
+            <SwitchRenderViewButtons 
+              onClick={{
+                setFirstView: () => setView('ACTIVE'),
+                setSecondView: () => setView('REMOVED'),
+              }} view={{
+                first: view === 'ACTIVE',
+                second: view === 'REMOVED',
+              }} label={{
+                first: "Ativos",
+                second: "Removidos"
+              }}
+            />
+          </Tooltip>
+        }
       </div>
-    {(hasProducts) ? (
+    {(hasProductsToDisplay) ? (
       <ProductCardsGrid>
-      {filteredProducts.map((product) => (
-        <Product
-          key={product.id}
-          product={product}
-        />
-      ))}
+        {renderedProducts}
       </ProductCardsGrid>
     ) : (
       <NoContentFoundMessage 
@@ -93,7 +130,9 @@ const Products = ({
             ? `Nenhum resultado para a categoria "${translatedCategoryFilter}"`
           : advancedFilter
             ? `Nenhum resultado para o filtro avançado "${translatedAdvandedFilter}"`
-          : `Nenhum produto disponível no momento`
+          : view === 'REMOVED' 
+            ? `Nenhum produto removido por você`
+          : `Nenhum produto adiquirido por você no momento`
         }
       />
     )}

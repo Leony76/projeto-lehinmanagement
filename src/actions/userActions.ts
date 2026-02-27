@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import prisma from "../lib/prisma";
 import { getRequiredSession } from "../lib/get-session-user";
 import { SupportMessageSentBy, SupportMessageType, UserSituation } from "@prisma/client";
+import { UserInfosEditFormData } from "../schemas/editUserInfosSchema";
 
 export async function toggleDarkTheme(darkTheme: boolean) {
   const session = await getRequiredSession();
@@ -41,6 +42,7 @@ export async function deactivateUserAccount(
       where: { id: userId },
       data: {
         isActive: false,
+        messageAfterReactivated: true,
       },
     });
 
@@ -106,7 +108,9 @@ export async function sendMessageToSupport(
     sentBy: SupportMessageSentBy;
     receiverId?: string;
   },
+  productId?: number,
 ) {
+
   await prisma.supportMessage.create({
     data: {
       subject: data.subject ?? null,
@@ -114,7 +118,8 @@ export async function sendMessageToSupport(
       type: data.type,
       sentBy: data.sentBy,
       receiverId: data.receiverId,
-      
+      targetProductId: productId,
+    
       senderId: userData.id,
       situation: 'UNRESOLVED',
       userSituation: userData.situation,
@@ -154,3 +159,30 @@ export async function sendReplyMessage(
   revalidatePath('/users');
 }
 
+export async function toggleMessageAfteruserActivated(
+  userId: string,
+) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { messageAfterReactivated: false },
+  });
+
+  revalidatePath('/dashboard');
+}
+
+export async function updateUserData(
+  data: UserInfosEditFormData,
+) {
+  const user = (await getRequiredSession()).user;
+  
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { 
+      name: data.name,
+      email: data.email,
+      image: data.image as string,
+    },
+  });
+
+  revalidatePath('/settings');
+}

@@ -4,6 +4,8 @@ import Modal from '../Modal'
 import Image from 'next/image'
 import { productCardInfoStyles as styles } from '@/src/styles/Product/productCardInfo.style'
 import LabelValue from '../../ui/LabelValue'
+import Button from '../../form/Button'
+import { ProductPageModals } from '@/src/types/modal'
 
 type Props = {
   modal: {
@@ -20,10 +22,11 @@ type Props = {
     salesCount: number;
     publishedAt: string;
     updatedAt: string;
-    rating: string | null;
+    rating: string | null | number;
   };
   actions: {
     onImageClick: () => void;
+    setActiveModal?: React.Dispatch<React.SetStateAction<ProductPageModals | null>>
   };
 }
 
@@ -44,6 +47,7 @@ const ProductInfo = ({
     onCloseModalActions={modal.onCloseActions}
     >
       <div className={styles.mainContainer}>
+
         <div className={styles.imageContainer}>
           <Image 
             src={product.imageUrl} 
@@ -53,55 +57,69 @@ const ProductInfo = ({
             onClick={actions.onImageClick}
           />
         </div>
-        <div className={styles.infosContainer}>      
-          <LabelValue
-            label='Nome'
-            value={product.name}
-          />
-          
-          <LabelValue
-            label='Categoria'
-            value={product.category}
-          />
 
-          <LabelValue
-            label='Descrição'
-            value={product.description}
-            textarea
-          />
-
-          <div className={styles.infosLowerContainer}>
-           
+        <div className='flex-2'>
+          <div className={styles.infosContainer + ' mb-2'}>      
             <LabelValue
-              label='Preço unitário'
-              value={formatCurrency(product.price)}
+              label='Nome'
+              value={product.name}
             />
             
             <LabelValue
-              label='Estoque'
-              value={product.stock}
-            />
-            
-            <LabelValue
-              label='Unidades vendidas'
-              value={product.salesCount}
+              label='Categoria'
+              value={product.category}
             />
 
             <LabelValue
-              label='Publicado'
-              value={publishedAt}
+              label='Descrição'
+              value={product.description}
+              textarea
             />
-          
-            <LabelValue
-              label='Atualizado'
-              value={updatedAt}
-            />
+
+            <div className={styles.infosLowerContainer}>
             
-             <LabelValue
-              label='Avaliação'
-              value={product.rating ?? 'Não avaliado'}
-            />
+              <LabelValue
+                label='Preço unitário'
+                value={formatCurrency(product.price)}
+              />
+              
+              <LabelValue
+                label='Estoque'
+                value={product.stock}
+              />
+              
+              <LabelValue
+                label='Unidades vendidas'
+                value={product.salesCount}
+              />
+
+              <LabelValue
+                label='Publicado'
+                value={publishedAt}
+              />
+            
+              <LabelValue
+                label='Atualizado'
+                value={updatedAt}
+              />
+              
+              <LabelValue
+                label='Avaliação'
+                value={isNaN(Number(product.rating)) 
+                  ? product.rating ?? 'Não Avaliado'
+                  : Number(product.rating).toFixed(1).replace('.',',')
+                }
+              />
+            </div>
+
           </div>
+          
+          <Button 
+            type={'button'}
+            label='Ver avaliações dos clientes'
+            style='px-5 w-full sm:w-fit'
+            onClick={() => actions.setActiveModal?.('PRODUCT_REVIEWS')}
+          />
         </div>
       </div>
     </Modal>

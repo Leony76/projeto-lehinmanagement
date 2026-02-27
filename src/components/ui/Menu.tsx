@@ -102,19 +102,11 @@ const Menu = ({menu, showMenu}:Props) => {
                 label={'Vender Produto'}
               />
             ) : user?.role === 'ADMIN' && (
-              <>
-              <MenuItem 
-                style='text-[13px]' 
-                route='/products/sell-product' 
-                closeMenu={showMenu} 
-                label={'Adicionar Produto'}
-              />
               <MenuItem 
                 route='/users' 
                 closeMenu={showMenu} 
                 label={'Usuários'}
               />
-              </>
             )} 
               
             {user?.role !== 'ADMIN' && 
@@ -126,7 +118,7 @@ const Menu = ({menu, showMenu}:Props) => {
             }
           </ul>
           <ul className="mt-auto text-center mb-5">
-            <li className={`${buttonColorsScheme.menuLi} text-secondary!`}>
+            <li className={`w-[90%] mx-auto text-secondary!`}>
               {user?.name 
                 ? getNameAndSurname(user.name) 
                 : <Spinner color='primary'/> + "Carregando..."

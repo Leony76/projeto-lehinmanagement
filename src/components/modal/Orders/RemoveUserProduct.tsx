@@ -22,7 +22,7 @@ const RemoveUserProduct = ({
   return (
     <Modal 
     isOpen={isOpen} 
-    modalTitle={'Excluir produto'} 
+    modalTitle={'Remover produto'} 
     onCloseModalActions={onCloseActions}
     >
       <p className='text-secondary-dark'>

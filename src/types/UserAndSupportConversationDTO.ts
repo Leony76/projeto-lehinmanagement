@@ -19,17 +19,4 @@ export type UserAndSupportConversationDTO = {
     name: string | null | undefined;
     role: Role | null | undefined;
   };
-
-  // conversationId: number;
-  // sender: {
-  //   message: string;
-  //   sentAt: string;
-  //   subject: string | null;
-  // },
-
-  // replier: {
-  //   reply: string | null | undefined;
-  //   repliedAt: string | null | undefined;
-  //   name: string | null | undefined;
-  // },
 }

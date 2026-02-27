@@ -20,7 +20,7 @@ import WarningInfo from '../ui/WarningInfo';
 type Props = {
   activeModal: ProductPageModals | null;
   setActiveModal: React.Dispatch<React.SetStateAction<ProductPageModals | null>>;
-  selectedProduct: ProductDTO | null;
+  selectedProduct: ProductDTO['product'] | null;
 }
 
 const OrderProduct = ({

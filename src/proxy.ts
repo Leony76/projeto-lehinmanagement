@@ -1,8 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
+  const origin = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:3000' 
+    : request.nextUrl.origin;
+
   const sessionResponse = await fetch(
-    `${request.nextUrl.origin}/api/auth/get-session`,
+    `${origin}/api/auth/get-session`,
     {
       headers: {
         cookie: request.headers.get("cookie") || "",

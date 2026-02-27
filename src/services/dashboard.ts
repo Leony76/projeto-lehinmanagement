@@ -19,6 +19,8 @@ export const getDashboardStats = async(): Promise<DashboardDTO> => {
         mostRecentOrder,
         mostOrderedCategory,
         total_average_highestAndLowestSpend,
+        messageAfterDeactivation,
+        activationJustification,
       ] = await Promise.all([
         prisma.order.count({ where: { userId } }),
 
@@ -59,6 +61,20 @@ export const getDashboardStats = async(): Promise<DashboardDTO> => {
           _max: { total: true },
           _min: { total: true },
         }),
+
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: { 
+            messageAfterReactivated: true,
+            name: true,
+          },
+        }),
+
+        prisma.adminActionHistory.findFirst({
+          where: { targetUserId: userId, action: 'USER_ACTIVATED' },
+          select: { justification: true },
+          orderBy: { createdAt: 'desc' }
+        }),
       ]);
 
       let mostOrderedCategoryName: Category | null = null;
@@ -74,6 +90,10 @@ export const getDashboardStats = async(): Promise<DashboardDTO> => {
 
       return {
         role: 'CUSTOMER',
+        userId: userId,
+        username: messageAfterDeactivation?.name ?? '[Desconhecido]',
+        messageAfterActivation: messageAfterDeactivation?.messageAfterReactivated ?? false,
+        activationJustification: activationJustification?.justification ?? '[Houve um erro ao carregar a mensagem!]',
         orders: {
           done: ordersDone,
           pending: pendingOrders,
@@ -111,6 +131,8 @@ export const getDashboardStats = async(): Promise<DashboardDTO> => {
         mostRecentOrder,
         mostOrderedCategory,
         total_average_highestAndLowestSpend,
+        messageAfterDeactivation,
+        activationJustification,
       ] = await Promise.all([
         prisma.orderItem.count({
           where: {
@@ -213,6 +235,20 @@ export const getDashboardStats = async(): Promise<DashboardDTO> => {
           _max: { total: true },
           _min: { total: true },
         }),
+
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: { 
+            messageAfterReactivated: true,
+            name: true,
+          },
+        }),
+
+        prisma.adminActionHistory.findFirst({
+          where: { targetUserId: userId, action: 'USER_ACTIVATED' },
+          select: { justification: true },
+          orderBy: { createdAt: 'desc' }
+        }),
       ]);
 
       let mostOrderedCategoryName: Category | null = null;
@@ -238,6 +274,10 @@ export const getDashboardStats = async(): Promise<DashboardDTO> => {
 
       return {
         role: 'SELLER',
+        userId: userId,
+        username: messageAfterDeactivation?.name ?? '[Desconhecido]',
+        messageAfterActivation: messageAfterDeactivation?.messageAfterReactivated ?? false,
+        activationJustification: activationJustification?.justification ?? '[Houve um erro ao carregar a mensagem!]',
         orders: {
           done: ordersDone,
           pending: pendingOrders,
@@ -299,6 +339,8 @@ export const getDashboardStats = async(): Promise<DashboardDTO> => {
         rejectedOrdersFromSellers,
         avarageSpendFromSellers,
         sellerOrdersWithProduct,
+
+        adminName,
       ] = await Promise.all([
 
         prisma.user.count({ where: { role: 'CUSTOMER' } }),
@@ -390,6 +432,11 @@ export const getDashboardStats = async(): Promise<DashboardDTO> => {
             },
           },
         }),
+
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: { name: true },
+        }),
       ]);
 
 
@@ -456,6 +503,8 @@ export const getDashboardStats = async(): Promise<DashboardDTO> => {
 
       return {
         role: 'ADMIN',
+        userId: userId,
+        username: adminName?.name ?? '[Desconhecido]',
 
         usersCount: {
           customers: customersCount,

@@ -1,4 +1,5 @@
-import { removeProduct, updateProduct } from "@/src/actions/productActions";
+import { deleteProduct, reactivateRemovedProduct, removeProduct, updateProduct } from "@/src/actions/productActions";
+import { sendMessageToSupport } from "@/src/actions/userActions";
 import { CATEGORY_LABEL_MAP } from "@/src/constants/generalConfigs";
 import { useToast } from "@/src/contexts/ToastContext";
 import { useUserStore } from "@/src/hooks/store/useUserStore";
@@ -6,31 +7,41 @@ import { useLockScrollY } from "@/src/hooks/useLockScrollY";
 import { AddProductFormData } from "@/src/schemas/addProductSchema";
 import { ProductPageModals } from "@/src/types/modal";
 import { ProductDTO } from "@/src/types/productDTO";
+import { UserAndSupportConversationDTO } from "@/src/types/UserAndSupportConversationDTO";
+import { UserSituation, SupportMessageType, SupportMessageSentBy } from "@prisma/client";
 import { useRef, useState } from "react";
 
 type Props = {
-  product: ProductDTO;
+  item: ProductDTO;
 }
 
-export const useProductLogic = ({product}:Props) => {
+export const useProductLogic = ({item}:Props) => {
 
   const { showToast } = useToast();
 
-  const [formData, setFormData] = useState<AddProductFormData | null>(null); // ADICIONE ISSO
+  const product = item.product;
+  const seller = item.seller;
+  const reviews = item.product.reviews;
+
+  const [formData, setFormData] = useState<AddProductFormData | null>(null); 
+  const [selectedConversation, setSelectedConversation] = useState<UserAndSupportConversationDTO | null>(null);
 
   const datePutToSale = new Date(product.createdAt).toLocaleDateString("pt-BR");
-  const category = CATEGORY_LABEL_MAP[product.category];
+  const category = CATEGORY_LABEL_MAP[item.product.category];
 
-  const [productToBeEdited, setProductToBeEdited] = useState<ProductDTO | null>(null);
+  const [productToBeEdited, setProductToBeEdited] = useState<ProductDTO['product'] | null>(null);
 
   const [activeModal, setActiveModal] = useState<ProductPageModals | null>(null);
 
   const [removeJustify, setRemoveJustify] = useState<string>('');
   const [editJustify, setEditJustify] = useState<string>('');
+  const [reactivateProductJustify, setReactivateProductJustify] = useState<string>('');
+
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [imageFile, setImageFile] = useState<File | null>(null);  
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [supportMessage, setSupportMessage] = useState<string>('');
   
   const [preview, setPreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -39,16 +50,11 @@ export const useProductLogic = ({product}:Props) => {
   const user = useUserStore((stats) => stats.user);
 
   const available = product.stock - product.reservedStock;
-  const canOrder = (product.sellerId !== user?.id) && (user?.role !== 'ADMIN');
+  const canOrder = (seller.id !== user?.id) && (user?.role !== 'ADMIN');
 
-  const handleRemoveProduct = async() => {
+  const handleRemoveProduct = async(): Promise<void> => {
     if (loading!) return;
-    setLoading(true);
-
-    if (user?.role === 'ADMIN' && !removeJustify) {
-      setError('A justificativa de remoção é obrigatória');
-      return;
-    }
+    setLoading(true); 
 
     try {
       
@@ -68,7 +74,59 @@ export const useProductLogic = ({product}:Props) => {
     }
   };
 
-  const handleEditProduct = async (): Promise<void> => {
+  const handleDeleteProduct = async(): Promise<void> => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      if (product.status === 'ACTIVE') throw new Error('Não se pode excluir um produto sem primeiro estar removido');
+
+      await deleteProduct(product.id);
+
+      showToast('Produto deletado com sucesso', 'success');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally {
+      setLoading(false);
+      setActiveModal(null);
+    }
+  }
+
+  const handleSendMessageToSupport = async(): Promise<void> => {
+    if (loading) return;
+    setLoading(true);
+
+    const userData = {
+      id: user?.id ?? '',
+      situation: user?.isActive
+        ? "ACTIVATED" 
+        : "DEACTIVATED" as UserSituation
+    };
+
+    const data = {
+      message: supportMessage,
+      type: 'APPEAL' as SupportMessageType,
+      sentBy: 'USER' as SupportMessageSentBy,
+    }
+
+    try {
+      await sendMessageToSupport(
+        userData,
+        data,    
+        product.id,    
+      );
+
+      showToast('Seu apelo foi enviado ao suporte', 'info');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally {
+      setLoading(false);
+      setActiveModal(null);
+      setSupportMessage('');
+    }
+  }
+
+  const handleEditProduct = async(): Promise<void> => {
 
     if (loading) return;
 
@@ -118,7 +176,28 @@ export const useProductLogic = ({product}:Props) => {
       setActiveModal(null);
       setFormData(null);
     }
+  }
 
+  const handleReactiveProduct = async(): Promise<void> => {
+    if (loading) return;
+    setLoading(true);
+    
+    try {
+      if (seller.id !== user?.id) throw new Error('Não autorizado');
+
+      await reactivateRemovedProduct(
+        product.id,
+        reactivateProductJustify
+      );
+
+      showToast('Produto reativado com sucesso', 'success');
+    } catch (err:unknown) {
+      showToast(`${err}`, 'error');
+    } finally {
+      setLoading(false);
+      setReactivateProductJustify('');
+      setActiveModal(null);
+    }
   }
 
   useLockScrollY(Boolean(activeModal)); 
@@ -126,21 +205,34 @@ export const useProductLogic = ({product}:Props) => {
   return {
     user,
     error,
+    seller,
     loading,
+    reviews,
     preview,
     canOrder,
     category,
     available,
     imageFile,
+    product,
     imageError,
     activeModal,
     editJustify,
     fileInputRef,
     datePutToSale,
+    removeJustify,
+    supportMessage,
     productToBeEdited,
+    selectedConversation,
+    reactivateProductJustify,
+    setReactivateProductJustify,
+    handleSendMessageToSupport,
+    setSelectedConversation,
+    handleReactiveProduct,
     setProductToBeEdited,
+    handleDeleteProduct,
     handleRemoveProduct,
     handleEditProduct,
+    setSupportMessage,
     setRemoveJustify,
     setEditJustify,
     setActiveModal,

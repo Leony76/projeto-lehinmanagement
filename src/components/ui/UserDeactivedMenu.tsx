@@ -116,11 +116,11 @@ const UserDeactivedMenu = ({
         <p className="text-primary text-center text-sm">
           Nossos administradores apuraram circunstância que inferiram na desativação de sua conta por tempo indeterminado
         </p>
-        <div className="mb-4">
+        <div className="mb-4 w-full">
           <label className="text-secondary">
             Razão
           </label>
-          <p className="text-gray text-sm max-h-30 overflow-y-auto">
+          <p className="text-gray text-sm max-h-30 overflow-y-auto wrap-break-word">
             {deactivation.reason}
           </p>
         </div>

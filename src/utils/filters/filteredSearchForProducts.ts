@@ -7,39 +7,46 @@ export const filteredSearchForProducts = (
   search: string,
   advancedFilter: ProductFilterValue | null,
   categoryFilter: Category | null,
+  showRemoved: boolean = false, 
 ) => {
-  const filteredProducts = items
-    .filter(item =>
-      search
-        ? item.name.toLowerCase().includes(search.toLowerCase())
-        : true
-    )
-    .filter(item =>
-      categoryFilter
-        ? item.category === categoryFilter
-        : true
-    );
+  const searchLower = search.toLowerCase();
 
-  const sortedItems = [...filteredProducts].sort((a, b) => {
+  const filteredProducts = items.filter((item) => {
+    const isRemoved = !!item.product.removed.at;
+    if (!showRemoved && isRemoved) return false;
+
+    const matchesSearch = search 
+      ? item.product.name.toLowerCase().includes(searchLower) 
+      : true;
+
+    const matchesCategory = categoryFilter 
+      ? item.product.category === categoryFilter 
+      : true;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  return [...filteredProducts].sort((a, b) => {
     if (!advancedFilter) return 0;
+
+    const pA = a.product;
+    const pB = b.product;
 
     switch (advancedFilter) {
       case "price_asc":
-        return a.price - b.price;
+        return pA.price - pB.price;
       case "price_desc":
-        return b.price - a.price;
+        return pB.price - pA.price;
       case "rating_asc":
-        return (Number(a.productAverageRating) ?? 0) - (Number(b.productAverageRating) ?? 0);
+        return Number(pA.averageRating ?? 0) - Number(pB.averageRating ?? 0);
       case "rating_desc":
-        return (Number(b.productAverageRating) ?? 0) - (Number(a.productAverageRating) ?? 0);
+        return Number(pB.averageRating ?? 0) - Number(pA.averageRating ?? 0);
       case "best_sellers":
-        return (b.productSalesCount ?? 0) - (a.productSalesCount ?? 0);
+        return (pB.salesCount ?? 0) - (pA.salesCount ?? 0);
       case "worst_sellers":
-        return (a.productSalesCount ?? 0) - (b.productSalesCount ?? 0);
+        return (pA.salesCount ?? 0) - (pB.salesCount ?? 0);
       default:
         return 0;
     }
   });
-
-  return sortedItems ;
-}
+};
