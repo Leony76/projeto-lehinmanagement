@@ -6,6 +6,7 @@ First, run the development server:
 
 ```bash
 npm run dev
+npx ngrok http 3000
 # or
 yarn dev
 # or
